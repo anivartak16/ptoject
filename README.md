@@ -2,6 +2,9 @@
 
 AgriLink is an SIH-ready agricultural marketplace that gives farmers transparent mandi prices and connects verified supply with buyer demand.
 
+**Canonical codebase:** this `do/` directory. See [MIGRATION.md](MIGRATION.md)
+for the consolidation note and local run instructions.
+
 ## What works
 
 - JWT + bcrypt authentication and role-protected Farmer, Buyer, FPO and Admin dashboards
