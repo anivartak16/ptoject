@@ -1,0 +1,18 @@
+'Log files:
+C:\Users\ASUS\Documents\Codex\2026-09-09\do\.npm-cache\_logs\2026-09-09T08_07_34_535Z-debug-0.log
+
+# npm resolution error report
+
+While resolving: agrilink-web@undefined
+Found: vite@6.4.3
+node_modules/vite
+  vite@"^6.0.5" from the root project
+
+Could not resolve dependency:
+peer vite@"^8.0.0" from @vitejs/plugin-react@6.1.1
+node_modules/@vitejs/plugin-react
+  @vitejs/plugin-react@"latest" from the root project
+
+Fix the upstream dependency conflict, or retry
+this command with --force or --legacy-peer-deps
+to accept an incorrect (and potentially broken) dependency resolution.
