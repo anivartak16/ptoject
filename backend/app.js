@@ -2,9 +2,9 @@ import { Dispute } from "./models/index.js";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { requireAuth, requireRole } from "./middleware/auth.js";
+import authRoutes from "./routes/authRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import {
   User,
   Lot,
@@ -49,134 +49,9 @@ const ok = (res, data, message = "Success") =>
   res.json({ success: true, message, data });
 const fail = (res, status, message, error = "VALIDATION_ERROR") =>
   res.status(status).json({ success: false, message, error });
-const token = (u) =>
-  jwt.sign({ id: u._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
 app.get("/api/health", (q, s) => ok(s, { status: "healthy" }));
-app.post("/api/auth/register", async (req, res, next) => {
-  try {
-    const {
-      name,
-      email,
-      password,
-      role,
-      phone,
-      location,
-      address,
-      district,
-      state,
-      pincode,
-      organizationName,
-      buyerType,
-      farmName,
-      landSize,
-      primaryCrop,
-      registrationNumber,
-      memberCount,
-    } = req.body;
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !phone ||
-      !location ||
-      !["FARMER", "FPO", "BUYER"].includes(role)
-    )
-      return fail(
-        res,
-        422,
-        "Name, email, phone, location, password and valid role are required",
-      );
-    if (
-      role === "FARMER" &&
-      (!farmName || !(Number(landSize) > 0) || !primaryCrop)
-    )
-      return fail(
-        res,
-        422,
-        "Farm name, land size and primary crop are required for farmers",
-      );
-    if (role === "BUYER" && (!organizationName || !buyerType))
-      return fail(
-        res,
-        422,
-        "Organisation name and buyer type are required for buyers",
-      );
-    if (
-      role === "FPO" &&
-      (!organizationName || !registrationNumber || !(Number(memberCount) > 0))
-    )
-      return fail(
-        res,
-        422,
-        "FPO name, registration number and member count are required",
-      );
-    if (await User.findOne({ email: email.toLowerCase() }))
-      return fail(res, 409, "Email already registered", "CONFLICT");
-    const user = await User.create({
-      name,
-      email,
-      password: await bcrypt.hash(password, 12),
-      role,
-      phone,
-      location,
-      address,
-      district,
-      state,
-      pincode,
-      organizationName,
-      buyerType,
-      farmName,
-      landSize: landSize ? Number(landSize) : undefined,
-      primaryCrop,
-      registrationNumber,
-      memberCount: memberCount ? Number(memberCount) : undefined,
-    });
-    ok(
-      res,
-      {
-        token: token(user),
-        user: {
-          id: user._id,
-          name: user.name,
-          role: user.role,
-          email: user.email,
-          phone: user.phone,
-          location: user.location,
-        },
-      },
-      "Registration successful",
-    );
-  } catch (e) {
-    next(e);
-  }
-});
-app.post("/api/auth/login", async (req, res, next) => {
-  try {
-    const u = await User.findOne({ email: req.body.email?.toLowerCase() });
-    if (!u || !(await bcrypt.compare(req.body.password || "", u.password)))
-      return fail(res, 401, "Invalid email or password", "INVALID_CREDENTIALS");
-    ok(
-      res,
-      {
-        token: token(u),
-        user: {
-          id: u._id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          location: u.location,
-        },
-      },
-      "Login successful",
-    );
-  } catch (e) {
-    next(e);
-  }
-});
-app.post("/api/auth/logout", requireAuth, (q, s) => ok(s, {}, "Logged out"));
-app.get("/api/auth/me", requireAuth, (q, s) => ok(s, q.user));
+app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.get("/api/markets", async (q, s, n) => {
   try {
     ok(s, await Market.find(q.query.state ? { state: q.query.state } : {}));

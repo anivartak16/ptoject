@@ -5,12 +5,13 @@ import {User,Market,MarketPrice,Quality,Lot,Demand,Warehouse,LogisticsProvider,O
 
 const ago=days=>new Date(Date.now()-days*86400000);
 const password=await bcrypt.hash('Demo@12345',12);
-const demoUsers=[['Demo Admin','demo.admin@agrilink.com','ADMIN','Bhopal'],['Demo Farmer','demo.farmer@agrilink.com','FARMER','Indore'],['Demo Buyer','demo.buyer@agrilink.com','BUYER','Indore'],['Demo FPO','demo.fpo@agrilink.com','FPO','Ujjain']];
+const demoUsers=[['Admin','admin@agrilink.com','ADMIN','Bhopal'],['Ramesh Patel','farmer@agrilink.com','FARMER','Indore'],['ABC Foods','buyer@agrilink.com','BUYER','Indore'],['Narmada FPO','fpo@agrilink.com','FPO','Ujjain']];
 await mongoose.connect(process.env.MONGO_URI);
 const users={};
-for(const [name,email,role,location] of demoUsers)users[role]=await User.findOneAndUpdate({email},{$setOnInsert:{name,email,role,location,password,verification:'VERIFIED'}},{new:true,upsert:true});
-const mandiCoordinates={Indore:[75.8577,22.7196],Dewas:[76.0534,22.9676],Ujjain:[75.7885,23.1765],Bhopal:[77.4126,23.2599],Mandsaur:[75.0693,24.0734],Neemuch:[74.872,24.4764]};
-if(await Market.countDocuments()===0)await Market.insertMany(Object.entries(mandiCoordinates).map(([location,coordinates])=>({name:`${location} Mandi`,location,district:location,state:'Madhya Pradesh',commodities:['Wheat','Soybean','Onion'],geo:{type:'Point',coordinates}})));
+for(const [name,email,role,location] of demoUsers)users[role]=await User.findOneAndUpdate({email},{$set:{name,email,role,location,verification:'VERIFIED',active:true},$setOnInsert:{password}},{new:true,upsert:true});
+const mandiCoordinates={Indore:[75.8577,22.7196],Dewas:[76.0534,22.9676],Ujjain:[75.7885,23.1765],Bhopal:[77.4126,23.2599],Mandsaur:[75.0693,24.0734],Neemuch:[74.872,24.4764]};const marketFactors={Indore:[7.5,4.4,318],Dewas:[8,4.2,207],Ujjain:[8,4.5,426],Bhopal:[9,4.1,189],Mandsaur:[8.5,4.6,512],Neemuch:[9,4.7,638]};
+if(await Market.countDocuments()===0)await Market.insertMany(Object.entries(mandiCoordinates).map(([location,coordinates])=>({name:`${location} Mandi`,location,district:location,state:'Madhya Pradesh',commodities:['Wheat','Soybean','Onion'],geo:{type:'Point',coordinates},transportCostPerKm:marketFactors[location][0],reviewAverage:marketFactors[location][1],reviewCount:marketFactors[location][2]})));
+for(const [location,factors] of Object.entries(marketFactors))await Market.updateOne({location},{$set:{transportCostPerKm:factors[0],reviewAverage:factors[1],reviewCount:factors[2]}});
 for(const [location,coordinates] of Object.entries(mandiCoordinates))await Market.updateOne({location},{$set:{geo:{type:'Point',coordinates}}});
 const markets=await Market.find().limit(6);
 if(await MarketPrice.countDocuments()===0){const prices=[];markets.forEach((market,index)=>{for(let day=0;day<30;day++)prices.push({market:market._id,commodity:'Wheat',date:ago(day),minPrice:2360+index*18-day*2,maxPrice:2540+index*18-day*2,modalPrice:2450+index*18-day*2,arrivalVolume:130+index*24})});await MarketPrice.insertMany(prices)}
@@ -24,5 +25,5 @@ if(await Warehouse.countDocuments()===0)await Warehouse.insertMany([{name:'Indor
 if(await LogisticsProvider.countDocuments()===0)await LogisticsProvider.insertMany([{name:'Kisan Transport',phone:'9876543210',vehicleType:'Truck',capacity:10000,serviceAreas:['Indore','Dewas','Ujjain'],pricePerKm:28},{name:'Malwa Logistics',phone:'9876500000',vehicleType:'Mini Truck',capacity:3000,serviceAreas:['Bhopal','Indore'],pricePerKm:22}]);
 if(!(await Offer.exists({buyer:users.BUYER._id}))&&lots.length){const offer=await Offer.create({lot:lots[0]._id,buyer:users.BUYER._id,quantity:1000,pricePerUnit:2520,totalAmount:2520000,message:'Pickup can be arranged within two days.',validUntil:ago(-3),status:'ACCEPTED'});const trade=await Transaction.create({offer:offer._id,lot:lots[0]._id,buyer:users.BUYER._id,seller:lots[0].owner,quantity:1000,amount:2520000,status:'IN_TRANSIT',events:[{status:'CREATED',note:'Offer accepted and trade created',at:ago(2)},{status:'CONFIRMED',note:'Seller confirmed dispatch',at:ago(1)},{status:'IN_TRANSIT',note:'Pickup vehicle assigned'}]});await Payment.create({transaction:trade._id,amount:2520000,paymentMethod:'Bank Transfer',status:'PROCESSING',remarks:'Escrow release after delivery'})}
 if(!(await Notification.exists({user:users.BUYER._id})))await Notification.insertMany([{user:users.FARMER._id,type:'NEW_OFFER',message:'New offer received for your Wheat lot.'},{user:users.BUYER._id,type:'LOGISTICS_UPDATED',message:'Pickup vehicle assigned for your Wheat transaction.'}]);
-console.log('Demo data is ready. Use demo.farmer@agrilink.com, demo.buyer@agrilink.com, or demo.fpo@agrilink.com with Demo@12345.');
+console.log('Demo data is ready. Use farmer@agrilink.com, buyer@agrilink.com, or fpo@agrilink.com with Demo@12345.');
 await mongoose.disconnect();
