@@ -697,12 +697,13 @@ function Dashboard() {
           {markets.map((p, i) => (
             <div className="market-row" key={p._id || p.market?._id || p.market?.name || i}>
               <b>
-                {i + 1}. {p.market?.name}
+                {i === 0 && <span className="recommended-badge">BEST FIT</span>} {i + 1}. {p.market?.name}
               </b>
-              <span>₹{p.modalPrice}/kg</span>
+              <span>₹{p.modalPrice}/kg · {p.recommendationScore ?? "—"}/100</span>
               <small>
-                {p.market?.location} · {p.distanceKm} km away · arrival {p.arrivalVolume} qtl
+                {p.market?.location} · {p.distanceKm} km · net ₹{p.netPrice ?? p.modalPrice}/kg · rating {p.reviewAverage ?? "—"}/5 · transport ₹{p.estimatedTransportCost ?? 0}
               </small>
+              {i === 0 && <small className="market-reasons">{p.recommendationReasons?.join(" · ")}</small>}
             </div>
           ))}
           <Link

@@ -9,8 +9,9 @@ const demoUsers=[['Admin','admin@agrilink.com','ADMIN','Bhopal'],['Ramesh Patel'
 await mongoose.connect(process.env.MONGO_URI);
 const users={};
 for(const [name,email,role,location] of demoUsers)users[role]=await User.findOneAndUpdate({email},{$set:{name,email,role,location,verification:'VERIFIED',active:true},$setOnInsert:{password}},{new:true,upsert:true});
-const mandiCoordinates={Indore:[75.8577,22.7196],Dewas:[76.0534,22.9676],Ujjain:[75.7885,23.1765],Bhopal:[77.4126,23.2599],Mandsaur:[75.0693,24.0734],Neemuch:[74.872,24.4764]};
-if(await Market.countDocuments()===0)await Market.insertMany(Object.entries(mandiCoordinates).map(([location,coordinates])=>({name:`${location} Mandi`,location,district:location,state:'Madhya Pradesh',commodities:['Wheat','Soybean','Onion'],geo:{type:'Point',coordinates}})));
+const mandiCoordinates={Indore:[75.8577,22.7196],Dewas:[76.0534,22.9676],Ujjain:[75.7885,23.1765],Bhopal:[77.4126,23.2599],Mandsaur:[75.0693,24.0734],Neemuch:[74.872,24.4764]};const marketFactors={Indore:[7.5,4.4,318],Dewas:[8,4.2,207],Ujjain:[8,4.5,426],Bhopal:[9,4.1,189],Mandsaur:[8.5,4.6,512],Neemuch:[9,4.7,638]};
+if(await Market.countDocuments()===0)await Market.insertMany(Object.entries(mandiCoordinates).map(([location,coordinates])=>({name:`${location} Mandi`,location,district:location,state:'Madhya Pradesh',commodities:['Wheat','Soybean','Onion'],geo:{type:'Point',coordinates},transportCostPerKm:marketFactors[location][0],reviewAverage:marketFactors[location][1],reviewCount:marketFactors[location][2]})));
+for(const [location,factors] of Object.entries(marketFactors))await Market.updateOne({location},{$set:{transportCostPerKm:factors[0],reviewAverage:factors[1],reviewCount:factors[2]}});
 for(const [location,coordinates] of Object.entries(mandiCoordinates))await Market.updateOne({location},{$set:{geo:{type:'Point',coordinates}}});
 const markets=await Market.find().limit(6);
 if(await MarketPrice.countDocuments()===0){const prices=[];markets.forEach((market,index)=>{for(let day=0;day<30;day++)prices.push({market:market._id,commodity:'Wheat',date:ago(day),minPrice:2360+index*18-day*2,maxPrice:2540+index*18-day*2,modalPrice:2450+index*18-day*2,arrivalVolume:130+index*24})});await MarketPrice.insertMany(prices)}
