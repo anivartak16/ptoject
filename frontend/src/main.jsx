@@ -207,53 +207,44 @@ function RoleDashboardRedirect() {
   );
 }
 function Home() {
+  const marketRows = [
+    ["Indore Mandi", "₹2,450", "+1.8%", "130 qtl"],
+    ["Neemuch Mandi", "₹2,540", "+2.4%", "250 qtl"],
+    ["Mandsaur Mandi", "₹2,522", "+1.9%", "226 qtl"],
+    ["Bhopal Mandi", "₹2,504", "+1.5%", "202 qtl"],
+  ];
   return (
     <div className="landing">
       <nav>
-        <b>🌾 AgriLink</b>
+        <b className="landing-brand"><span>↗</span> AgriLink <small>Digital Mandi</small></b>
         <div>
+          <Link to="/register/farmer">For farmers</Link>
+          <Link to="/register/buyer">For buyers</Link>
           <Link to="/login">Login</Link>{" "}
-          <Link className="primary" to="/register">
-            Get Started
-          </Link>
+          <Link className="primary" to="/register">Open an account</Link>
         </div>
       </nav>
-      <section className="hero">
-        <div>
-          <p className="eyebrow">SMART AGRICULTURE MARKETPLACE</p>
-          <h1>Better prices. Reliable buyers. Stronger farmers.</h1>
-          <p>
-            Helping farmers discover better prices and connect directly with
-            reliable buyers.
-          </p>
-          <Link className="primary" to="/register">
-            Get Started
-          </Link>
+      <section className="market-hero">
+        <div className="market-hero-copy">
+          <div className="market-kicker"><span className="live-dot" /> MARKET OPEN <i /> WHEAT · MADHYA PRADESH</div>
+          <h1>The mandi, <em>online.</em></h1>
+          <p className="market-lede">A live trading network where farmers bring supply, buyers place demand, and every lot moves with a visible price, quality, and delivery trail.</p>
+          <div className="hero-actions"><Link className="primary" to="/register/farmer">Sell your produce</Link><Link className="text-action" to="/register/buyer">Find market supply <span>↗</span></Link></div>
+          <div className="market-stats"><div><b>₹2,558</b><span>Wheat modal price</span></div><div><b className="up">+1.97%</b><span>30-day movement</span></div><div><b>10</b><span>Mandis connected</span></div></div>
         </div>
-        <div className="hero-card">
-          <b>Today's Wheat signal</b>
-          <h2>₹2,558 / kg</h2>
-          <span>↑ Positive 30-day trend</span>
-          <hr />
-          <p>Farmers · FPOs · Buyers · Mandis · Logistics · Storage</p>
+        <div className="market-terminal">
+          <div className="terminal-top"><span><i className="live-dot" /> LIVE MARKET</span><small>09 SEP 2026 · 14:32 IST</small></div>
+          <div className="terminal-price"><small>WHEAT / KG</small><strong>₹2,558.00</strong><span>▲ 49.40 <b>(+1.97%)</b></span></div>
+          <div className="mini-chart"><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><b>LIVE</b></div>
+          <div className="terminal-grid"><div><small>BEST BID</small><b>₹2,550</b><span>18 buyers</span></div><div><small>BEST ASK</small><b>₹2,558</b><span>6 lots</span></div><div><small>TRADED TODAY</small><b>1,842 qtl</b><span>+12.4%</span></div></div>
         </div>
       </section>
-      <section className="features">
-        {[
-          "Smart price discovery",
-          "Explainable matching",
-          "FPO aggregation",
-          "Quality-based pricing",
-          "Logistics & storage",
-          "Trusted transactions",
-        ].map((x, i) => (
-          <article>
-            <span>0{i + 1}</span>
-            <h3>{x}</h3>
-            <p>Clear information for every market decision.</p>
-          </article>
-        ))}
+      <section className="market-board">
+        <div className="board-heading"><div><p className="eyebrow">LIVE PRICE TAPE</p><h2>What is trading near you</h2></div><Link to="/register/farmer">View all mandis ↗</Link></div>
+        <div className="rate-tape">{marketRows.map(([name, price, change, volume]) => <article key={name}><div><span className="status-dot" /> <b>{name}</b></div><strong>{price}</strong><span className="up">▲ {change}</span><small>{volume} arrivals</small></article>)}</div>
+        <div className="order-floor"><div className="floor-intro"><p className="eyebrow">THE DIGITAL TRADING FLOOR</p><h2>From mandi arrival to market match.</h2><p>AgriLink brings the working parts of offline trade into one visible flow: discover a rate, list a lot, match a buyer, and coordinate the handoff.</p></div><div className="order-card"><div className="order-card-top"><b>WHEAT · ORDER FLOW</b><span>Today</span></div><div className="order-row order-head"><span>BUYERS</span><span>PRICE</span><span>LOTS</span></div><div className="order-row"><span>ABC Foods</span><b>₹2,560</b><span>12</span></div><div className="order-row"><span>Malwa Traders</span><b>₹2,548</b><span>8</span></div><div className="order-row"><span>Indore FPO</span><b>₹2,540</b><span>5</span></div><div className="order-footer"><span>3 active demands</span><Link to="/register/buyer">Join the book ↗</Link></div></div></div>
       </section>
+      <section className="role-strip"><div><p className="eyebrow">ONE MARKET, DIFFERENT ROLES</p><h2>Choose your side of the trade.</h2></div><div className="role-links"><Link to="/register/farmer"><span>01</span><b>Farmer</b><small>List produce at a visible rate</small>↗</Link><Link to="/register/fpo"><span>02</span><b>FPO</b><small>Pool supply and sell together</small>↗</Link><Link to="/register/buyer"><span>03</span><b>Buyer</b><small>Place demand and source lots</small>↗</Link></div></section>
     </div>
   );
 }
@@ -904,22 +895,25 @@ function Lots() {
   );
 }
 function Offer({ lot }) {
-  let [msg, setMsg] = useState("");
+  let [msg, setMsg] = useState(""), [error, setError] = useState(""), [sending, setSending] = useState(false);
   let send = async () => {
-    await api.post("/offers", {
-      lotId: lot._id,
-      quantity: Math.min(1000, lot.remainingQuantity),
-      pricePerUnit: lot.expectedPrice,
-      message: "We can arrange pickup within 2 days.",
-    });
-    setMsg("Offer sent");
+    setSending(true); setError("");
+    try {
+      await api.post("/offers", { lotId: lot._id, quantity: Math.min(1000, lot.remainingQuantity), pricePerUnit: lot.expectedPrice, message: "We can arrange pickup within 2 days." });
+      setMsg("Offer sent");
+    } catch (e) {
+      setError(e.response?.data?.message || "Could not send offer.");
+    } finally {
+      setSending(false);
+    }
   };
   return (
     <>
-      <button className="primary" onClick={send}>
-        Make offer
+      <button className="primary" onClick={send} disabled={sending || !!msg}>
+        {sending ? "Sending…" : msg ? "Offer sent" : "Make offer"}
       </button>
       <p className="success">{msg}</p>
+      {error && <p className="error">{error}</p>}
     </>
   );
 }
@@ -932,41 +926,40 @@ function Demands() {
       requiredQuality: "Grade A",
       preferredLocation: "Indore",
       maxPrice: 2600,
-    });
-  let load = () =>
-    api.get("/demands?mine=true").then((x) => setRows(x.data.data));
+    }), [error, setError] = useState(""), [loading, setLoading] = useState(false);
+  let load = () => api.get("/demands?mine=true").then((x) => setRows(x.data.data)).catch((e) => setError(e.response?.data?.message || "Could not load demands."));
   useEffect(() => {
     load();
   }, []);
   let save = async (e) => {
     e.preventDefault();
-    await api.post("/demands", {
-      ...f,
-      requiredQuantity: +f.requiredQuantity,
-      maxPrice: +f.maxPrice,
-    });
-    load();
+    setError(""); setLoading(true);
+    try { await api.post("/demands", { ...f, requiredQuantity: +f.requiredQuantity, maxPrice: +f.maxPrice }); load(); }
+    catch (x) { setError(x.response?.data?.message || "Could not create demand."); }
+    finally { setLoading(false); }
   };
   return (
     <section>
       <h2>Buyer Demand & Explainable Matching</h2>
+      {error && <p className="form-message error">{error}</p>}
       <form className="inline-form" onSubmit={save}>
         {Object.keys(f).map((k) => (
           <input
+              key={k}
             value={f[k]}
             onChange={(e) => setF({ ...f, [k]: e.target.value })}
           />
         ))}
-        <button className="primary">Create demand</button>
+        <button className="primary" disabled={loading}>{loading ? "Creating…" : "Create demand"}</button>
       </form>
       {rows.map((d) => (
-        <article className="lot">
+        <article className="lot" key={d._id}>
           <h3>
             {d.commodity} · {d.requiredQuantity} KG
           </h3>
           <button
             onClick={() =>
-              api.get("/matches/" + d._id).then((x) => setMatches(x.data.data))
+              api.get("/matches/" + d._id).then((x) => setMatches(x.data.data)).catch((x) => setError(x.response?.data?.message || "Could not find matches."))
             }
           >
             Find matches
@@ -974,7 +967,7 @@ function Demands() {
         </article>
       ))}
       {matches.map((m) => (
-        <div className="match">
+        <div className="match" key={m.lot?._id || m.matchScore}>
           <b>{m.matchScore}% match</b> — {m.lot.commodity} /{" "}
           {m.lot.remainingQuantity}kg / ₹{m.lot.expectedPrice}
           <p>{m.reasons.map((x) => "✓ " + x).join(" · ")}</p>
@@ -1061,7 +1054,7 @@ function Offers() {
   );
 }
 function Transactions() {
-  let [rows, setRows] = useState(null),
+  let { user } = useA(), [rows, setRows] = useState(null),
     [error, setError] = useState(""),
     load = () => {
       setError("");
@@ -1145,6 +1138,7 @@ function Transactions() {
                 <span key={e._id}>✓ {e.status}</span>
               ))}
             </div>
+            {t.status !== "COMPLETED" && t.status !== "CANCELLED" && <Link className="text-action" to={`/${user.role.toLowerCase()}/disputes`}>Raise a dispute ↗</Link>}
           </div>
         ))
       )}
@@ -1183,7 +1177,8 @@ function Operational({ title, type }) {
     [rows, setRows] = useState([]),
     [note, setNote] = useState(""),
     [booking, setBooking] = useState(null),
-    [bookingMessage, setBookingMessage] = useState("");
+    [bookingMessage, setBookingMessage] = useState(""),
+    [bookingHistory, setBookingHistory] = useState([]);
   let endpoint =
     type === "prices"
       ? "/markets/nearby?commodity=Wheat"
@@ -1208,6 +1203,7 @@ function Operational({ title, type }) {
         .get(endpoint)
         .then((x) => setRows(x.data.data))
         .catch(() => setNote("No records available yet."));
+      if (type === "storage" || type === "logistics") api.get(type === "storage" ? "/storage/bookings" : "/logistics/bookings").then((x) => setBookingHistory(x.data.data)).catch(() => {});
   }, [type]);
   const submitBooking = async (event) => {
     event.preventDefault();
@@ -1226,6 +1222,8 @@ function Operational({ title, type }) {
       }
       setBooking(null);
       setBookingMessage("Booking request created successfully.");
+      const history = await api.get(type === "storage" ? "/storage/bookings" : "/logistics/bookings");
+      setBookingHistory(history.data.data);
     } catch (e) {
       setBookingMessage(e.response?.data?.message || "Could not create booking.");
     }
@@ -1298,6 +1296,7 @@ function Operational({ title, type }) {
         </div>
       )}
       {bookingMessage && <div className="form-message success">{bookingMessage}</div>}
+      {(type === "storage" || type === "logistics") && bookingHistory.length > 0 && <div className="panel booking-history"><h3>Your booking history</h3>{bookingHistory.map((item) => <div className="market-row" key={item._id}><b>{type === "storage" ? item.warehouse?.name : item.provider?.name}</b><span>{item.status}</span><small>{item.quantity} kg · ₹{item.estimatedCost?.toLocaleString("en-IN")}</small></div>)}</div>}
       {type === "admin" && (
         <div className="panel">
           <h3>Verification queue</h3>
@@ -1444,28 +1443,7 @@ function DynamicPage() {
     );
   if (misc === "recommendations" || misc === "matching")
     return <MatchWorkspace />;
-  if (misc === "farmers")
-    return (
-      <section>
-        <p className="eyebrow">FPO NETWORK</p>
-        <h1>Associated farmers</h1>
-        <div className="grid">
-          <Card a="ASSOCIATED FARMERS" b="5" c="Seeded FPO network" />
-          <Card a="AGGREGATABLE PRODUCE" b="7,500 KG" c="Wheat and soybean" />
-          <Card a="QUALITY-READY LOTS" b="4" c="Inspection data attached" />
-        </div>
-        <div className="panel">
-          <h3>Aggregation-ready workflow</h3>
-          <p>
-            Select member lots, preserve origin and quality information, then
-            publish a larger FPO lot to improve bargaining power.
-          </p>
-          <Link className="primary" to="/fpo/aggregation">
-            Start aggregation
-          </Link>
-        </div>
-      </section>
-    );
+  if (misc === "farmers") return <FpoAggregation />;
   return (
     <section>
       <p className="eyebrow">WORKSPACE</p>
