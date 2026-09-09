@@ -22,6 +22,25 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ArrowRight,
+  CheckCircle2,
+  TrendingUp,
+  ShieldCheck,
+  Users,
+  IndianRupee,
+  Handshake,
+  MapPin,
+  BarChart3,
+  BadgeCheck,
+  Truck,
+  Lock,
+  Search,
+  Sprout,
+  Store,
+  Globe2,
+  ChevronRight,
+} from "lucide-react";
 import MandiMap from "./components/MandiMap";
 import "./style.css";
 const api = axios.create({
@@ -206,48 +225,1400 @@ function RoleDashboardRedirect() {
     <Navigate to="/" replace />
   );
 }
+
 function Home() {
+  const [language, setLanguage] = useState("en");
+  const [selectedCrop, setSelectedCrop] = useState("Wheat");
+
   const marketRows = [
     ["Indore Mandi", "₹2,450", "+1.8%", "130 qtl"],
     ["Neemuch Mandi", "₹2,540", "+2.4%", "250 qtl"],
     ["Mandsaur Mandi", "₹2,522", "+1.9%", "226 qtl"],
     ["Bhopal Mandi", "₹2,504", "+1.5%", "202 qtl"],
   ];
+
+  const crops = [
+    {
+      name: "Wheat",
+      emoji: "🌾",
+      price: 2450,
+      change: "+4.1%",
+      trend: "up",
+      demand: "High",
+    },
+    {
+      name: "Rice",
+      emoji: "🌾",
+      price: 3800,
+      change: "+5.6%",
+      trend: "up",
+      demand: "High",
+    },
+    {
+      name: "Onion",
+      emoji: "🧅",
+      price: 1850,
+      change: "-5.1%",
+      trend: "down",
+      demand: "Medium",
+    },
+    {
+      name: "Tomato",
+      emoji: "🍅",
+      price: 45,
+      change: "+18.4%",
+      trend: "up",
+      demand: "High",
+    },
+    {
+      name: "Chilli",
+      emoji: "🌶️",
+      price: 8200,
+      change: "+5.1%",
+      trend: "up",
+      demand: "High",
+    },
+    {
+      name: "Potato",
+      emoji: "🥔",
+      price: 28,
+      change: "-6.7%",
+      trend: "down",
+      demand: "Low",
+    },
+  ];
+
+  const selectedCropData =
+    crops.find((crop) => crop.name === selectedCrop) || crops[0];
+
+  const uspFeatures = [
+    {
+      icon: <TrendingUp size={25} />,
+      title: language === "en"
+        ? "Better Price Discovery"
+        : "बेहतर मूल्य खोज",
+      description: language === "en"
+        ? "Compare mandi prices and buyer offers before deciding where to sell."
+        : "बेचने से पहले मंडी कीमतों और खरीदारों के ऑफर की तुलना करें।",
+    },
+    {
+      icon: <Handshake size={25} />,
+      title: language === "en"
+        ? "Direct Farmer-Buyer Connect"
+        : "सीधा किसान-खरीदार संपर्क",
+      description: language === "en"
+        ? "Connect farmers, FPOs and buyers through one transparent marketplace."
+        : "किसानों, FPO और खरीदारों को एक पारदर्शी marketplace से जोड़ें।",
+    },
+    {
+      icon: <BarChart3 size={25} />,
+      title: language === "en"
+        ? "Transparent Market Data"
+        : "पारदर्शी बाजार डेटा",
+      description: language === "en"
+        ? "See market prices, demand and trade activity in one place."
+        : "बाजार कीमत, मांग और व्यापार गतिविधि एक ही जगह देखें।",
+    },
+    {
+      icon: <BadgeCheck size={25} />,
+      title: language === "en"
+        ? "Verified Participants"
+        : "सत्यापित प्रतिभागी",
+      description: language === "en"
+        ? "Build trust by trading with registered marketplace participants."
+        : "पंजीकृत marketplace participants के साथ भरोसे से व्यापार करें।",
+    },
+    {
+      icon: <Truck size={25} />,
+      title: language === "en"
+        ? "End-to-End Trade Flow"
+        : "पूरी व्यापार प्रक्रिया",
+      description: language === "en"
+        ? "From listing and matching to delivery and payment."
+        : "लिस्टिंग और matching से लेकर delivery और payment तक।",
+    },
+    {
+      icon: <Lock size={25} />,
+      title: language === "en"
+        ? "Secure Transactions"
+        : "सुरक्षित लेनदेन",
+      description: language === "en"
+        ? "Keep transaction records visible and structured throughout the trade."
+        : "पूरे व्यापार के दौरान transaction records को सुरक्षित और व्यवस्थित रखें।",
+    },
+  ];
+
+  const howItWorks = [
+    {
+      number: "01",
+      icon: <Sprout size={28} />,
+      title: language === "en"
+        ? "Register & List"
+        : "रजिस्टर करें और फसल लिस्ट करें",
+      text: language === "en"
+        ? "Create your account and publish the produce you want to sell."
+        : "अपना अकाउंट बनाएं और बेचने वाली फसल लिस्ट करें।",
+    },
+    {
+      number: "02",
+      icon: <Users size={28} />,
+      title: language === "en"
+        ? "Discover & Match"
+        : "खोजें और मैच करें",
+      text: language === "en"
+        ? "Compare mandi prices and connect with buyers looking for your crop."
+        : "मंडी कीमतों की तुलना करें और अपनी फसल के खरीदारों से जुड़ें।",
+    },
+    {
+      number: "03",
+      icon: <IndianRupee size={28} />,
+      title: language === "en"
+        ? "Trade & Track"
+        : "व्यापार और ट्रैक करें",
+      text: language === "en"
+        ? "Agree on the offer and follow the trade through delivery and payment."
+        : "ऑफर स्वीकार करें और delivery व payment तक व्यापार को ट्रैक करें।",
+    },
+  ];
+
+  const buyerBids = [
+    {
+      buyer: "ABC Foods",
+      crop: "Wheat",
+      price: "₹2,560",
+      quantity: "120 qtl",
+      location: "Indore",
+      verified: true,
+    },
+    {
+      buyer: "Malwa Traders",
+      crop: "Wheat",
+      price: "₹2,548",
+      quantity: "80 qtl",
+      location: "Mandsaur",
+      verified: true,
+    },
+    {
+      buyer: "Central Agro",
+      crop: "Wheat",
+      price: "₹2,535",
+      quantity: "150 qtl",
+      location: "Bhopal",
+      verified: true,
+    },
+  ];
+
+  const trustItems = [
+    {
+      icon: <ShieldCheck size={25} />,
+      title: language === "en" ? "Verified Marketplace" : "सत्यापित Marketplace",
+    },
+    {
+      icon: <Lock size={25} />,
+      title: language === "en" ? "Secure Transactions" : "सुरक्षित लेनदेन",
+    },
+    {
+      icon: <BarChart3 size={25} />,
+      title: language === "en" ? "Transparent Pricing" : "पारदर्शी कीमत",
+    },
+    {
+      icon: <Users size={25} />,
+      title: language === "en" ? "Multiple Market Participants" : "कई बाजार प्रतिभागी",
+    },
+  ];
+
   return (
     <div className="landing">
-      <nav>
-        <b className="landing-brand"><span>↗</span> AgriLink <small>Digital Mandi</small></b>
-        <div>
-          <Link to="/register/farmer">For farmers</Link>
-          <Link to="/register/buyer">For buyers</Link>
-          <Link to="/login">Login</Link>{" "}
-          <Link className="primary" to="/register">Open an account</Link>
+
+      {/* ================= NAVBAR ================= */}
+
+      <nav className="landing-nav">
+
+        <Link to="/" className="landing-brand">
+          <span>🌾</span>
+          <strong>AgriLink</strong>
+          <small>Digital Mandi</small>
+        </Link>
+
+        <div className="landing-nav-links">
+
+          <a href="#how-it-works">
+            {language === "en" ? "How it works" : "कैसे काम करता है"}
+          </a>
+
+          <a href="#why-agrilink">
+            {language === "en" ? "Why AgriLink" : "AgriLink क्यों?"}
+          </a>
+
+          <a href="#market">
+            {language === "en" ? "Market" : "बाजार"}
+          </a>
+
+          <Link to="/register/farmer">
+            {language === "en" ? "For farmers" : "किसानों के लिए"}
+          </Link>
+
+          <Link to="/register/buyer">
+            {language === "en" ? "For buyers" : "खरीदारों के लिए"}
+          </Link>
+
         </div>
+
+        <div className="landing-nav-actions">
+
+          {/* LANGUAGE */}
+
+          <div className="language-switch">
+
+            <button
+              className={language === "en" ? "active" : ""}
+              onClick={() => setLanguage("en")}
+            >
+              EN
+            </button>
+
+            <button
+              className={language === "hi" ? "active" : ""}
+              onClick={() => setLanguage("hi")}
+            >
+              हिंदी
+            </button>
+
+          </div>
+
+          <Link to="/login" className="login-link">
+            {language === "en" ? "Login" : "लॉगिन"}
+          </Link>
+
+          <Link className="primary" to="/register">
+            {language === "en" ? "Get started" : "शुरू करें"}
+          </Link>
+
+        </div>
+
       </nav>
+
+
+      {/* ================= HERO ================= */}
+
       <section className="market-hero">
+
         <div className="market-hero-copy">
-          <div className="market-kicker"><span className="live-dot" /> MARKET OPEN <i /> WHEAT · MADHYA PRADESH</div>
-          <h1>The mandi, <em>online.</em></h1>
-          <p className="market-lede">A live trading network where farmers bring supply, buyers place demand, and every lot moves with a visible price, quality, and delivery trail.</p>
-          <div className="hero-actions"><Link className="primary" to="/register/farmer">Sell your produce</Link><Link className="text-action" to="/register/buyer">Find market supply <span>↗</span></Link></div>
-          <div className="market-stats"><div><b>₹2,558</b><span>Wheat modal price</span></div><div><b className="up">+1.97%</b><span>30-day movement</span></div><div><b>10</b><span>Mandis connected</span></div></div>
+
+          <div className="market-kicker">
+            <span className="live-dot" />
+            MARKET OPEN
+            <i />
+            WHEAT · MADHYA PRADESH
+          </div>
+
+          <h1>
+            {language === "en" ? (
+              <>
+                The mandi,
+                <em> online.</em>
+              </>
+            ) : (
+              <>
+                मंडी अब,
+                <em> ऑनलाइन.</em>
+              </>
+            )}
+          </h1>
+
+          <p className="market-lede">
+            {language === "en"
+              ? "A digital trading network where farmers bring supply, buyers place demand, and every lot moves with a visible price, quality and delivery trail."
+              : "एक डिजिटल trading network जहां किसान अपनी फसल लाते हैं, खरीदार demand रखते हैं और हर lot की कीमत, quality और delivery दिखाई देती है।"}
+          </p>
+
+          <div className="hero-actions">
+
+            <Link
+              className="primary"
+              to="/register/farmer"
+            >
+              {language === "en"
+                ? "Sell your produce"
+                : "अपनी फसल बेचें"}
+              <ArrowRight size={17} />
+            </Link>
+
+            <Link
+              className="text-action"
+              to="/register/buyer"
+            >
+              {language === "en"
+                ? "Find market supply"
+                : "फसल खोजें"}
+              <span>↗</span>
+            </Link>
+
+          </div>
+
+          <div className="market-stats">
+
+            <div>
+              <b>₹2,558</b>
+              <span>
+                {language === "en"
+                  ? "Wheat modal price"
+                  : "गेहूं की modal कीमत"}
+              </span>
+            </div>
+
+            <div>
+              <b className="up">+1.97%</b>
+              <span>
+                {language === "en"
+                  ? "30-day movement"
+                  : "30 दिन का बदलाव"}
+              </span>
+            </div>
+
+            <div>
+              <b>10</b>
+              <span>
+                {language === "en"
+                  ? "Mandis connected"
+                  : "जुड़ी हुई मंडियां"}
+              </span>
+            </div>
+
+          </div>
+
         </div>
+
+
+        {/* MARKET TERMINAL */}
+
         <div className="market-terminal">
-          <div className="terminal-top"><span><i className="live-dot" /> LIVE MARKET</span><small>09 SEP 2026 · 14:32 IST</small></div>
-          <div className="terminal-price"><small>WHEAT / KG</small><strong>₹2,558.00</strong><span>▲ 49.40 <b>(+1.97%)</b></span></div>
-          <div className="mini-chart"><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><b>LIVE</b></div>
-          <div className="terminal-grid"><div><small>BEST BID</small><b>₹2,550</b><span>18 buyers</span></div><div><small>BEST ASK</small><b>₹2,558</b><span>6 lots</span></div><div><small>TRADED TODAY</small><b>1,842 qtl</b><span>+12.4%</span></div></div>
+
+          <div className="terminal-top">
+            <span>
+              <i className="live-dot" />
+              LIVE MARKET
+            </span>
+
+            <small>09 SEP 2026 · 14:32 IST</small>
+          </div>
+
+          <div className="terminal-price">
+
+            <small>WHEAT / KG</small>
+
+            <strong>₹2,558.00</strong>
+
+            <span>
+              ▲ 49.40 <b>(+1.97%)</b>
+            </span>
+
+          </div>
+
+          <div className="mini-chart">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <b>LIVE</b>
+          </div>
+
+          <div className="terminal-grid">
+
+            <div>
+              <small>BEST BID</small>
+              <b>₹2,550</b>
+              <span>18 buyers</span>
+            </div>
+
+            <div>
+              <small>BEST ASK</small>
+              <b>₹2,558</b>
+              <span>6 lots</span>
+            </div>
+
+            <div>
+              <small>TRADED TODAY</small>
+              <b>1,842 qtl</b>
+              <span>+12.4%</span>
+            </div>
+
+          </div>
+
         </div>
+
       </section>
+
+
+      {/* ================= HOW IT WORKS ================= */}
+
+      <section
+        className="enhanced-section how-section"
+        id="how-it-works"
+      >
+
+        <div className="section-intro">
+
+          <p className="eyebrow">
+            SIMPLE DIGITAL FLOW
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "How AgriLink works"
+              : "AgriLink कैसे काम करता है"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "A simple flow that connects supply, demand and trade in one marketplace."
+              : "एक सरल प्रक्रिया जो supply, demand और trade को एक ही marketplace में जोड़ती है।"}
+          </p>
+
+        </div>
+
+        <div className="how-grid">
+
+          {howItWorks.map((item, index) => (
+
+            <div className="how-card" key={item.number}>
+
+              <div className="how-number">
+                {item.number}
+              </div>
+
+              <div className="how-icon">
+                {item.icon}
+              </div>
+
+              <h3>{item.title}</h3>
+
+              <p>{item.text}</p>
+
+              {index < howItWorks.length - 1 && (
+                <ChevronRight className="how-arrow" />
+              )}
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </section>
+
+
+      {/* ================= LIVE MARKET ================= */}
+
+      <section className="market-board" id="market">
+
+        <div className="board-heading">
+
+          <div>
+
+            <p className="eyebrow">
+              LIVE PRICE TAPE
+            </p>
+
+            <h2>
+              {language === "en"
+                ? "What is trading near you"
+                : "आपके पास क्या भाव चल रहा है"}
+            </h2>
+
+          </div>
+
+          <Link to="/register/farmer">
+            {language === "en"
+              ? "View all mandis"
+              : "सभी मंडियां देखें"}
+            ↗
+          </Link>
+
+        </div>
+
+        <div className="rate-tape">
+
+          {marketRows.map(
+            ([name, price, change, volume]) => (
+
+              <article key={name}>
+
+                <div>
+                  <span className="status-dot" />
+                  <b>{name}</b>
+                </div>
+
+                <strong>{price}</strong>
+
+                <span className="up">
+                  ▲ {change}
+                </span>
+
+                <small>
+                  {volume} arrivals
+                </small>
+
+              </article>
+
+            )
+          )}
+
+        </div>
+
+      </section>
+
+
+      {/* ================= CROP PRICE COMPARISON ================= */}
+
+      
+<section className="agri-market-board">
+
+  <div className="agri-market-heading">
+    <div>
+      <p className="eyebrow">LIVE AGRI MARKET</p>
+      <h2>The market is moving. Stay ahead.</h2>
+      <p>
+        Compare crop prices, daily movement and buyer demand
+        before you decide where to sell.
+      </p>
+    </div>
+
+    <div className="market-index">
+      <span className="market-live-dot"></span>
+      MARKET OPEN
+    </div>
+  </div>
+
+
+  {/* MARKET SUMMARY */}
+
+  <div className="market-summary">
+
+    <div>
+      <small>RISING CROPS</small>
+      <strong className="green-text">↑ 8</strong>
+    </div>
+
+    <div>
+      <small>FALLING CROPS</small>
+      <strong>↓ 2</strong>
+    </div>
+
+    <div>
+      <small>HIGHEST DEMAND</small>
+      <strong>🌶️ Chilli</strong>
+    </div>
+
+    <div>
+      <small>MARKET VOLUME</small>
+      <strong>5,842 qtl</strong>
+    </div>
+
+  </div>
+
+
+  {/* PRICE TABLE */}
+
+  <div className="agri-price-table">
+
+    <div className="agri-table-header">
+      <span>CROP</span>
+      <span>CURRENT PRICE</span>
+      <span>TODAY</span>
+      <span>PRICE MOVEMENT</span>
+      <span>DEMAND</span>
+      <span></span>
+    </div>
+
+
+    {/* WHEAT */}
+
+    <div className="agri-price-row">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🌾</span>
+        <div>
+          <strong>Wheat</strong>
+          <small>Cereal</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹2,558/qtl</strong>
+
+      <span className="price-up">▲ 1.97%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge high">HIGH</span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+
+    {/* SOYBEAN */}
+
+    <div className="agri-price-row">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🌱</span>
+        <div>
+          <strong>Soybean</strong>
+          <small>Oilseed</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹4,620/qtl</strong>
+
+      <span className="price-up">▲ 0.84%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge high">HIGH</span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+
+    {/* MAIZE */}
+
+    <div className="agri-price-row">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🌽</span>
+        <div>
+          <strong>Maize</strong>
+          <small>Cereal</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹2,180/qtl</strong>
+
+      <span className="price-down">▼ 0.42%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge medium">MEDIUM</span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+
+    {/* GRAM */}
+
+    <div className="agri-price-row">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🫘</span>
+        <div>
+          <strong>Gram</strong>
+          <small>Pulse</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹5,420/qtl</strong>
+
+      <span className="price-up">▲ 1.21%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge high">HIGH</span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+
+    {/* ONION */}
+
+    <div className="agri-price-row">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🧅</span>
+        <div>
+          <strong>Onion</strong>
+          <small>Vegetable</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹2,840/qtl</strong>
+
+      <span className="price-up">▲ 2.10%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge high">HIGH</span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+
+    {/* CHILLI */}
+
+    <div className="agri-price-row featured-crop">
+
+      <div className="agri-crop">
+        <span className="agri-crop-icon">🌶️</span>
+        <div>
+          <strong>Chilli</strong>
+          <small>Spice</small>
+        </div>
+      </div>
+
+      <strong className="agri-price">₹8,200/qtl</strong>
+
+      <span className="price-up">▲ 3.42%</span>
+
+      <div className="mini-trend">
+  <svg viewBox="0 0 100 35" preserveAspectRatio="none">
+    <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
+  </svg>
+</div>
+
+      <span className="demand-badge very-high">
+        VERY HIGH
+      </span>
+
+      <Link to="/register/buyer" className="market-arrow">
+        →
+      </Link>
+
+    </div>
+
+  </div>
+
+
+  {/* FOOTER */}
+
+  <div className="market-board-footer">
+
+    <span>
+      Prices shown are indicative market rates
+    </span>
+
+    <Link to="/register/farmer">
+      Explore full market →
+    </Link>
+
+  </div>
+
+</section>
+
+
+      {/* ================= DIGITAL TRADING FLOOR ================= */}
+
       <section className="market-board">
-        <div className="board-heading"><div><p className="eyebrow">LIVE PRICE TAPE</p><h2>What is trading near you</h2></div><Link to="/register/farmer">View all mandis ↗</Link></div>
-        <div className="rate-tape">{marketRows.map(([name, price, change, volume]) => <article key={name}><div><span className="status-dot" /> <b>{name}</b></div><strong>{price}</strong><span className="up">▲ {change}</span><small>{volume} arrivals</small></article>)}</div>
-        <div className="order-floor"><div className="floor-intro"><p className="eyebrow">THE DIGITAL TRADING FLOOR</p><h2>From mandi arrival to market match.</h2><p>AgriLink brings the working parts of offline trade into one visible flow: discover a rate, list a lot, match a buyer, and coordinate the handoff.</p></div><div className="order-card"><div className="order-card-top"><b>WHEAT · ORDER FLOW</b><span>Today</span></div><div className="order-row order-head"><span>BUYERS</span><span>PRICE</span><span>LOTS</span></div><div className="order-row"><span>ABC Foods</span><b>₹2,560</b><span>12</span></div><div className="order-row"><span>Malwa Traders</span><b>₹2,548</b><span>8</span></div><div className="order-row"><span>Indore FPO</span><b>₹2,540</b><span>5</span></div><div className="order-footer"><span>3 active demands</span><Link to="/register/buyer">Join the book ↗</Link></div></div></div>
+
+        <div className="order-floor">
+
+          <div className="floor-intro">
+
+            <p className="eyebrow">
+              THE DIGITAL TRADING FLOOR
+            </p>
+
+            <h2>
+              {language === "en"
+                ? "From mandi arrival to market match."
+                : "मंडी arrival से market match तक।"}
+            </h2>
+
+            <p>
+              {language === "en"
+                ? "AgriLink brings the working parts of offline trade into one visible flow: discover a rate, list a lot, match a buyer and coordinate the handoff."
+                : "AgriLink offline trade की जरूरी प्रक्रियाओं को एक visible digital flow में लाता है।"}
+            </p>
+
+          </div>
+
+          <div className="order-card">
+
+            <div className="order-card-top">
+
+              <b>WHEAT · ORDER FLOW</b>
+
+              <span>LIVE</span>
+
+            </div>
+
+            <div className="order-row order-head">
+              <span>BUYERS</span>
+              <span>PRICE</span>
+              <span>LOTS</span>
+            </div>
+
+            <div className="order-row">
+              <span>ABC Foods</span>
+              <b>₹2,560</b>
+              <span>12</span>
+            </div>
+
+            <div className="order-row">
+              <span>Malwa Traders</span>
+              <b>₹2,548</b>
+              <span>8</span>
+            </div>
+
+            <div className="order-row">
+              <span>Indore FPO</span>
+              <b>₹2,540</b>
+              <span>5</span>
+            </div>
+
+            <div className="order-footer">
+
+              <span>
+                3 active demands
+              </span>
+
+              <Link to="/register/buyer">
+                Join the book ↗
+              </Link>
+
+            </div>
+
+          </div>
+
+        </div>
+
       </section>
-      <section className="role-strip"><div><p className="eyebrow">ONE MARKET, DIFFERENT ROLES</p><h2>Choose your side of the trade.</h2></div><div className="role-links"><Link to="/register/farmer"><span>01</span><b>Farmer</b><small>List produce at a visible rate</small>↗</Link><Link to="/register/fpo"><span>02</span><b>FPO</b><small>Pool supply and sell together</small>↗</Link><Link to="/register/buyer"><span>03</span><b>Buyer</b><small>Place demand and source lots</small>↗</Link></div></section>
+
+
+      {/* ================= BEST MANDI ================= */}
+
+      <section className="enhanced-section mandi-section">
+
+        <div className="section-intro">
+
+          <p className="eyebrow">
+            MARKET DISCOVERY
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Find the best mandi for your crop"
+              : "अपनी फसल के लिए सबसे अच्छी मंडी खोजें"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "Compare nearby market prices instead of relying on a single mandi."
+              : "सिर्फ एक मंडी पर निर्भर रहने के बजाय आसपास की मंडियों की कीमतों की तुलना करें।"}
+          </p>
+
+        </div>
+
+
+        <div className="mandi-discovery">
+
+          <div className="mandi-list">
+
+            {marketRows.map(
+              ([name, price, change, volume], index) => (
+
+                <div
+                  className={
+                    index === 1
+                      ? "mandi-card best"
+                      : "mandi-card"
+                  }
+                  key={name}
+                >
+
+                  <div className="mandi-rank">
+                    #{index + 1}
+                  </div>
+
+                  <div className="mandi-info">
+
+                    <h3>{name}</h3>
+
+                    <span>
+                      <MapPin size={14} />
+                      Madhya Pradesh
+                    </span>
+
+                  </div>
+
+                  <div className="mandi-price">
+
+                    <strong>{price}</strong>
+
+                    <span
+                      className={
+                        change.startsWith("+")
+                          ? "up"
+                          : "down"
+                      }
+                    >
+                      {change}
+                    </span>
+
+                  </div>
+
+                  {index === 1 && (
+                    <span className="best-badge">
+                      BEST PRICE
+                    </span>
+                  )}
+
+                </div>
+
+              )
+            )}
+
+          </div>
+
+
+          <div className="mandi-map-placeholder">
+
+            <div className="map-content">
+
+              <Globe2 size={60} />
+
+              <h3>
+                {language === "en"
+                  ? "Mandi network"
+                  : "मंडी नेटवर्क"}
+              </h3>
+
+              <p>
+                {language === "en"
+                  ? "Connect with markets across regions."
+                  : "अलग-अलग क्षेत्रों के बाजारों से जुड़ें।"}
+              </p>
+
+              <Link
+                to="/register/farmer"
+                className="primary"
+              >
+                {language === "en"
+                  ? "Explore markets"
+                  : "बाजार देखें"}
+              </Link>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= LIVE BUYER BIDS ================= */}
+
+      <section className="enhanced-section bids-section">
+
+        <div className="section-intro">
+
+          <p className="eyebrow">
+            <span className="live-dot" />
+            LIVE BUYER DEMAND
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Buyers are looking for your produce"
+              : "खरीदार आपकी फसल की तलाश में हैं"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "See active demand and competitive offers from marketplace buyers."
+              : "Marketplace buyers की active demand और competitive offers देखें।"}
+          </p>
+
+        </div>
+
+
+        <div className="bids-table">
+
+          <div className="bid-header">
+            <span>BUYER</span>
+            <span>CROP</span>
+            <span>OFFER</span>
+            <span>QUANTITY</span>
+            <span>LOCATION</span>
+          </div>
+
+
+          {buyerBids.map((bid) => (
+
+            <div className="bid-row" key={bid.buyer}>
+
+              <div className="buyer-name">
+
+                <div className="buyer-avatar">
+                  <Users size={17} />
+                </div>
+
+                <div>
+                  <b>{bid.buyer}</b>
+
+                  {bid.verified && (
+                    <small>
+                      <BadgeCheck size={13} />
+                      Verified buyer
+                    </small>
+                  )}
+                </div>
+
+              </div>
+
+              <span>{bid.crop}</span>
+
+              <strong>{bid.price}</strong>
+
+              <span>{bid.quantity}</span>
+
+              <span>
+                <MapPin size={14} />
+                {bid.location}
+              </span>
+
+            </div>
+
+          ))}
+
+        </div>
+
+
+        <div className="bid-cta">
+
+          <p>
+            {language === "en"
+              ? "Have produce to sell?"
+              : "क्या आपके पास बेचने के लिए फसल है?"}
+          </p>
+
+          <Link
+            className="primary"
+            to="/register/farmer"
+          >
+            {language === "en"
+              ? "List your produce"
+              : "अपनी फसल लिस्ट करें"}
+            <ArrowRight size={17} />
+          </Link>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= USP ================= */}
+
+      <section
+        className="enhanced-section usp-section"
+        id="why-agrilink"
+      >
+
+        <div className="section-intro">
+
+          <p className="eyebrow">
+            WHY AGRILINK
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Built to give farmers more control"
+              : "किसानों को अधिक नियंत्रण देने के लिए बनाया गया"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "A marketplace designed around visibility, choice and better coordination."
+              : "एक marketplace जो visibility, choice और बेहतर coordination पर आधारित है।"}
+          </p>
+
+        </div>
+
+
+        <div className="usp-grid">
+
+          {uspFeatures.map((feature) => (
+
+            <article
+              className="usp-card"
+              key={feature.title}
+            >
+
+              <div className="usp-icon">
+                {feature.icon}
+              </div>
+
+              <h3>{feature.title}</h3>
+
+              <p>{feature.description}</p>
+
+            </article>
+
+          ))}
+
+        </div>
+
+      </section>
+
+
+      {/* ================= ROLES ================= */}
+
+      <section className="role-strip">
+
+        <div>
+
+          <p className="eyebrow">
+            ONE MARKET, DIFFERENT ROLES
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Choose your side of the trade."
+              : "व्यापार में अपनी भूमिका चुनें।"}
+          </h2>
+
+        </div>
+
+        <div className="role-links">
+
+          <Link to="/register/farmer">
+            <span>01</span>
+            <b>
+              {language === "en"
+                ? "Farmer"
+                : "किसान"}
+            </b>
+            <small>
+              {language === "en"
+                ? "List produce at a visible rate"
+                : "अपनी फसल की कीमत के साथ लिस्ट करें"}
+            </small>
+            ↗
+          </Link>
+
+          <Link to="/register/fpo">
+            <span>02</span>
+            <b>FPO</b>
+            <small>
+              {language === "en"
+                ? "Pool supply and sell together"
+                : "फसल को एक साथ बेचें"}
+            </small>
+            ↗
+          </Link>
+
+          <Link to="/register/buyer">
+            <span>03</span>
+            <b>
+              {language === "en"
+                ? "Buyer"
+                : "खरीदार"}
+            </b>
+            <small>
+              {language === "en"
+                ? "Place demand and source lots"
+                : "Demand रखें और lots खरीदें"}
+            </small>
+            ↗
+          </Link>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= TRUST ================= */}
+
+      <section className="enhanced-section trust-section">
+
+        <div className="section-intro">
+
+          <p className="eyebrow">
+            TRUST & TRANSPARENCY
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Trade with confidence"
+              : "भरोसे के साथ व्यापार करें"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "Every marketplace needs trust. AgriLink makes the important parts of the trade visible."
+              : "हर marketplace में भरोसा जरूरी है। AgriLink व्यापार के जरूरी हिस्सों को visible बनाता है।"}
+          </p>
+
+        </div>
+
+
+        <div className="trust-grid">
+
+          {trustItems.map((item) => (
+
+            <div
+              className="trust-card"
+              key={item.title}
+            >
+
+              <div className="trust-icon">
+                {item.icon}
+              </div>
+
+              <b>{item.title}</b>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </section>
+
+
+      {/* ================= FINAL CTA ================= */}
+
+      <section className="final-cta">
+
+        <div className="final-cta-content">
+
+          <span className="final-emoji">
+            🌾
+          </span>
+
+          <p className="eyebrow">
+            {language === "en"
+              ? "THE DIGITAL MANDI"
+              : "डिजिटल मंडी"}
+          </p>
+
+          <h2>
+            {language === "en"
+              ? "Ready to trade smarter?"
+              : "स्मार्ट तरीके से व्यापार करने के लिए तैयार हैं?"}
+          </h2>
+
+          <p>
+            {language === "en"
+              ? "Join farmers, FPOs and buyers building a more connected agricultural marketplace."
+              : "किसानों, FPO और खरीदारों के साथ एक बेहतर connected agricultural marketplace का हिस्सा बनें।"}
+          </p>
+
+          <div className="final-actions">
+
+            <Link
+              className="primary"
+              to="/register/farmer"
+            >
+              {language === "en"
+                ? "Start selling"
+                : "बेचना शुरू करें"}
+              <ArrowRight size={18} />
+            </Link>
+
+            <Link
+              className="secondary-button"
+              to="/register/buyer"
+            >
+              {language === "en"
+                ? "Join as buyer"
+                : "खरीदार के रूप में जुड़ें"}
+            </Link>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ================= FOOTER ================= */}
+
+      <footer className="landing-footer">
+
+        <div>
+
+          <b className="landing-brand">
+            🌾 AgriLink
+          </b>
+
+          <p>
+            Digital marketplace for agricultural trade.
+          </p>
+
+        </div>
+
+        <div className="footer-links">
+
+          <Link to="/register/farmer">
+            Farmers
+          </Link>
+
+          <Link to="/register/fpo">
+            FPOs
+          </Link>
+
+          <Link to="/register/buyer">
+            Buyers
+          </Link>
+
+          <Link to="/login">
+            Login
+          </Link>
+
+        </div>
+
+        <small>
+          © 2026 AgriLink · Digital Mandi
+        </small>
+
+      </footer>
+
     </div>
   );
 }
+
+
 function Login({ reg }) {
   let nav = useNavigate(),
     { role: routeRole } = useParams(),
