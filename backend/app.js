@@ -177,6 +177,37 @@ app.post("/api/auth/login", async (req, res, next) => {
 });
 app.post("/api/auth/logout", requireAuth, (q, s) => ok(s, {}, "Logged out"));
 app.get("/api/auth/me", requireAuth, (q, s) => ok(s, q.user));
+app.get("/api/dashboard/summary", requireAuth, async (q, s, n) => {
+  try {
+    const userId = q.user._id;
+    if (q.user.role === "BUYER") {
+      const [demands, offers, transactions] = await Promise.all([
+        Demand.countDocuments({ buyer: userId, status: "ACTIVE" }),
+        Offer.countDocuments({ buyer: userId, status: "PENDING" }),
+        Transaction.countDocuments({ buyer: userId, status: { $nin: ["COMPLETED", "CANCELLED"] } }),
+      ]);
+      return ok(s, { role: "BUYER", activeDemands: demands, pendingOffers: offers, activeTransactions: transactions });
+    }
+    if (q.user.role === "FPO") {
+      const fpo = await User.findById(userId).select("members");
+      const owners = [...(fpo?.members || []), userId];
+      const [members, lots, volume, offers] = await Promise.all([
+        User.countDocuments({ _id: { $in: fpo?.members || [] } }),
+        Lot.countDocuments({ owner: { $in: owners }, status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] } }),
+        Lot.aggregate([{ $match: { owner: { $in: owners }, status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] } } }, { $group: { _id: null, total: { $sum: "$remainingQuantity" } } }]),
+        Offer.countDocuments({ lot: { $in: await Lot.find({ owner: userId }).distinct("_id") }, status: "PENDING" }),
+      ]);
+      return ok(s, { role: "FPO", members, activeLots: lots, pooledVolume: volume[0]?.total || 0, pendingOffers: offers });
+    }
+    const [lots, volume, offers, transactions] = await Promise.all([
+      Lot.countDocuments({ owner: userId, status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] } }),
+      Lot.aggregate([{ $match: { owner: userId, status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] } } }, { $group: { _id: null, total: { $sum: "$remainingQuantity" } } }]),
+      Offer.countDocuments({ lot: { $in: await Lot.find({ owner: userId }).distinct("_id") }, status: "PENDING" }),
+      Transaction.countDocuments({ seller: userId, status: { $nin: ["COMPLETED", "CANCELLED"] } }),
+    ]);
+    return ok(s, { role: "FARMER", activeLots: lots, availableVolume: volume[0]?.total || 0, pendingOffers: offers, activeTransactions: transactions });
+  } catch (e) { n(e); }
+});
 app.get("/api/markets", async (q, s, n) => {
   try {
     ok(s, await Market.find(q.query.state ? { state: q.query.state } : {}));

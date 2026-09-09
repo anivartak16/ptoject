@@ -295,7 +295,7 @@ function Login({ reg }) {
     return (
       <div className="auth">
         <h1>Welcome back</h1>
-        <p>Demo: farmer@agrilink.com / Demo@12345</p>
+        <p>Demo accounts: farmer@agrilink.com · buyer@agrilink.com · fpo@agrilink.com · password Demo@12345</p>
         <form onSubmit={go}>
           <input
             aria-label="Email"
@@ -539,6 +539,7 @@ function Dashboard() {
     { r } = useParams(),
     [d, setD] = useState(cachedDashboard?.trend || null),
     [admin, setAdmin] = useState(null),
+    [summary, setSummary] = useState(null),
     [markets, setMarkets] = useState(cachedDashboard?.markets || []),
     [error, setError] = useState("");
   useEffect(() => {
@@ -553,12 +554,12 @@ function Dashboard() {
           }
           const coordinates = user.geo?.coordinates?.length === 2 ? user.geo.coordinates : null;
           const locationQuery = coordinates ? `&longitude=${coordinates[0]}&latitude=${coordinates[1]}` : "";
-          let [trend, nearby] = await Promise.all([
-            api.get("/prices/trends?commodity=Wheat"),
-            api.get(`/markets/nearby?commodity=Wheat${locationQuery}`),
-          ]);
+          const trend = await api.get("/prices/trends?commodity=Wheat");
+          const nearby = user.role === "FARMER" ? await api.get(`/markets/nearby?commodity=Wheat${locationQuery}`) : { data: { data: [] } };
+          const summaryResponse = await api.get("/dashboard/summary");
           if (alive) {
             setD(trend.data.data);
+            setSummary(summaryResponse.data.data);
             const nearestMarkets = nearby.data.data;
             setMarkets(nearestMarkets);
             sessionStorage.setItem(
@@ -647,6 +648,22 @@ function Dashboard() {
     })),
     chartColor = d.changePercentage >= 0 ? "#17804b" : "#c94c4c",
     farmerCoordinates = user.geo?.coordinates?.length === 2 ? user.geo.coordinates : null;
+  const roleCards = isBuyer ? [
+    ["ACTIVE DEMANDS", summary?.activeDemands ?? "—", "Buying requirements currently open"],
+    ["PENDING OFFERS", summary?.pendingOffers ?? "—", "Offers awaiting seller response"],
+    ["ACTIVE TRADES", summary?.activeTransactions ?? "—", "Procurement commitments in motion"],
+    ["NEXT ACTION", "Find lots", "Browse supply matched to your demands"],
+  ] : isFpo ? [
+    ["FPO MEMBERS", summary?.members ?? "—", "Farmers in your collective"],
+    ["AVAILABLE LOTS", summary?.activeLots ?? "—", "Member and published FPO inventory"],
+    ["POOLED VOLUME", `${(summary?.pooledVolume || 0).toLocaleString("en-IN")} kg`, "Produce ready for collective sale"],
+    ["NEXT ACTION", "Add farmers", "Grow your supply network"],
+  ] : [
+    ["ACTIVE LOTS", summary?.activeLots ?? "—", "Your produce currently listed"],
+    ["AVAILABLE VOLUME", `${(summary?.availableVolume || 0).toLocaleString("en-IN")} kg`, "Produce still available to sell"],
+    ["PENDING OFFERS", summary?.pendingOffers ?? "—", "Buyer offers awaiting your decision"],
+    ["NEXT ACTION", "Create lot", "List more produce for buyers"],
+  ];
   return (
     <section>
       <p className="eyebrow">
@@ -668,41 +685,9 @@ function Dashboard() {
           ? "Review demands, receive matched lots and manage buying commitments."
           : "Make an informed selling decision with live mandi comparison and active buyer demand."}
       </p>
-      <div className="grid">
-        <Card
-          a={isFpo ? "ACTIVE MEMBER LOTS" : isBuyer ? "ACTIVE PROCUREMENT" : "CURRENT MODAL PRICE"}
-          b={isFpo ? "48 lots" : isBuyer ? "2 demands" : "₹" + d.currentPrice}
-          c={
-            isFpo
-              ? "Ready for aggregation"
-              : isBuyer
-              ? "Quality and price rules applied"
-              : "Wheat / kg · sampled market data"
-          }
-        />
-        <Card
-          a={isFpo ? "POOLED VOLUME" : "7-DAY AVERAGE"}
-          b={isFpo ? "286 qtl" : "₹" + d.average7Days}
-          c={isFpo ? "Across 5 crop groups" : "Mandi modal price"}
-        />
-        <Card
-          a={isFpo ? "BEST BUYER MATCH" : "PRICE TREND"}
-          b={isFpo ? "97%" : d.trend}
-          c={
-            isFpo
-              ? "Quality, price & pickup aligned"
-              : (d.changePercentage > 0 ? "+" : "") +
-                d.changePercentage +
-                "% against 30 days"
-          }
-        />
-        <Card
-          a={isFpo ? "COLLECTION STATUS" : "SELLING INSIGHT"}
-          b={isFpo ? "Ready" : advice.recommendation.replace("_", " ")}
-          c={isFpo ? "12 member pickups scheduled" : advice.reason}
-        />
-      </div>
-      <div className="two-col">
+      <div className="grid">{roleCards.map(([label, value, detail]) => <Card key={label} a={label} b={value} c={detail} />)}</div>
+      <div className="dashboard-actions panel"><div><p className="eyebrow">WORKSPACE ACTION</p><h3>{isBuyer ? "Source your next lot" : isFpo ? "Build collective supply" : "Sell with better information"}</h3><p>{isBuyer ? "Turn an open demand into a matched purchase." : isFpo ? "Add members and combine their available produce into one market lot." : "Compare nearby mandi rates, then list produce when the price and demand align."}</p></div><Link className="primary" to={isBuyer ? `/${r}/lots` : isFpo ? `/${r}/aggregation` : `/${r}/lots`}>{isBuyer ? "Browse lots" : isFpo ? "Open aggregation" : "Manage my lots"}</Link></div>
+      {user.role === "FARMER" && <div className="two-col">
         <div className="panel">
           <MandiRateChart markets={markets} />
           <small>{advice.disclaimer} · Updates every 30 seconds · Last checked {new Date(d.lastUpdated || Date.now()).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</small>
@@ -727,12 +712,14 @@ function Dashboard() {
             Compare all markets
           </Link>
         </div>
-      </div>
-      <div className="panel mandi-map-panel">
+      </div>}
+      {user.role === "FARMER" && <div className="panel mandi-map-panel">
         <h3>Nearest mandis on the map</h3>
         <p>Tap a pin to compare the live modal price and arrivals for each recommended mandi.</p>
         <MandiMap markets={markets} userLocation={farmerCoordinates} compact />
-      </div>
+      </div>}
+      {isBuyer && <div className="two-col dashboard-role-panels"><div className="panel"><p className="eyebrow">BUY-SIDE ACTIVITY</p><h3>Procurement desk</h3><p>Manage open demands, review ranked matches, and turn the best available lots into offers.</p><Link className="primary" to={`/${r}/demands`}>Open demand book</Link></div><div className="panel"><p className="eyebrow">FAIR MATCHING</p><h3>Explainable rankings</h3><p>Every match is scored on quantity, quality, price, location, and availability. No hidden ranking.</p><Link className="primary" to={`/${r}/recommendations`}>View recommendations</Link></div></div>}
+      {isFpo && <div className="two-col dashboard-role-panels"><div className="panel"><p className="eyebrow">COLLECTIVE SUPPLY</p><h3>Member network</h3><p>Bring farmer members together, inspect their available lots, and publish one stronger pooled offer.</p><Link className="primary" to={`/${r}/farmers`}>Manage farmers</Link></div><div className="panel"><p className="eyebrow">AGGREGATION DESK</p><h3>Pool and publish</h3><p>Choose compatible lots from your members and create a traceable FPO-owned market lot.</p><Link className="primary" to={`/${r}/aggregation`}>Open aggregation</Link></div></div>}
     </section>
   );
 }
@@ -968,8 +955,8 @@ function Demands() {
       ))}
       {matches.map((m) => (
         <div className="match" key={m.lot?._id || m.matchScore}>
-          <b>{m.matchScore}% match</b> — {m.lot.commodity} /{" "}
-          {m.lot.remainingQuantity}kg / ₹{m.lot.expectedPrice}
+          <div className="match-heading"><b>{m.matchScore}% fair match</b><span>{m.lot.commodity} · {m.lot.remainingQuantity} kg · ₹{m.lot.expectedPrice}/kg</span></div>
+          <div className="match-breakdown">{Object.entries(m.breakdown || {}).map(([key, value]) => <span key={key}><b>{value}</b>/ {key}</span>)}</div>
           <p>{m.reasons.map((x) => "✓ " + x).join(" · ")}</p>
         </div>
       ))}
@@ -1505,9 +1492,9 @@ function MatchWorkspace() {
         ))}
       </div>
       {matches.map((m) => (
-        <div className="match">
-          <b>{m.matchScore}% Match</b> {m.lot.commodity} ·{" "}
-          {m.lot.remainingQuantity} kg · ₹{m.lot.expectedPrice}/kg
+        <div className="match" key={m.lot?._id || m.matchScore}>
+          <div className="match-heading"><b>{m.matchScore}% fair match</b><span>{m.lot.commodity} · {m.lot.remainingQuantity} kg · ₹{m.lot.expectedPrice}/kg</span></div>
+          <div className="match-breakdown">{Object.entries(m.breakdown || {}).map(([key, value]) => <span key={key}><b>{value}</b>/ {key}</span>)}</div>
           <p>{m.reasons.map((x) => "✓ " + x).join(" · ")}</p>
         </div>
       ))}
