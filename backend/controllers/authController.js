@@ -32,7 +32,7 @@ export async function register(req, res, next) {
       registrationNumber,
       memberCount,
     } = req.body;
-    if (!name || !email || !password || !phone || !location || !["FARMER", "FPO", "BUYER"].includes(role))
+    if (!name || !email || !password || !phone || !location || !["FARMER", "FPO", "BUYER", "KRISHI_KENDRA"].includes(role))
       return fail(res, 422, "Name, email, phone, location, password and valid role are required");
     if (role === "FARMER" && (!farmName || !(Number(landSize) > 0) || !primaryCrop))
       return fail(res, 422, "Farm name, land size and primary crop are required for farmers");
@@ -40,6 +40,8 @@ export async function register(req, res, next) {
       return fail(res, 422, "Organisation name and buyer type are required for buyers");
     if (role === "FPO" && (!organizationName || !registrationNumber || !(Number(memberCount) > 0)))
       return fail(res, 422, "FPO name, registration number and member count are required");
+    if (role === "KRISHI_KENDRA" && (!organizationName || !registrationNumber))
+      return fail(res, 422, "Krishi Kendra name and registration number are required");
     if (await User.findOne({ email: email.toLowerCase() }))
       return fail(res, 409, "Email already registered", "CONFLICT");
     const user = await User.create({
