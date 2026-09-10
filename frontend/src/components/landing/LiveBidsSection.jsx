@@ -2,7 +2,35 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BadgeCheck, MapPin, Users } from "lucide-react";
 
-export function LiveBidsSection({ language, buyerBids }) {
+const defaultBuyerBids = [
+  {
+    buyer: "ABC Foods",
+    crop: "Wheat",
+    price: "₹2,560",
+    quantity: "120 qtl",
+    location: "Indore",
+    verified: true,
+  },
+  {
+    buyer: "Malwa Traders",
+    crop: "Wheat",
+    price: "₹2,548",
+    quantity: "80 qtl",
+    location: "Mandsaur",
+    verified: true,
+  },
+  {
+    buyer: "Central Agro",
+    crop: "Wheat",
+    price: "₹2,535",
+    quantity: "150 qtl",
+    location: "Bhopal",
+    verified: true,
+  },
+];
+
+export function LiveBidsSection({ language = "en", buyerBids = defaultBuyerBids }) {
+  const bids = buyerBids?.length ? buyerBids : defaultBuyerBids;
   return (
     <section className="enhanced-section bids-section">
       <div className="section-intro">
@@ -30,7 +58,7 @@ export function LiveBidsSection({ language, buyerBids }) {
           <span>LOCATION</span>
         </div>
 
-        {buyerBids.map((bid) => (
+        {bids.map((bid) => (
           <div className="bid-row" key={bid.buyer}>
             <div className="buyer-name">
               <div className="buyer-avatar">

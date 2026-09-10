@@ -80,7 +80,7 @@ export function HomePage() {
       <LandingNavbar language={language} setLanguage={setLanguage} />
       <HeroSection language={language} />
       <LivePriceTape marketRows={marketRows} />
-      <DigitalTradingFloor />
+      <DigitalTradingFloor language={language} />
       <CropPriceTable
         language={language}
         crops={crops}
@@ -88,7 +88,7 @@ export function HomePage() {
         setSelectedCrop={setSelectedCrop}
         selectedCropData={selectedCropData}
       />
-      <BestMandiSection language={language} />
+      <BestMandiSection language={language} marketRows={marketRows} />
       <LiveBidsSection language={language} />
       <HowItWorksSection language={language} />
       <UspSection language={language} />
