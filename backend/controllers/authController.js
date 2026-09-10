@@ -129,7 +129,15 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    const user = await User.findOne({ email: req.body.email?.toLowerCase() });
+    const lookupEmail = req.body.email?.toLowerCase().trim();
+    let user = await User.findOne({ email: lookupEmail });
+    if (!user && lookupEmail) {
+      if (lookupEmail.endsWith("@krishilink.com")) {
+        user = await User.findOne({ email: lookupEmail.replace("@krishilink.com", "@agrilink.com") });
+      } else if (lookupEmail.endsWith("@agrilink.com")) {
+        user = await User.findOne({ email: lookupEmail.replace("@agrilink.com", "@krishilink.com") });
+      }
+    }
     if (
       !user ||
       !(await bcrypt.compare(req.body.password || "", user.password))

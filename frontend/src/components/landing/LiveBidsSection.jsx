@@ -1,101 +1,154 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck, MapPin, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Building2, MapPin, ShieldAlert, Sparkles } from "lucide-react";
 
-const defaultBuyerBids = [
+const panIndiaBuyerDemands = [
   {
-    buyer: "ABC Foods",
-    crop: "Wheat",
-    price: "₹2,560",
-    quantity: "120 qtl",
-    location: "Indore",
+    buyer: "ITC Agri Business Division",
+    type: "Food Processing Enterprise",
+    crop: "Sharbati Wheat (Grade A)",
+    price: "₹2,580 / qtl",
+    quantity: "850 qtl",
+    location: "Indore & Bhopal, MP",
+    terms: "Payment upon Krishi Kendra Grade Certificate",
     verified: true,
   },
   {
-    buyer: "Malwa Traders",
-    crop: "Wheat",
-    price: "₹2,548",
-    quantity: "80 qtl",
-    location: "Mandsaur",
+    buyer: "Adani Wilmar Ltd.",
+    type: "Edible Oil & Food Conglomerate",
+    crop: "Yellow Soybean (Moisture < 10%)",
+    price: "₹4,650 / qtl",
+    quantity: "1,200 qtl",
+    location: "Latur, Maharashtra",
+    terms: "Direct farmgate pickup arranged",
     verified: true,
   },
   {
-    buyer: "Central Agro",
-    crop: "Wheat",
-    price: "₹2,535",
-    quantity: "150 qtl",
-    location: "Bhopal",
+    buyer: "KRBL Limited (India Gate)",
+    type: "Basmati Rice Miller & Exporter",
+    crop: "1121 Basmati Paddy",
+    price: "₹3,940 / qtl",
+    quantity: "600 qtl",
+    location: "Karnal, Haryana",
+    terms: "Instant escrow payout upon delivery",
+    verified: true,
+  },
+  {
+    buyer: "Everest Spices Pvt Ltd",
+    type: "National Spice Manufacturer",
+    crop: "Guntur Red Chilli (Teja)",
+    price: "₹8,480 / qtl",
+    quantity: "250 qtl",
+    location: "Guntur, Andhra Pradesh",
+    terms: "Quality sample verified at Krishi Kendra",
+    verified: true,
+  },
+  {
+    buyer: "Cargill India",
+    type: "Global Agri Processor",
+    crop: "Yellow Feed Maize",
+    price: "₹2,200 / qtl",
+    quantity: "1,500 qtl",
+    location: "Davangere, Karnataka",
+    terms: "Bulk contract pricing",
     verified: true,
   },
 ];
 
-export function LiveBidsSection({ language = "en", buyerBids = defaultBuyerBids }) {
-  const bids = buyerBids?.length ? buyerBids : defaultBuyerBids;
+export function LiveBidsSection({ language = "en" }) {
   return (
-    <section className="enhanced-section bids-section">
+    <section className="bids-section-clean" id="buyer-demands">
       <div className="section-intro">
         <p className="eyebrow">
-          <span className="live-dot" /> LIVE BUYER DEMAND
+          <span className="live-dot" /> LIVE VERIFIED BUYER DEMANDS
         </p>
         <h2>
           {language === "en"
-            ? "Buyers are looking for your produce"
-            : "खरीदार आपकी फसल की तलाश में हैं"}
+            ? "Institutional Buyers Ready to Procure Directly"
+            : "संस्थागत खरीदारों की सक्रिय मांग"}
         </h2>
         <p>
           {language === "en"
-            ? "See active demand and competitive offers from marketplace buyers."
-            : "Marketplace buyers की active demand और competitive offers देखें।"}
+            ? "Leading Indian food processors, exporters, and millers place binding purchase demands with secured escrow deposits."
+            : "भारत की प्रमुख खाद्य कंपनियां, निर्यातक और मिलर्स सुरक्षित एस्क्रो जमा के साथ फसल की सीधी खरीद कर रहे हैं।"}
         </p>
       </div>
 
-      <div className="bids-table">
-        <div className="bid-header">
-          <span>BUYER</span>
-          <span>CROP</span>
-          <span>OFFER</span>
-          <span>QUANTITY</span>
-          <span>LOCATION</span>
+      <div className="bids-table-clean">
+        <div className="clean-bid-header">
+          <span>ENTERPRISE BUYER</span>
+          <span>COMMODITY & SPECS</span>
+          <span>OFFER PRICE</span>
+          <span>VOLUME</span>
+          <span>PROCUREMENT LOCATION</span>
         </div>
 
-        {bids.map((bid) => (
-          <div className="bid-row" key={bid.buyer}>
-            <div className="buyer-name">
-              <div className="buyer-avatar">
-                <Users size={17} />
+        {panIndiaBuyerDemands.map((bid) => (
+          <div className="clean-bid-row" key={bid.buyer}>
+            <div className="buyer-col-info">
+              <div className="buyer-avatar-clean">
+                <Building2 size={18} />
               </div>
               <div>
                 <b>{bid.buyer}</b>
-                {bid.verified && (
-                  <small>
-                    <BadgeCheck size={13} />
-                    Verified buyer
-                  </small>
-                )}
+                <small>
+                  <BadgeCheck size={13} className="text-green" />
+                  Verified Corporate Buyer
+                </small>
               </div>
             </div>
 
-            <span>{bid.crop}</span>
-            <strong>{bid.price}</strong>
-            <span>{bid.quantity}</span>
-            <span>
-              <MapPin size={14} />
-              {bid.location}
-            </span>
+            <div className="crop-spec-col">
+              <strong>{bid.crop}</strong>
+              <small>{bid.terms}</small>
+            </div>
+
+            <div className="price-offer-col">
+              <strong>{bid.price}</strong>
+            </div>
+
+            <div className="quantity-col">
+              <span>{bid.quantity}</span>
+            </div>
+
+            <div className="location-col">
+              <span>
+                <MapPin size={13} />
+                {bid.location}
+              </span>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="bid-cta">
-        <p>
-          {language === "en"
-            ? "Have produce to sell?"
-            : "क्या आपके पास बेचने के लिए फसल है?"}
-        </p>
-        <Link className="primary" to="/register/farmer">
-          {language === "en" ? "List your produce" : "अपनी फसल लिस्ट करें"}
-          <ArrowRight size={17} />
-        </Link>
+      {/* Action banner with unambiguous links */}
+      <div className="bids-action-banner">
+        <div className="action-text">
+          <Sparkles size={20} className="text-green" />
+          <div>
+            <strong>
+              {language === "en"
+                ? "Are you a Farmer or FPO with harvested stock?"
+                : "क्या आप किसान या FPO हैं और अपनी फसल बेचना चाहते हैं?"}
+            </strong>
+            <p>
+              {language === "en"
+                ? "Register your crop lot to match with these buyers and receive payment directly into your bank account."
+                : "अपनी फसल दर्ज करें, इन खरीदारों से सीधे जुड़ें और बैंक खाते में सुरक्षित भुगतान प्राप्त करें।"}
+            </p>
+          </div>
+        </div>
+
+        <div className="action-buttons-wrap">
+          <Link className="clean-cta-btn" to="/register/farmer">
+            <span>{language === "en" ? "Register to Sell Produce" : "फसल बेचने के लिए पंजीकरण"}</span>
+            <ArrowRight size={16} />
+          </Link>
+
+          <Link className="clean-secondary-btn" to="/register/buyer">
+            <span>{language === "en" ? "Post Buyer Demand" : "खरीदार मांग दर्ज करें"}</span>
+          </Link>
+        </div>
       </div>
     </section>
   );

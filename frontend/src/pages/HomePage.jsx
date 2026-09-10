@@ -1,14 +1,17 @@
 import React, { useState } from "react";
+import "../landing.css";
 import { LandingNavbar } from "../components/landing/LandingNavbar.jsx";
 import { HeroSection } from "../components/landing/HeroSection.jsx";
+import { TrustValueSection } from "../components/landing/TrustValueSection.jsx";
 import { LivePriceTape } from "../components/landing/LivePriceTape.jsx";
 import { DigitalTradingFloor } from "../components/landing/DigitalTradingFloor.jsx";
 import { CropPriceTable } from "../components/landing/CropPriceTable.jsx";
 import { BestMandiSection } from "../components/landing/BestMandiSection.jsx";
+import { LiveBidsSection } from "../components/landing/LiveBidsSection.jsx";
 import { HowItWorksSection } from "../components/landing/HowItWorksSection.jsx";
 import { UspSection } from "../components/landing/UspSection.jsx";
 import { RolesSection } from "../components/landing/RolesSection.jsx";
-import { LiveBidsSection } from "../components/landing/LiveBidsSection.jsx";
+import { LandingCtaSection } from "../components/landing/LandingCtaSection.jsx";
 
 export function HomePage() {
   const [language, setLanguage] = useState("en");
@@ -79,21 +82,25 @@ export function HomePage() {
     <div className="landing">
       
       <LandingNavbar language={language} setLanguage={setLanguage} />
-      <HeroSection language={language} />
-      <LivePriceTape marketRows={marketRows} />
-      <DigitalTradingFloor language={language} />
-      <CropPriceTable
-        language={language}
-        crops={crops}
-        selectedCrop={selectedCrop}
-        setSelectedCrop={setSelectedCrop}
-        selectedCropData={selectedCropData}
-      />
-      <BestMandiSection language={language} marketRows={marketRows} />
-      <LiveBidsSection language={language} />
-      <HowItWorksSection language={language} />
-      <UspSection language={language} />
-      <RolesSection language={language} />
+      <main className="landing-main">
+        <HeroSection language={language} />
+        <TrustValueSection language={language} />
+        <LivePriceTape language={language} marketRows={marketRows} />
+        <DigitalTradingFloor language={language} />
+        <CropPriceTable
+          language={language}
+          crops={crops}
+          selectedCrop={selectedCrop}
+          setSelectedCrop={setSelectedCrop}
+          selectedCropData={selectedCropData}
+        />
+        <BestMandiSection language={language} marketRows={marketRows} />
+        <LiveBidsSection language={language} />
+        <HowItWorksSection language={language} />
+        <UspSection language={language} />
+        <RolesSection language={language} />
+        <LandingCtaSection language={language} />
+      </main>
     </div>
   );
 }

@@ -5,7 +5,16 @@ import {User,Market,MarketPrice,Quality,Lot,Demand,Warehouse,LogisticsProvider,O
 
 const ago=days=>new Date(Date.now()-days*86400000);
 const password=await bcrypt.hash('Demo@12345',12);
-const demoUsers=[['Admin','admin@agrilink.com','ADMIN','Bhopal'],['Ramesh Patel','farmer@agrilink.com','FARMER','Indore'],['ABC Foods','buyer@agrilink.com','BUYER','Indore'],['Narmada FPO','fpo@agrilink.com','FPO','Ujjain']];
+const demoUsers=[
+  ['Admin','admin@krishilink.com','ADMIN','Bhopal'],
+  ['Admin','admin@agrilink.com','ADMIN','Bhopal'],
+  ['Ramesh Patel','farmer@krishilink.com','FARMER','Indore'],
+  ['Ramesh Patel','farmer@agrilink.com','FARMER','Indore'],
+  ['ABC Foods','buyer@krishilink.com','BUYER','Indore'],
+  ['ABC Foods','buyer@agrilink.com','BUYER','Indore'],
+  ['Narmada FPO','fpo@krishilink.com','FPO','Ujjain'],
+  ['Narmada FPO','fpo@agrilink.com','FPO','Ujjain']
+];
 await mongoose.connect(process.env.MONGO_URI);
 const users={};
 for(const [name,email,role,location] of demoUsers)users[role]=await User.findOneAndUpdate({email},{$set:{name,email,role,location,verification:'VERIFIED',active:true},$setOnInsert:{password}},{new:true,upsert:true});
@@ -25,5 +34,5 @@ if(await Warehouse.countDocuments()===0)await Warehouse.insertMany([{name:'Indor
 if(await LogisticsProvider.countDocuments()===0)await LogisticsProvider.insertMany([{name:'Kisan Transport',phone:'9876543210',vehicleType:'Truck',capacity:10000,serviceAreas:['Indore','Dewas','Ujjain'],pricePerKm:28},{name:'Malwa Logistics',phone:'9876500000',vehicleType:'Mini Truck',capacity:3000,serviceAreas:['Bhopal','Indore'],pricePerKm:22}]);
 if(!(await Offer.exists({buyer:users.BUYER._id}))&&lots.length){const offer=await Offer.create({lot:lots[0]._id,buyer:users.BUYER._id,quantity:1000,pricePerUnit:2520,totalAmount:2520000,message:'Pickup can be arranged within two days.',validUntil:ago(-3),status:'ACCEPTED'});const trade=await Transaction.create({offer:offer._id,lot:lots[0]._id,buyer:users.BUYER._id,seller:lots[0].owner,quantity:1000,amount:2520000,status:'IN_TRANSIT',events:[{status:'CREATED',note:'Offer accepted and trade created',at:ago(2)},{status:'CONFIRMED',note:'Seller confirmed dispatch',at:ago(1)},{status:'IN_TRANSIT',note:'Pickup vehicle assigned'}]});await Payment.create({transaction:trade._id,amount:2520000,paymentMethod:'Bank Transfer',status:'PROCESSING',remarks:'Escrow release after delivery'})}
 if(!(await Notification.exists({user:users.BUYER._id})))await Notification.insertMany([{user:users.FARMER._id,type:'NEW_OFFER',message:'New offer received for your Wheat lot.'},{user:users.BUYER._id,type:'LOGISTICS_UPDATED',message:'Pickup vehicle assigned for your Wheat transaction.'}]);
-console.log('Demo data is ready. Use farmer@agrilink.com, buyer@agrilink.com, or fpo@agrilink.com with Demo@12345.');
+console.log('Demo data is ready. Use farmer@krishilink.com, buyer@krishilink.com, or fpo@krishilink.com with Demo@12345.');
 await mongoose.disconnect();

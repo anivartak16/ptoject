@@ -72,7 +72,7 @@ export function Shell({ children }) {
     <div className="app-shell">
       <aside>
         <Link className="brand" to="/">
-          🌾 <span>AgriLink</span>
+          🌾 <span>KrishiLink</span>
         </Link>
         <div className="workspace-card">
           <span className="workspace-role">{workspaceRole}</span>

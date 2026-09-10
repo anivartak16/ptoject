@@ -1,6 +1,6 @@
-# AgriLink
+# KrishiLink
 
-AgriLink is an SIH-ready agricultural marketplace that gives farmers transparent mandi prices and connects verified supply with buyer demand.
+KrishiLink is an SIH-ready agricultural marketplace that gives farmers transparent mandi prices and connects verified supply with buyer demand.
 
 **Canonical codebase:** this `do/` directory. See [MIGRATION.md](MIGRATION.md)
 for the consolidation note and local run instructions.
@@ -34,10 +34,10 @@ Demo password for every seeded account: `Demo@12345`
 
 | Role | Email |
 |---|---|
-| Admin | admin@agrilink.com |
-| Farmer | farmer@agrilink.com |
-| FPO | fpo@agrilink.com |
-| Buyer | buyer@agrilink.com |
+| Admin | admin@krishilink.com |
+| Farmer | farmer@krishilink.com |
+| FPO | fpo@krishilink.com |
+| Buyer | buyer@krishilink.com |
 
 ## Main API endpoints
 

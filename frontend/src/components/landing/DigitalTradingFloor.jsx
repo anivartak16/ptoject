@@ -1,57 +1,107 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowUpRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function DigitalTradingFloor({ language }) {
+  const scrollToDemands = () => {
+    const el = document.getElementById("buyer-demands");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
-    <section className="market-board">
-      <div className="order-floor">
+    <section className="market-board" id="order-flow">
+      <div className="order-floor-clean">
         <div className="floor-intro">
-          <p className="eyebrow">THE DIGITAL TRADING FLOOR</p>
+          <p className="eyebrow">NATIONAL DIGITAL ORDER BOOK</p>
           <h2>
             {language === "en"
-              ? "From mandi arrival to market match."
-              : "मंडी arrival से market match तक।"}
+              ? "Transparent Matching from Farmgate to Factory"
+              : "खेत से लेकर कारखाने तक पारदर्शी व्यापार"}
           </h2>
           <p>
             {language === "en"
-              ? "AgriLink brings the working parts of offline trade into one visible flow: discover a rate, list a lot, match a buyer and coordinate the handoff."
-              : "AgriLink offline trade की जरूरी प्रक्रियाओं को एक visible digital flow में लाता है।"}
+              ? "KrishiLink digitizes physical mandi trading onto a national order book. Compare institutional procurement offers, view verified grain demand across states, and close trades with escrow security."
+              : "KrishiLink पारंपरिक मंडी व्यापार को राष्ट्रीय डिजिटल ऑर्डर बुक में बदलता है। विभिन्न राज्यों के खरीदारों के लाइव ऑफर्स देखें और सुरक्षित एस्क्रो के साथ व्यापार करें।"}
           </p>
+
+          <div className="floor-highlights">
+            <div className="floor-hl-item">
+              <CheckCircle2 size={16} />
+              <span>{language === "en" ? "Real-time institutional procurement offers" : "संस्थागत खरीदारों के रीयल-टाइम खरीद ऑफर्स"}</span>
+            </div>
+            <div className="floor-hl-item">
+              <CheckCircle2 size={16} />
+              <span>{language === "en" ? "e-NAM aligned quality standards & lab grading" : "मानकीकृत गुणवत्ता जांच व प्रयोगशाला ग्रेडिंग"}</span>
+            </div>
+            <div className="floor-hl-item">
+              <CheckCircle2 size={16} />
+              <span>{language === "en" ? "Guaranteed payout release upon dispatch verification" : "सत्यापन के बाद बैंक खाते में त्वरित भुगतान"}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="order-card">
+        {/* ORDER BOOK CARD */}
+        <div className="order-card-clean">
           <div className="order-card-top">
-            <b>WHEAT · ORDER FLOW</b>
-            <span>LIVE</span>
+            <div className="order-top-left">
+              <span className="live-dot" />
+              <b>NATIONAL ORDER FLOW · SHARBATI WHEAT</b>
+            </div>
+            <span className="order-live-tag">ACTIVE MATCHING</span>
           </div>
 
           <div className="order-row order-head">
-            <span>BUYERS</span>
-            <span>PRICE</span>
-            <span>LOTS</span>
+            <span>BUYER / ENTERPRISE</span>
+            <span>BID PRICE</span>
+            <span>VOLUME</span>
+            <span>STATE</span>
           </div>
 
           <div className="order-row">
-            <span>ABC Foods</span>
-            <b>₹2,560</b>
-            <span>12</span>
+            <div className="order-buyer-col">
+              <strong>ITC Agri Business</strong>
+              <small>Processing Unit</small>
+            </div>
+            <b className="order-price">₹2,580/qtl</b>
+            <span>850 qtl</span>
+            <span className="order-state-pill">Madhya Pradesh</span>
           </div>
 
           <div className="order-row">
-            <span>Malwa Traders</span>
-            <b>₹2,548</b>
-            <span>8</span>
+            <div className="order-buyer-col">
+              <strong>Adani Wilmar Ltd.</strong>
+              <small>Bulk Procurement</small>
+            </div>
+            <b className="order-price">₹2,575/qtl</b>
+            <span>1,200 qtl</span>
+            <span className="order-state-pill">Gujarat</span>
           </div>
 
           <div className="order-row">
-            <span>Indore FPO</span>
-            <b>₹2,540</b>
-            <span>5</span>
+            <div className="order-buyer-col">
+              <strong>Central Flour Mills</strong>
+              <small>Flour Milling Hub</small>
+            </div>
+            <b className="order-price">₹2,560/qtl</b>
+            <span>450 qtl</span>
+            <span className="order-state-pill">Maharashtra</span>
           </div>
 
-          <div className="order-footer">
-            <span>3 active demands</span>
-            <Link to="/register/buyer">Join the book ↗</Link>
+          <div className="order-footer-clean">
+            <button
+              type="button"
+              className="order-scroll-link"
+              onClick={scrollToDemands}
+            >
+              <span>View All 5 Active Corporate Demands ↓</span>
+            </button>
+
+            <Link to="/register/buyer" className="order-join-btn">
+              <span>Register as Buyer to Place Bid</span>
+              <ArrowUpRight size={14} />
+            </Link>
           </div>
         </div>
       </div>

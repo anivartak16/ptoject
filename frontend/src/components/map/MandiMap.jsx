@@ -1,26 +1,66 @@
 import React, { Component } from "react";
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, ZoomControl } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 const fallbackCenter = [22.7196, 75.8577];
 
-const markerIcon = (price) =>
-  L.divIcon({
-    className: "mandi-marker-wrap",
-    html: `<span class="mandi-marker">₹<small>${Math.round(price || 0)}</small></span>`,
-    iconSize: [52, 34],
-    iconAnchor: [26, 34],
-    popupAnchor: [0, -34],
-  });
+const createMandiPin = (price, marketName, isNearest = false) => {
+  const displayName = marketName ? marketName.replace(/\s*Mandi$/i, "") : "";
+  const pinFill = isNearest ? "#16a34a" : "#1e293b";
+  const centerFill = isNearest ? "#facc15" : "#38bdf8";
 
-const nearestIcon = (price) =>
+  return L.divIcon({
+    className: `mandi-pin-leaflet-icon ${isNearest ? "is-nearest" : ""}`,
+    html: `
+      <div class="mandi-pin-wrapper">
+        ${isNearest ? '<div class="mandi-pin-radar"></div>' : ""}
+        <div class="mandi-pin-badge">
+          ${isNearest ? '<span class="mandi-pin-star">★</span>' : ""}
+          <span class="mandi-pin-price">₹${Math.round(price || 0)}</span>
+          ${displayName ? `<span class="mandi-pin-name">${displayName}</span>` : ""}
+        </div>
+        <div class="mandi-pin-needle">
+          <svg viewBox="0 0 32 42" width="32" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 26 16 26s16-14 16-26c0-8.837-7.163-16-16-16z"
+                  fill="${pinFill}"
+                  stroke="#ffffff"
+                  stroke-width="2.5" />
+            <circle cx="16" cy="15" r="6" fill="#ffffff" />
+            <circle cx="16" cy="15" r="3.2" fill="${centerFill}" />
+          </svg>
+        </div>
+      </div>
+    `,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -46],
+  });
+};
+
+const userFarmPin = () =>
   L.divIcon({
-    className: "mandi-marker-wrap mandi-marker-wrap--nearest",
-    html: `<span class="mandi-marker">₹<small>${Math.round(price || 0)}</small></span>`,
-    iconSize: [58, 38],
-    iconAnchor: [29, 38],
-    popupAnchor: [0, -38],
+    className: "mandi-pin-leaflet-icon is-farm",
+    html: `
+      <div class="mandi-pin-wrapper">
+        <div class="mandi-pin-badge farm-badge">
+          <span>🏡 Your Farm</span>
+        </div>
+        <div class="mandi-pin-needle">
+          <svg viewBox="0 0 32 42" width="32" height="42" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 26 16 26s16-14 16-26c0-8.837-7.163-16-16-16z"
+                  fill="#ea580c"
+                  stroke="#ffffff"
+                  stroke-width="2.5" />
+            <circle cx="16" cy="15" r="6.5" fill="#ffffff" />
+            <circle cx="16" cy="15" r="3.2" fill="#ea580c" />
+          </svg>
+        </div>
+      </div>
+    `,
+    iconSize: [32, 42],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -46],
   });
 
 class MapErrorBoundary extends Component {
@@ -79,22 +119,16 @@ export default function MandiMap({ markets = [], userLocation, compact = false }
           />
           <ZoomControl position="bottomright" />
           {userLocation?.length === 2 && (
-            <CircleMarker
-              center={[userLocation[1], userLocation[0]]}
-              radius={8}
-              pathOptions={{
-                color: "#1f5f3b",
-                fillColor: "#f1b24a",
-                fillOpacity: 1,
-                weight: 3,
-              }}
+            <Marker
+              position={[userLocation[1], userLocation[0]]}
+              icon={userFarmPin()}
             >
               <Popup>
-                <strong>Your farm location</strong>
+                <strong>🏡 Your farm location</strong>
                 <br />
-                Nearest grain mandis are measured from here.
+                Nearest grain mandis and transport distances are measured from here.
               </Popup>
-            </CircleMarker>
+            </Marker>
           )}
           {pinnedMarkets.map((row) => {
             const market = row.market || row;
@@ -104,15 +138,15 @@ export default function MandiMap({ markets = [], userLocation, compact = false }
               <Marker
                 key={row._id || market._id || market.name}
                 position={[latitude, longitude]}
-                icon={
+                icon={createMandiPin(
+                  row.modalPrice,
+                  market.name || market.location,
                   isNearest
-                    ? nearestIcon(row.modalPrice)
-                    : markerIcon(row.modalPrice)
-                }
+                )}
               >
                 <Popup>
                   <strong>
-                    {isNearest ? "Nearest grain mandi · " : ""}
+                    {isNearest ? "★ Nearest grain mandi · " : ""}
                     {market.name}
                   </strong>
                   <br />
@@ -132,11 +166,9 @@ export default function MandiMap({ markets = [], userLocation, compact = false }
           })}
         </MapContainer>
         <span className="map-caption">
-          {nearest
-            ? "Nearest grain mandi pinned"
-            : `${pinnedMarkets.length} nearby mandi${
-                pinnedMarkets.length === 1 ? "" : "s"
-              } pinned`}
+          📍 {nearest
+            ? `Nearest: ${nearest.market?.name || nearest.name || "Indore Mandi"} pinned`
+            : `${pinnedMarkets.length} nearby mandis pinned`}
         </span>
       </div>
     </MapErrorBoundary>

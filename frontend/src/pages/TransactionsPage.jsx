@@ -26,7 +26,7 @@ export function TransactionsPage() {
     try {
       await api.patch("/transactions/" + t._id + "/status", {
         status,
-        note: "Updated from AgriLink dashboard",
+        note: "Updated from KrishiLink dashboard",
       });
       if (status === "COMPLETED")
         await api.patch("/payments/" + t._id, { status: "PAID" });

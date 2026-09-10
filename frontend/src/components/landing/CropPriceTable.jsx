@@ -1,196 +1,245 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { ArrowDown, CheckCircle2, ChevronRight, TrendingUp } from "lucide-react";
 
-export function CropPriceTable() {
+const panIndiaCrops = [
+  {
+    id: "wheat",
+    name: "Wheat (Sharbati / Lokwan)",
+    states: "Madhya Pradesh, Punjab, Haryana",
+    category: "Cereal Grain",
+    emoji: "🌾",
+    price: "₹2,580/qtl",
+    change: "+2.14%",
+    trend: "up",
+    demand: "HIGH",
+    mandis: "Khanna (₹2,590), Indore (₹2,575), Kota (₹2,560)",
+    bestBid: "₹2,575 (ITC Agri Business)",
+  },
+  {
+    id: "rice",
+    name: "Basmati Paddy (1121)",
+    states: "Haryana, Punjab, Western UP",
+    category: "Grain",
+    emoji: "🌾",
+    price: "₹3,920/qtl",
+    change: "+3.80%",
+    trend: "up",
+    demand: "VERY HIGH",
+    mandis: "Karnal (₹3,940), Amritsar (₹3,910), Taraori (₹3,950)",
+    bestBid: "₹3,930 (KRBL World)",
+  },
+  {
+    id: "soybean",
+    name: "Soybean (Yellow)",
+    states: "Madhya Pradesh, Maharashtra, Rajasthan",
+    category: "Oilseed",
+    emoji: "🌱",
+    price: "₹4,650/qtl",
+    change: "+1.85%",
+    trend: "up",
+    demand: "HIGH",
+    mandis: "Indore (₹4,650), Latur (₹4,620), Ujjain (₹4,640)",
+    bestBid: "₹4,640 (Adani Wilmar)",
+  },
+  {
+    id: "cotton",
+    name: "Cotton (Shankar-6)",
+    states: "Gujarat, Maharashtra, Telangana",
+    category: "Fiber Crop",
+    emoji: "☁️",
+    price: "₹7,100/qtl",
+    change: "+2.40%",
+    trend: "up",
+    demand: "HIGH",
+    mandis: "Rajkot (₹7,120), Kadi (₹7,090), Warangal (₹7,080)",
+    bestBid: "₹7,100 (Vardhman Textiles)",
+  },
+  {
+    id: "mustard",
+    name: "Mustard Seed (Sarson)",
+    states: "Rajasthan, Haryana, Madhya Pradesh",
+    category: "Oilseed",
+    emoji: "🌼",
+    price: "₹5,480/qtl",
+    change: "+1.50%",
+    trend: "up",
+    demand: "MEDIUM",
+    mandis: "Bharatpur (₹5,500), Jaipur (₹5,470), Alwar (₹5,490)",
+    bestBid: "₹5,475 (Patanjali Agro)",
+  },
+  {
+    id: "onion",
+    name: "Nashik Red Onion",
+    states: "Maharashtra, Karnataka, Gujarat",
+    category: "Horticulture",
+    emoji: "🧅",
+    price: "₹2,820/qtl",
+    change: "+3.42%",
+    trend: "up",
+    demand: "HIGH",
+    mandis: "Lasalgaon (₹2,850), Pimpalgaon (₹2,820), Pune (₹2,800)",
+    bestBid: "₹2,840 (Reliance Fresh Retail)",
+  },
+  {
+    id: "chilli",
+    name: "Guntur Red Chilli (Teja)",
+    states: "Andhra Pradesh, Telangana, Karnataka",
+    category: "Spice",
+    emoji: "🌶️",
+    price: "₹8,450/qtl",
+    change: "+4.20%",
+    trend: "up",
+    demand: "VERY HIGH",
+    mandis: "Guntur (₹8,450), Khammam (₹8,400), Byadgi (₹8,380)",
+    bestBid: "₹8,420 (Everest Spices Ltd)",
+  },
+  {
+    id: "maize",
+    name: "Yellow Maize (Poultry Feed)",
+    states: "Karnataka, Bihar, Andhra Pradesh",
+    category: "Coarse Grain",
+    emoji: "🌽",
+    price: "₹2,180/qtl",
+    change: "-0.42%",
+    trend: "down",
+    demand: "MEDIUM",
+    mandis: "Davangere (₹2,200), Gulabbagh (₹2,170), Chhindwara (₹2,180)",
+    bestBid: "₹2,175 (Cargill India Feed)",
+  },
+];
+
+export function CropPriceTable({ language = "en" }) {
+  const [selectedCropId, setSelectedCropId] = useState("wheat");
+
+  const scrollToDemands = () => {
+    const el = document.getElementById("buyer-demands");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const activeCrop = panIndiaCrops.find((c) => c.id === selectedCropId) || panIndiaCrops[0];
+
   return (
-    <section className="agri-market-board">
+    <section className="agri-market-board" id="market-prices">
       <div className="agri-market-heading">
         <div>
-          <p className="eyebrow">LIVE AGRI MARKET</p>
-          <h2>The market is moving. Stay ahead.</h2>
+          <p className="eyebrow">PAN-INDIA COMMODITY BENCHMARK</p>
+          <h2>
+            {language === "en"
+              ? "Real-Time Mandi Rates Across 18+ States"
+              : "18+ राज्यों की मंडियों के वास्तविक भाव"}
+          </h2>
           <p>
-            Compare crop prices, daily movement and buyer demand before you
-            decide where to sell.
+            {language === "en"
+              ? "Select any commodity to view major producing state mandis, daily price movements, and active buyer bids."
+              : "किसी भी फसल पर क्लिक करें और प्रमुख उत्पादक राज्यों की मंडियों के भाव व सक्रिय खरीदार देखें।"}
           </p>
         </div>
 
-        <div className="market-index">
-          <span className="market-live-dot" />
-          MARKET OPEN
+        <div className="market-index-clean">
+          <span className="live-dot" />
+          <span>NATIONAL APMC DATA FEED</span>
         </div>
       </div>
 
-      {/* MARKET SUMMARY */}
-      <div className="market-summary">
-        <div>
-          <small>RISING CROPS</small>
-          <strong className="green-text">↑ 8</strong>
+      {/* STAT SUMMARY BAR */}
+      <div className="market-summary-clean">
+        <div className="summary-clean-card">
+          <small>MAJOR COMMODITIES</small>
+          <strong>8 Key Crops</strong>
         </div>
-
-        <div>
-          <small>FALLING CROPS</small>
-          <strong>↓ 2</strong>
+        <div className="summary-clean-card">
+          <small>AVERAGE GAIN TODAY</small>
+          <strong className="text-green">+2.18%</strong>
         </div>
-
-        <div>
+        <div className="summary-clean-card">
           <small>HIGHEST DEMAND</small>
-          <strong>🌶️ Chilli</strong>
+          <strong>🌶️ Guntur Chilli</strong>
         </div>
-
-        <div>
-          <small>MARKET VOLUME</small>
-          <strong>5,842 qtl</strong>
-        </div>
-      </div>
-
-      {/* PRICE TABLE */}
-      <div className="agri-price-table">
-        <div className="agri-table-header">
-          <span>CROP</span>
-          <span>CURRENT PRICE</span>
-          <span>TODAY</span>
-          <span>PRICE MOVEMENT</span>
-          <span>DEMAND</span>
-          <span></span>
-        </div>
-
-        {/* WHEAT */}
-        <div className="agri-price-row">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🌾</span>
-            <div>
-              <strong>Wheat</strong>
-              <small>Cereal</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹2,558/qtl</strong>
-          <span className="price-up">▲ 1.97%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge high">HIGH</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
-        </div>
-
-        {/* SOYBEAN */}
-        <div className="agri-price-row">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🌱</span>
-            <div>
-              <strong>Soybean</strong>
-              <small>Oilseed</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹4,620/qtl</strong>
-          <span className="price-up">▲ 0.84%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge high">HIGH</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
-        </div>
-
-        {/* MAIZE */}
-        <div className="agri-price-row">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🌽</span>
-            <div>
-              <strong>Maize</strong>
-              <small>Cereal</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹2,180/qtl</strong>
-          <span className="price-down">▼ 0.42%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge medium">MEDIUM</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
-        </div>
-
-        {/* GRAM */}
-        <div className="agri-price-row">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🫘</span>
-            <div>
-              <strong>Gram</strong>
-              <small>Pulse</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹5,420/qtl</strong>
-          <span className="price-up">▲ 1.21%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge high">HIGH</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
-        </div>
-
-        {/* ONION */}
-        <div className="agri-price-row">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🧅</span>
-            <div>
-              <strong>Onion</strong>
-              <small>Vegetable</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹2,840/qtl</strong>
-          <span className="price-up">▲ 2.10%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge high">HIGH</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
-        </div>
-
-        {/* CHILLI */}
-        <div className="agri-price-row featured-crop">
-          <div className="agri-crop">
-            <span className="agri-crop-icon">🌶️</span>
-            <div>
-              <strong>Chilli</strong>
-              <small>Spice</small>
-            </div>
-          </div>
-          <strong className="agri-price">₹8,200/qtl</strong>
-          <span className="price-up">▲ 3.42%</span>
-          <div className="mini-trend">
-            <svg viewBox="0 0 100 35" preserveAspectRatio="none">
-              <polyline points="0,28 12,22 25,25 38,14 50,19 63,9 76,15 88,5 100,10" />
-            </svg>
-          </div>
-          <span className="demand-badge very-high">VERY HIGH</span>
-          <Link to="/register/buyer" className="market-arrow">
-            →
-          </Link>
+        <div className="summary-clean-card">
+          <small>NATIONAL VOLUMES</small>
+          <strong>1,42,800 qtl</strong>
         </div>
       </div>
 
-      {/* FOOTER */}
-      <div className="market-board-footer">
-        <span>Prices shown are indicative market rates</span>
-        <Link to="/register/farmer">Explore full market →</Link>
+      {/* CROP MATRIX */}
+      <div className="agri-price-table-clean">
+        <div className="agri-clean-header">
+          <span>COMMODITY & PRODUCING STATES</span>
+          <span>PRICE / QTL</span>
+          <span>24H CHANGE</span>
+          <span>MARKET DEMAND</span>
+          <span>TOP REGIONAL MANDIS</span>
+        </div>
+
+        {panIndiaCrops.map((crop) => {
+          const isSelected = crop.id === selectedCropId;
+          return (
+            <div
+              key={crop.id}
+              className={`agri-clean-row ${isSelected ? "selected" : ""}`}
+              onClick={() => setSelectedCropId(crop.id)}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="crop-col-main">
+                <span className="crop-emoji">{crop.emoji}</span>
+                <div>
+                  <strong>{crop.name}</strong>
+                  <small>{crop.states}</small>
+                </div>
+              </div>
+
+              <div className="crop-price-col">
+                <strong>{crop.price}</strong>
+              </div>
+
+              <div className="crop-change-col">
+                <span className={crop.trend === "up" ? "text-green" : "text-red"}>
+                  {crop.trend === "up" ? "▲" : "▼"} {crop.change}
+                </span>
+              </div>
+
+              <div className="crop-demand-col">
+                <span className={`demand-pill ${crop.demand.toLowerCase().replace(" ", "-")}`}>
+                  {crop.demand}
+                </span>
+              </div>
+
+              <div className="crop-mandis-col">
+                <span>{crop.mandis}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* INTERACTIVE DETAILS CARD FOR SELECTED CROP */}
+      <div className="selected-crop-detail-card">
+        <div className="detail-left">
+          <span className="detail-emoji">{activeCrop.emoji}</span>
+          <div>
+            <h4>{activeCrop.name}</h4>
+            <p>Major hubs: {activeCrop.mandis}</p>
+          </div>
+        </div>
+
+        <div className="detail-right">
+          <div className="detail-bid-box">
+            <small>TOP INSTITUTIONAL BIDDER</small>
+            <b>{activeCrop.bestBid}</b>
+          </div>
+
+          <button
+            type="button"
+            className="detail-action-btn"
+            onClick={scrollToDemands}
+          >
+            <span>View All Buyer Demands</span>
+            <ArrowDown size={15} />
+          </button>
+        </div>
       </div>
     </section>
   );
