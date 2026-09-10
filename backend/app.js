@@ -4,7 +4,6 @@ import morgan from "morgan";
 import apiRouter from "./routes/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 const app = express();
-
 app.use(
   cors({
     origin: (origin, cb) => {
