@@ -2,7 +2,15 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Globe2, MapPin } from "lucide-react";
 
-export function BestMandiSection({ language, marketRows }) {
+const defaultMarketRows = [
+  ["Indore Mandi", "₹2,450", "+1.8%", "130 qtl"],
+  ["Neemuch Mandi", "₹2,540", "+2.4%", "250 qtl"],
+  ["Mandsaur Mandi", "₹2,522", "+1.9%", "226 qtl"],
+  ["Bhopal Mandi", "₹2,504", "+1.5%", "202 qtl"],
+];
+
+export function BestMandiSection({ language = "en", marketRows = defaultMarketRows }) {
+  const rows = marketRows?.length ? marketRows : defaultMarketRows;
   return (
     <section className="enhanced-section mandi-section">
       <div className="section-intro">
@@ -21,7 +29,7 @@ export function BestMandiSection({ language, marketRows }) {
 
       <div className="mandi-discovery">
         <div className="mandi-list">
-          {marketRows.map(([name, price, change], index) => (
+          {rows.map(([name, price, change], index) => (
             <div
               className={index === 1 ? "mandi-card best" : "mandi-card"}
               key={name}
