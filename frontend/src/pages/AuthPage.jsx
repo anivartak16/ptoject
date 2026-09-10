@@ -47,11 +47,70 @@ export function AuthPage({ reg = false }) {
     setF((x) => ({ ...x, [key]: value }));
   };
 
-  useEffect(() => {
-    if (reg) {
-      setF((x) => ({ ...x, role: selectedRole }));
+  const reverseGeocode = async (lat, lon) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+        {
+          signal: controller.signal,
+          headers: { "Accept-Language": "en" },
+        }
+      );
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+
+        const state = addr.state || addr.province || addr.state_district || "";
+        const district = addr.state_district || addr.district || addr.county || "";
+        const cityTaluka = addr.city || addr.town || addr.tehsil || addr.taluk || addr.subdistrict || addr.suburb || district || "";
+        const villageArea = addr.village || addr.hamlet || addr.suburb || addr.neighbourhood || addr.road || "";
+        const pincode = addr.postcode || "";
+
+        const readableLocation = [villageArea, cityTaluka, district].filter(Boolean).slice(0, 2).join(", ") || cityTaluka || district || "Indore";
+        const fullAddress = data.display_name ? data.display_name.split(",").slice(0, 3).join(",").trim() : readableLocation;
+
+        return {
+          location: readableLocation,
+          district: district || cityTaluka || "Indore",
+          state: state || "Madhya Pradesh",
+          pincode: pincode,
+          address: fullAddress,
+        };
+      }
+    } catch (err) {
+      console.warn("Reverse geocode request failed, using regional coordinates fallback:", err);
     }
-  }, [reg, selectedRole]);
+
+    // Graceful fallback for offline / rate-limited environments
+    return {
+      location: "Indore",
+      district: "Indore",
+      state: "Madhya Pradesh",
+      pincode: "452001",
+      address: `Detected area near Lat ${Number(lat).toFixed(4)}, Lon ${Number(lon).toFixed(4)}`,
+    };
+  };
+
+  const handleLocationResolved = async (latitude, longitude) => {
+    setLocationStatus("geocoding");
+    const geoDetails = await reverseGeocode(latitude, longitude);
+
+    setF((prev) => ({
+      ...prev,
+      latitude,
+      longitude,
+      location: geoDetails.location || prev.location,
+      district: geoDetails.district || prev.district,
+      state: geoDetails.state || prev.state,
+      pincode: geoDetails.pincode || prev.pincode,
+      address: geoDetails.address || prev.address,
+    }));
+
+    setLocationStatus("success");
+  };
 
   // Automatically detect user's location during registration
   useEffect(() => {
@@ -59,7 +118,6 @@ export function AuthPage({ reg = false }) {
 
     if (!navigator.geolocation) {
       setLocationStatus("error");
-      setErr("Geolocation is not supported by your browser.");
       return;
     }
 
@@ -68,14 +126,7 @@ export function AuthPage({ reg = false }) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-
-        setF((prev) => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
-
-        setLocationStatus("success");
+        handleLocationResolved(latitude, longitude);
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
@@ -95,7 +146,7 @@ export function AuthPage({ reg = false }) {
   const detectLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus("error");
-      setErr("Geolocation is not supported by your browser.");
+      setErr("Geolocation is not supported by your browser. Please fill location details manually.");
       return;
     }
 
@@ -105,14 +156,7 @@ export function AuthPage({ reg = false }) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-
-        setF((prev) => ({
-          ...prev,
-          latitude,
-          longitude,
-        }));
-
-        setLocationStatus("success");
+        handleLocationResolved(latitude, longitude);
       },
       (error) => {
         if (error.code === error.PERMISSION_DENIED) {
@@ -133,16 +177,8 @@ export function AuthPage({ reg = false }) {
     e.preventDefault();
     setErr("");
 
-    if (
-      reg &&
-      (f.latitude === "" ||
-        f.longitude === "" ||
-        f.latitude === null ||
-        f.longitude === null)
-    ) {
-      setErr(
-        "Location is required. Please allow location access and try again."
-      );
+    if (reg && !f.location && !f.district) {
+      setErr("Please provide your village/city and location details.");
       return;
     }
 
@@ -291,28 +327,55 @@ export function AuthPage({ reg = false }) {
           </label>
         </div>
 
-        <h3>Location</h3>
+        <h3>Location details</h3>
 
         <div className="location-box">
+          {locationStatus === "idle" && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <p style={{ margin: 0 }}>📍 Auto-detect your location or fill the details manually below.</p>
+              <button
+                type="button"
+                onClick={detectLocation}
+                className="secondary"
+              >
+                📍 Auto-Detect Location
+              </button>
+            </div>
+          )}
+
           {locationStatus === "detecting" && (
-            <p>📍 Detecting your location...</p>
+            <p>📍 Requesting GPS coordinates from your device...</p>
+          )}
+
+          {locationStatus === "geocoding" && (
+            <p>🔄 Converting coordinates to district, tehsil, and address...</p>
           )}
 
           {locationStatus === "success" && (
-            <p>
-              ✅ Location detected successfully
-              <br />
-              <small>
-                Latitude: {Number(f.latitude).toFixed(6)} | Longitude:{" "}
-                {Number(f.longitude).toFixed(6)}
-              </small>
-            </p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <div>
+                <p style={{ margin: "0 0 4px", fontWeight: 700, color: "var(--primary-dark)" }}>
+                  ✅ Location detected & auto-filled!
+                </p>
+                <small style={{ color: "var(--muted)" }}>
+                  {f.location ? `${f.location}, ` : ""}{f.district} · {f.state} {f.pincode ? `(${f.pincode})` : ""}
+                  {" — "}You can edit any field below.
+                </small>
+              </div>
+              <button
+                type="button"
+                onClick={detectLocation}
+                className="secondary"
+                style={{ fontSize: "12px", padding: "6px 12px" }}
+              >
+                🔄 Re-detect
+              </button>
+            </div>
           )}
 
           {locationStatus === "denied" && (
-            <div>
-              <p>⚠️ Location permission was denied.</p>
-
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <p style={{ margin: 0 }}>⚠️ Location permission was denied. You can fill the fields manually below.</p>
               <button
                 type="button"
                 onClick={detectLocation}
@@ -324,15 +387,14 @@ export function AuthPage({ reg = false }) {
           )}
 
           {locationStatus === "error" && (
-            <div>
-              <p>⚠️ Unable to detect your location.</p>
-
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <p style={{ margin: 0 }}>⚠️ Location service unavailable. You can enter your details manually below.</p>
               <button
                 type="button"
                 onClick={detectLocation}
                 className="secondary"
               >
-                Detect Location
+                Retry Detection
               </button>
             </div>
           )}

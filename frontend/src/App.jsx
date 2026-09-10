@@ -13,6 +13,7 @@ import { TransactionsPage } from "./pages/TransactionsPage.jsx";
 import { OperationalPage } from "./pages/OperationalPage.jsx";
 import { DynamicPage } from "./pages/DynamicPage.jsx";
 import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
+import { PredictionPage } from "./pages/PredictionPage.jsx";
 
 function RoleDashboardRedirect() {
   const { user } = useAuth();
@@ -60,6 +61,14 @@ export function App() {
           element={
             <Guard>
               <DashboardPage />
+            </Guard>
+          }
+        />
+        <Route
+          path="/:r/predictions"
+          element={
+            <Guard>
+              <PredictionPage />
             </Guard>
           }
         />
