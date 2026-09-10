@@ -30,6 +30,8 @@ import {
 } from "./services/intelligence.js";
 import { acceptOffer } from "./services/transaction.js";
 const app = express();
+import chatRoutes from "./routes/chatRoutes.js";
+app.use("/api/chat", chatRoutes);
 app.use(
   cors({
     origin: (origin, cb) => {

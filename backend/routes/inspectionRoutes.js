@@ -6,4 +6,8 @@ const router = Router();
 router.get("/lots", requireAuth, requireRole("KRISHI_KENDRA"), inspectionLots);
 router.post("/", requireAuth, requireRole("KRISHI_KENDRA"), createInspection);
 
+
+// AI chat route
+// import chatRoutes from "../";
+
 export default router;

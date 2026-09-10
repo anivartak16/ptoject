@@ -70,3 +70,4 @@ export async function matchesFor(demand){
 		return {lot:l,matchScore,reasons,breakdown:{quantity:Math.round(quantityScore),quality:Math.round(qualityScore),price:Math.round(priceScore),location:Math.round(locationScore),availability:Math.round(freshnessScore)}};
 	}).sort((a,b)=>b.matchScore-a.matchScore);
 }
+
