@@ -151,8 +151,6 @@ export function sellAdvice(insight, demandCount = 0) {
   };
 }
 
-<<<<<<< HEAD
-=======
 /**
  * Explainable matching engine between buyer demands and farmer/FPO lots.
  */
@@ -222,4 +220,3 @@ export async function matchesFor(demand) {
 
 
  
->>>>>>> 719931bac6b098f0ff68f6a02fb3be01dceb4af8
