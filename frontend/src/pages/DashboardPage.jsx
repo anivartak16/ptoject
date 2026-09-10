@@ -12,7 +12,7 @@ export function DashboardPage() {
   const cachedDashboard = (() => {
     try {
       return JSON.parse(
-        sessionStorage.getItem("agrilink-dashboard-wheat-v2") || "null"
+        sessionStorage.getItem("krishilink-dashboard-wheat-v2") || "null"
       );
     } catch {
       return null;
@@ -57,7 +57,7 @@ export function DashboardPage() {
           const nearestMarkets = nearby.data.data;
           setMarkets(nearestMarkets);
           sessionStorage.setItem(
-            "agrilink-dashboard-wheat-v2",
+            "krishilink-dashboard-wheat-v2",
             JSON.stringify({ trend: trend.data.data, markets: nearestMarkets })
           );
         }
@@ -181,6 +181,7 @@ export function DashboardPage() {
   return (
     <section>
       <p className="eyebrow">
+     
         {isFpo
           ? "FPO TRADE COMMAND CENTRE"
           : isBuyer

@@ -9,7 +9,7 @@ export function AdminLoginPage() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-  const [email, setEmail] = useState("admin@agrilink.com");
+  const [email, setEmail] = useState("admin@krishilink.com");
   const [password, setPassword] = useState("Demo@12345");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export function AdminLoginPage() {
   };
 
   const fillDemoAdmin = () => {
-    setEmail("admin@agrilink.com");
+    setEmail("admin@krishilink.com");
     setPassword("Demo@12345");
     setError("");
   };
@@ -79,7 +79,7 @@ export function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@agrilink.com"
+                placeholder="admin@krishilink.com"
                 autoComplete="email"
               />
             </div>
@@ -118,7 +118,7 @@ export function AdminLoginPage() {
             <span>Demo Admin Credentials</span>
           </div>
           <p>
-            Email: <code>admin@agrilink.com</code>
+            Email: <code>admin@krishilink.com</code>
             <br />
             Password: <code>Demo@12345</code>
           </p>

@@ -18,15 +18,19 @@ export function AuthPage({ reg = false }) {
 
   const [f, setF] = useState({
     name: "",
-    email: reg ? "" : "farmer@agrilink.com",
+    email: reg ? "" : "farmer@krishilink.com",
     password: reg ? "" : "Demo@12345",
     role: selectedRole,
     phone: "",
+
     location: "",
     address: "",
     district: "",
     state: "",
     pincode: "",
+    latitude: "",
+    longitude: "",
+
     farmName: "",
     landSize: "",
     primaryCrop: "",
@@ -37,19 +41,117 @@ export function AuthPage({ reg = false }) {
   });
 
   const [err, setErr] = useState("");
-  const set = (key, value) => setF((x) => ({ ...x, [key]: value }));
+  const [locationStatus, setLocationStatus] = useState("idle");
+
+  const set = (key, value) => {
+    setF((x) => ({ ...x, [key]: value }));
+  };
 
   useEffect(() => {
-    if (reg) setF((x) => ({ ...x, role: selectedRole }));
+    if (reg) {
+      setF((x) => ({ ...x, role: selectedRole }));
+    }
   }, [reg, selectedRole]);
+
+  // Automatically detect user's location during registration
+  useEffect(() => {
+    if (!reg) return;
+
+    if (!navigator.geolocation) {
+      setLocationStatus("error");
+      setErr("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setLocationStatus("detecting");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        setF((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+
+        setLocationStatus("success");
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationStatus("denied");
+        } else {
+          setLocationStatus("error");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  }, [reg]);
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationStatus("error");
+      setErr("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setLocationStatus("detecting");
+    setErr("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        setF((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+
+        setLocationStatus("success");
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationStatus("denied");
+        } else {
+          setLocationStatus("error");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
+
+    if (
+      reg &&
+      (f.latitude === "" ||
+        f.longitude === "" ||
+        f.latitude === null ||
+        f.longitude === null)
+    ) {
+      setErr(
+        "Location is required. Please allow location access and try again."
+      );
+      return;
+    }
+
     try {
       const endpoint = "/auth/" + (reg ? "register" : "login");
+
       const res = await api.post(endpoint, f);
       const { token, user } = res.data.data;
+
       localStorage.token = token;
       setUser(user);
       navigate(getDashboardPath(user.role));
@@ -62,9 +164,12 @@ export function AuthPage({ reg = false }) {
     return (
       <div className="auth">
         <h1>Welcome back</h1>
+
         <p>
-          Demo accounts: farmer@agrilink.com · buyer@agrilink.com · fpo@agrilink.com · password Demo@12345
+          Demo accounts: farmer@krishilink.com · buyer@krishilink.com ·
+          fpo@krishilink.com · password Demo@12345
         </p>
+
         <form onSubmit={handleSubmit}>
           <input
             aria-label="Email"
@@ -74,6 +179,7 @@ export function AuthPage({ reg = false }) {
             placeholder="Email address"
             required
           />
+
           <input
             aria-label="Password"
             type="password"
@@ -82,11 +188,14 @@ export function AuthPage({ reg = false }) {
             placeholder="Password"
             required
           />
+
           <button className="primary" type="submit">
             Login
           </button>
         </form>
+
         {err && <p className="error">{err}</p>}
+
         <Link to="/register">Create an account</Link>
       </div>
     );
@@ -113,17 +222,21 @@ export function AuthPage({ reg = false }) {
   return (
     <div className="auth auth-register">
       <p className="eyebrow">CREATE YOUR MARKETPLACE PROFILE</p>
+
       <h1>Create your {roleLabel} workspace</h1>
+
       <p>{roleIntro}</p>
 
       <form onSubmit={handleSubmit}>
         <label>
           Choose account type
+
           <select
             value={f.role}
             onChange={(e) =>
               navigate(
-                "/register/" + e.target.value.toLowerCase().replaceAll("_", "-")
+                "/register/" +
+                  e.target.value.toLowerCase().replaceAll("_", "-")
               )
             }
           >
@@ -135,6 +248,7 @@ export function AuthPage({ reg = false }) {
         </label>
 
         <h3>Contact details</h3>
+
         <div className="form-grid">
           <label>
             Full name
@@ -144,6 +258,7 @@ export function AuthPage({ reg = false }) {
               required
             />
           </label>
+
           <label>
             Email address
             <input
@@ -153,6 +268,7 @@ export function AuthPage({ reg = false }) {
               required
             />
           </label>
+
           <label>
             Mobile number
             <input
@@ -162,6 +278,7 @@ export function AuthPage({ reg = false }) {
               required
             />
           </label>
+
           <label>
             Password
             <input
@@ -175,15 +292,62 @@ export function AuthPage({ reg = false }) {
         </div>
 
         <h3>Location</h3>
+
+        <div className="location-box">
+          {locationStatus === "detecting" && (
+            <p>📍 Detecting your location...</p>
+          )}
+
+          {locationStatus === "success" && (
+            <p>
+              ✅ Location detected successfully
+              <br />
+              <small>
+                Latitude: {Number(f.latitude).toFixed(6)} | Longitude:{" "}
+                {Number(f.longitude).toFixed(6)}
+              </small>
+            </p>
+          )}
+
+          {locationStatus === "denied" && (
+            <div>
+              <p>⚠️ Location permission was denied.</p>
+
+              <button
+                type="button"
+                onClick={detectLocation}
+                className="secondary"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {locationStatus === "error" && (
+            <div>
+              <p>⚠️ Unable to detect your location.</p>
+
+              <button
+                type="button"
+                onClick={detectLocation}
+                className="secondary"
+              >
+                Detect Location
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="form-grid">
           <label>
             Village / city
             <input
               value={f.location}
               onChange={(e) => set("location", e.target.value)}
-              required
+              placeholder="Enter village or city"
             />
           </label>
+
           <label>
             District
             <input
@@ -191,6 +355,7 @@ export function AuthPage({ reg = false }) {
               onChange={(e) => set("district", e.target.value)}
             />
           </label>
+
           <label>
             State
             <input
@@ -198,6 +363,7 @@ export function AuthPage({ reg = false }) {
               onChange={(e) => set("state", e.target.value)}
             />
           </label>
+
           <label>
             PIN code
             <input
@@ -213,12 +379,14 @@ export function AuthPage({ reg = false }) {
           <input
             value={f.address}
             onChange={(e) => set("address", e.target.value)}
+            placeholder="Enter address"
           />
         </label>
 
         {f.role === "FARMER" && (
           <>
             <h3>Your farm details</h3>
+
             <div className="form-grid">
               <label>
                 Farm name
@@ -228,6 +396,7 @@ export function AuthPage({ reg = false }) {
                   required
                 />
               </label>
+
               <label>
                 Land size (acres)
                 <input
@@ -239,6 +408,7 @@ export function AuthPage({ reg = false }) {
                   required
                 />
               </label>
+
               <label>
                 Primary crop
                 <input
@@ -255,15 +425,19 @@ export function AuthPage({ reg = false }) {
         {f.role === "BUYER" && (
           <>
             <h3>Your buyer organisation</h3>
+
             <div className="form-grid">
               <label>
                 Organisation name
                 <input
                   value={f.organizationName}
-                  onChange={(e) => set("organizationName", e.target.value)}
+                  onChange={(e) =>
+                    set("organizationName", e.target.value)
+                  }
                   required
                 />
               </label>
+
               <label>
                 Buyer type
                 <select
@@ -283,23 +457,30 @@ export function AuthPage({ reg = false }) {
         {f.role === "FPO" && (
           <>
             <h3>Your FPO organisation</h3>
+
             <div className="form-grid">
               <label>
                 FPO name
                 <input
                   value={f.organizationName}
-                  onChange={(e) => set("organizationName", e.target.value)}
+                  onChange={(e) =>
+                    set("organizationName", e.target.value)
+                  }
                   required
                 />
               </label>
+
               <label>
                 Registration number
                 <input
                   value={f.registrationNumber}
-                  onChange={(e) => set("registrationNumber", e.target.value)}
+                  onChange={(e) =>
+                    set("registrationNumber", e.target.value)
+                  }
                   required
                 />
               </label>
+
               <label>
                 Member count
                 <input
@@ -317,20 +498,26 @@ export function AuthPage({ reg = false }) {
         {f.role === "KRISHI_KENDRA" && (
           <>
             <h3>Krishi Kendra details</h3>
+
             <div className="form-grid">
               <label>
                 Kendra name
                 <input
                   value={f.organizationName}
-                  onChange={(e) => set("organizationName", e.target.value)}
+                  onChange={(e) =>
+                    set("organizationName", e.target.value)
+                  }
                   required
                 />
               </label>
+
               <label>
                 Registration number
                 <input
                   value={f.registrationNumber}
-                  onChange={(e) => set("registrationNumber", e.target.value)}
+                  onChange={(e) =>
+                    set("registrationNumber", e.target.value)
+                  }
                   required
                 />
               </label>
@@ -342,7 +529,9 @@ export function AuthPage({ reg = false }) {
           Create {roleLabel} account
         </button>
       </form>
+
       {err && <p className="error">{err}</p>}
+
       <Link to="/login">Login instead</Link>
     </div>
   );
