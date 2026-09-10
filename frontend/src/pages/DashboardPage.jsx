@@ -231,6 +231,43 @@ export function DashboardPage() {
         </Link>
       </div>
 
+      {/* Market Prediction Spotlight Banner */}
+      <div className="panel prediction-spotlight-card">
+        <div className="prediction-spotlight-content">
+          <div>
+            <p className="eyebrow">
+              <span className="live-dot" /> AI & MATHEMATICAL MARKET PREDICTION
+            </p>
+            <h3>
+              {isBuyer
+                ? "Procurement Advisory: Wheat & Soybean"
+                : isFpo
+                  ? "Collective Aggregation Advisory: Wheat"
+                  : "Mandi Price Advisory: Wheat (Hold / Sell / Wait)"}
+            </h3>
+            <p>
+              {isBuyer
+                ? "Predicting buyer procurement windows based on regional supply arrivals and institutional demand trends."
+                : isFpo
+                  ? "Evaluating collective member inventory against prospective institutional buyer contracts."
+                  : "Mathematical prediction of mandi modal rates to help you decide whether to BUY, SELL, HOLD, or WAIT."}
+            </p>
+          </div>
+          <div className="prediction-spotlight-badges">
+            <span className="spotlight-badge badge-hold">
+              ★ {isBuyer ? "BUY NOW" : isFpo ? "AGGREGATE & HOLD" : "HOLD PRODUCE"}
+            </span>
+            <small>84% Model Confidence · 14-Day Horizon</small>
+          </div>
+        </div>
+        <div className="prediction-spotlight-footer">
+          <span>Key Factor: Rising buyer velocity & constrained APMC arrivals (+7.8% price outlook)</span>
+          <Link className="primary" to={`/${r}/predictions`}>
+            Open Full Prediction System →
+          </Link>
+        </div>
+      </div>
+
       {user.role === "FARMER" && (
         <div className="two-col">
           <div className="panel">

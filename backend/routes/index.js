@@ -19,7 +19,7 @@ import adminRoutes from "./adminRoutes.js";
 import fpoRoutes from "./fpoRoutes.js";
 import buyerRoutes from "./buyerRoutes.js";
 import chatRoutes from "./chatRoutes.js";
-
+import predictionRoutes from "./predictionRoutes.js";
 import { ok } from "../utils/response.js";
 
 import data from "./marketPrice.routes.js";
@@ -31,7 +31,7 @@ apiRouter.get("/health", (_req, res) =>
 );
 
 apiRouter.use("/marketPrice", data);
-
+apiRouter.use("/predictions", predictionRoutes);
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
 apiRouter.use("/inspections", inspectionRoutes);

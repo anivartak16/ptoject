@@ -1,12 +1,18 @@
 import React from "react";
-import { Link, NavLink, useParams } from "react-router-dom";
+import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export function Shell({ children }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { r: routeRole } = useParams();
   const r = routeRole || user?.role?.toLowerCase().replaceAll("_", "-") || "farmer";
   const workspaceRole = r.toUpperCase().replaceAll("-", "_");
+
+  const handleSignOut = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
 
   let items =
     workspaceRole === "ADMIN"
@@ -14,12 +20,14 @@ export function Shell({ children }) {
           ["Dashboard", "dashboard", "◫"],
           ["Users", "users", "◉"],
           ["Market activity", "prices", "↗"],
+          ["Market Prediction", "predictions", "📈"],
           ["Disputes", "disputes", "!"],
           ["Analytics", "analytics", "⌁"],
         ]
       : workspaceRole === "BUYER"
         ? [
             ["Dashboard", "dashboard", "◫"],
+            ["Market Prediction", "predictions", "📈"],
             ["Buyer demands", "demands", "⌁"],
             ["Browse lots", "lots", "▦"],
             ["Recommended lots", "recommendations", "✦"],
@@ -36,6 +44,7 @@ export function Shell({ children }) {
               ["Aggregated lots", "lots", "▦"],
               ["Aggregation", "aggregation", "⊞"],
               ["Market prices", "prices", "↗"],
+              ["Market Prediction", "predictions", "📈"],
               ["Matching", "matching", "✦"],
               ["Offers", "offers", "↔"],
               ["Transactions", "transactions", "✓"],
@@ -50,6 +59,7 @@ export function Shell({ children }) {
               ["My farm", "farm", "⌂"],
               ["My lots", "lots", "▦"],
               ["Market prices", "prices", "↗"],
+              ["Market Prediction", "predictions", "📈"],
               ["Buyer demands", "demands", "⌁"],
               ["Offers", "offers", "↔"],
               ["Transactions", "transactions", "✓"],
@@ -110,7 +120,7 @@ export function Shell({ children }) {
             <b>{user?.name}</b>
             <small> · {workspaceRole} workspace</small>
           </div>
-          <button onClick={logout}>Sign out</button>
+          <button onClick={handleSignOut} className="signout-btn">Sign out</button>
         </header>
         <main>{children}</main>
       </div>
