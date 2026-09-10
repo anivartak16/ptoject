@@ -1,0 +1,44 @@
+import { Router } from "express";
+import authRoutes from "./authRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
+import inspectionRoutes from "./inspectionRoutes.js";
+import marketRoutes from "./marketRoutes.js";
+import priceRoutes from "./priceRoutes.js";
+import lotRoutes from "./lotRoutes.js";
+import demandRoutes from "./demandRoutes.js";
+import matchRoutes from "./matchRoutes.js";
+import offerRoutes from "./offerRoutes.js";
+import transactionRoutes from "./transactionRoutes.js";
+import disputeRoutes from "./disputeRoutes.js";
+import paymentRoutes from "./paymentRoutes.js";
+import notificationRoutes from "./notificationRoutes.js";
+import storageRoutes from "./storageRoutes.js";
+import logisticsRoutes from "./logisticsRoutes.js";
+import adminRoutes from "./adminRoutes.js";
+import fpoRoutes from "./fpoRoutes.js";
+import buyerRoutes from "./buyerRoutes.js";
+import { ok } from "../utils/response.js";
+
+const apiRouter = Router();
+
+apiRouter.get("/health", (_req, res) => ok(res, { status: "healthy" }));
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/dashboard", dashboardRoutes);
+apiRouter.use("/inspections", inspectionRoutes);
+apiRouter.use("/markets", marketRoutes);
+apiRouter.use("/prices", priceRoutes);
+apiRouter.use("/lots", lotRoutes);
+apiRouter.use("/demands", demandRoutes);
+apiRouter.use("/matches", matchRoutes);
+apiRouter.use("/offers", offerRoutes);
+apiRouter.use("/transactions", transactionRoutes);
+apiRouter.use("/disputes", disputeRoutes);
+apiRouter.use("/payments", paymentRoutes);
+apiRouter.use("/notifications", notificationRoutes);
+apiRouter.use("/storage", storageRoutes);
+apiRouter.use("/logistics", logisticsRoutes);
+apiRouter.use("/admin", adminRoutes);
+apiRouter.use("/fpo", fpoRoutes);
+apiRouter.use("/buyers", buyerRoutes);
+
+export default apiRouter;
