@@ -181,6 +181,7 @@ export function DashboardPage() {
   return (
     <section>
       <p className="eyebrow">
+     
         {isFpo
           ? "FPO TRADE COMMAND CENTRE"
           : isBuyer

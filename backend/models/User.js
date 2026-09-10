@@ -4,7 +4,7 @@ const { Schema, model } = mongoose;
 
 const loc = {
   type: { type: String, default: "Point" },
-  coordinates: { type: [Number], default: [75.86, 22.72] },
+  coordinates: { type: [Number] },
 };
 
 const userSchema = new Schema(

@@ -77,6 +77,7 @@ export function HomePage() {
 
   return (
     <div className="landing">
+      
       <LandingNavbar language={language} setLanguage={setLanguage} />
       <HeroSection language={language} />
       <LivePriceTape marketRows={marketRows} />
