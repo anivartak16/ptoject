@@ -1,5 +1,5 @@
 import express from "express";
-import { generateChatResponse } from "../services/intelligence.js";
+import { generateChatResponse } from "../services/chatServices.js";
 
 const router = express.Router();
 
