@@ -1,3 +1,4 @@
+// import React, { Component, createContext, useContext, useEffect, useState } from "react";
 import React, { Component, createContext, useContext, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -24,22 +25,19 @@ import {
 } from "recharts";
 import {
   ArrowRight,
-  CheckCircle2,
-  TrendingUp,
-  ShieldCheck,
-  Users,
-  IndianRupee,
-  Handshake,
-  MapPin,
-  BarChart3,
   BadgeCheck,
-  Truck,
-  Lock,
-  Search,
-  Sprout,
-  Store,
-  Globe2,
+  BarChart3,
   ChevronRight,
+  Globe2,
+  Handshake,
+  IndianRupee,
+  Lock,
+  MapPin,
+  ShieldCheck,
+  Sprout,
+  TrendingUp,
+  Truck,
+  Users,
 } from "lucide-react";
 import MandiMap from "./components/MandiMap";
 import "./style.css";
@@ -53,7 +51,7 @@ api.interceptors.request.use((c) => {
 });
 const A = createContext(),
   useA = () => useContext(A),
-  path = (r) => "/" + r.toLowerCase() + "/dashboard";
+  path = (r) => "/" + r.toLowerCase().replaceAll("_", "-") + "/dashboard";
 const Card = ({ a, b, c }) => (
   <div className="card">
     <small>{a}</small>
@@ -106,8 +104,8 @@ class AppErrorBoundary extends Component {
 function Shell({ children }) {
   let { user, logout } = useA(),
     { r: routeRole } = useParams(),
-    r = routeRole || user.role.toLowerCase(),
-    workspaceRole = r.toUpperCase();
+    r = routeRole || user.role.toLowerCase().replaceAll("_", "-"),
+    workspaceRole = r.toUpperCase().replaceAll("-", "_");
   let items =
     workspaceRole === "ADMIN"
       ? [
@@ -159,6 +157,7 @@ function Shell({ children }) {
               ["Notifications", "notifications", "●"],
               ["Disputes", "disputes", "!"],
             ];
+  if (workspaceRole === "KRISHI_KENDRA") items = [["Inspection desk", "inspections", "✓"], ["Verified lots", "lots", "▦"], ["Notifications", "notifications", "●"]];
   return (
     <div className="app-shell">
       <aside>
@@ -206,7 +205,7 @@ function Shell({ children }) {
 }
 function Guard({ children }) {
   let { user, ready } = useA(), { r } = useParams();
-  if (ready && user && r && r.toUpperCase() !== user.role)
+  if (ready && user && r && r.toUpperCase().replaceAll("-", "_") !== user.role)
     return <Navigate to={path(user.role)} replace />;
   return !ready ? (
     <div className="boot">Restoring your secure session…</div>
@@ -219,13 +218,12 @@ function Guard({ children }) {
 function RoleDashboardRedirect() {
   const { r } = useParams();
   const role = (r || "").toLowerCase();
-  return ["farmer", "buyer", "fpo", "admin"].includes(role) ? (
+  return ["farmer", "buyer", "fpo", "admin", "krishi-kendra"].includes(role) ? (
     <Navigate to={`/${role}/dashboard`} replace />
   ) : (
     <Navigate to="/" replace />
   );
 }
-
 function Home() {
   const [language, setLanguage] = useState("en");
   const [selectedCrop, setSelectedCrop] = useState("Wheat");
@@ -1617,13 +1615,53 @@ function Home() {
     </div>
   );
 }
-
-
+// function Home() {
+//   const marketRows = [
+//     ["Indore Mandi", "₹2,450", "+1.8%", "130 qtl"],
+//     ["Neemuch Mandi", "₹2,540", "+2.4%", "250 qtl"],
+//     ["Mandsaur Mandi", "₹2,522", "+1.9%", "226 qtl"],
+//     ["Bhopal Mandi", "₹2,504", "+1.5%", "202 qtl"],
+//   ];
+//   return (
+//     <div className="landing">
+//       <nav>
+//         <b className="landing-brand"><span>↗</span> AgriLink <small>Digital Mandi</small></b>
+//         <div>
+//           <Link to="/register/farmer">For farmers</Link>
+//           <Link to="/register/buyer">For buyers</Link>
+//           <Link to="/login">Login</Link>{" "}
+//           <Link className="primary" to="/register">Open an account</Link>
+//         </div>
+//       </nav>
+//       <section className="market-hero">
+//         <div className="market-hero-copy">
+//           <div className="market-kicker"><span className="live-dot" /> MARKET OPEN <i /> WHEAT · MADHYA PRADESH</div>
+//           <h1>The mandi, <em>online.</em></h1>
+//           <p className="market-lede">A live trading network where farmers bring supply, buyers place demand, and every lot moves with a visible price, quality, and delivery trail.</p>
+//           <div className="hero-actions"><Link className="primary" to="/register/farmer">Sell your produce</Link><Link className="text-action" to="/register/buyer">Find market supply <span>↗</span></Link></div>
+//           <div className="market-stats"><div><b>₹2,558</b><span>Wheat modal price</span></div><div><b className="up">+1.97%</b><span>30-day movement</span></div><div><b>10</b><span>Mandis connected</span></div></div>
+//         </div>
+//         <div className="market-terminal">
+//           <div className="terminal-top"><span><i className="live-dot" /> LIVE MARKET</span><small>09 SEP 2026 · 14:32 IST</small></div>
+//           <div className="terminal-price"><small>WHEAT / KG</small><strong>₹2,558.00</strong><span>▲ 49.40 <b>(+1.97%)</b></span></div>
+//           <div className="mini-chart"><span /><span /><span /><span /><span /><span /><span /><span /><span /><span /><b>LIVE</b></div>
+//           <div className="terminal-grid"><div><small>BEST BID</small><b>₹2,550</b><span>18 buyers</span></div><div><small>BEST ASK</small><b>₹2,558</b><span>6 lots</span></div><div><small>TRADED TODAY</small><b>1,842 qtl</b><span>+12.4%</span></div></div>
+//         </div>
+//       </section>
+//       <section className="market-board">
+//         <div className="board-heading"><div><p className="eyebrow">LIVE PRICE TAPE</p><h2>What is trading near you</h2></div><Link to="/register/farmer">View all mandis ↗</Link></div>
+//         <div className="rate-tape">{marketRows.map(([name, price, change, volume]) => <article key={name}><div><span className="status-dot" /> <b>{name}</b></div><strong>{price}</strong><span className="up">▲ {change}</span><small>{volume} arrivals</small></article>)}</div>
+//         <div className="order-floor"><div className="floor-intro"><p className="eyebrow">THE DIGITAL TRADING FLOOR</p><h2>From mandi arrival to market match.</h2><p>AgriLink brings the working parts of offline trade into one visible flow: discover a rate, list a lot, match a buyer, and coordinate the handoff.</p></div><div className="order-card"><div className="order-card-top"><b>WHEAT · ORDER FLOW</b><span>Today</span></div><div className="order-row order-head"><span>BUYERS</span><span>PRICE</span><span>LOTS</span></div><div className="order-row"><span>ABC Foods</span><b>₹2,560</b><span>12</span></div><div className="order-row"><span>Malwa Traders</span><b>₹2,548</b><span>8</span></div><div className="order-row"><span>Indore FPO</span><b>₹2,540</b><span>5</span></div><div className="order-footer"><span>3 active demands</span><Link to="/register/buyer">Join the book ↗</Link></div></div></div>
+//       </section>
+//       <section className="role-strip"><div><p className="eyebrow">ONE MARKET, DIFFERENT ROLES</p><h2>Choose your side of the trade.</h2></div><div className="role-links"><Link to="/register/farmer"><span>01</span><b>Farmer</b><small>List produce at a visible rate</small>↗</Link><Link to="/register/fpo"><span>02</span><b>FPO</b><small>Pool supply and sell together</small>↗</Link><Link to="/register/buyer"><span>03</span><b>Buyer</b><small>Place demand and source lots</small>↗</Link></div></section>
+//     </div>
+//   );
+// }
 function Login({ reg }) {
   let nav = useNavigate(),
     { role: routeRole } = useParams(),
-    selectedRole = ["farmer", "buyer", "fpo"].includes(routeRole?.toLowerCase())
-      ? routeRole.toUpperCase()
+    selectedRole = ["farmer", "buyer", "fpo", "krishi-kendra"].includes(routeRole?.toLowerCase())
+      ? routeRole.toLowerCase() === "krishi-kendra" ? "KRISHI_KENDRA" : routeRole.toUpperCase()
       : "FARMER",
     { setUser } = useA(),
     [f, setF] = useState({
@@ -1693,13 +1731,13 @@ function Login({ reg }) {
       ? "Farmer"
       : f.role === "BUYER"
         ? "Buyer"
-        : "FPO representative";
+        : f.role === "KRISHI_KENDRA" ? "Krishi Kendra officer" : "FPO representative";
   let roleIntro =
     f.role === "FARMER"
       ? "Create a farmer workspace to list produce, compare mandi prices and connect with buyers."
       : f.role === "BUYER"
         ? "Create a buyer workspace to publish demands, discover lots and manage procurement."
-        : "Create an FPO workspace to add farmers, aggregate their produce and sell together.";
+        : f.role === "KRISHI_KENDRA" ? "Create an inspection workspace to test grain samples and publish trusted quality records." : "Create an FPO workspace to add farmers, aggregate their produce and sell together.";
   return (
     <div className="auth auth-register">
       <p className="eyebrow">CREATE YOUR MARKETPLACE PROFILE</p>
@@ -1710,11 +1748,12 @@ function Login({ reg }) {
           Choose account type
           <select
             value={f.role}
-            onChange={(e) => nav("/register/" + e.target.value.toLowerCase())}
+            onChange={(e) => nav("/register/" + e.target.value.toLowerCase().replaceAll("_", "-"))}
           >
             <option value="FARMER">Farmer</option>
             <option value="BUYER">Buyer</option>
             <option value="FPO">FPO representative</option>
+            <option value="KRISHI_KENDRA">Krishi Kendra officer</option>
           </select>
         </label>
         <h3>Contact details</h3>
@@ -1891,6 +1930,7 @@ function Login({ reg }) {
             </div>
           </>
         )}
+        {f.role === "KRISHI_KENDRA" && <><h3>Krishi Kendra details</h3><div className="form-grid"><label>Kendra name<input value={f.organizationName} onChange={(e) => set("organizationName", e.target.value)} required /></label><label>Registration number<input value={f.registrationNumber} onChange={(e) => set("registrationNumber", e.target.value)} required /></label></div></>}
         <button className="primary">Create {roleLabel} account</button>
       </form>
       <p className="error">{err}</p>
@@ -1953,6 +1993,7 @@ function Dashboard() {
       clearInterval(refreshTimer);
     };
   }, [user.role]);
+  if (user.role === "KRISHI_KENDRA") return <InspectionDesk />;
   if (admin)
     return (
       <section>
@@ -2232,6 +2273,8 @@ function Lots() {
                 <b>{l.remainingQuantity} KG</b> · ₹{l.expectedPrice}/kg
               </p>
               <p>📍 {l.location || "Location not provided"}</p>
+              {l.quality?.inspectionStatus === "VERIFIED" && <p className="verified-quality"><b>✓ Krishi Kendra verified</b> · {l.quality.grade} · moisture {l.quality.moisture}% · defects {l.quality.damagedPercentage || 0}%</p>}
+              {l.quality?.grainImage && <img className="grain-preview" src={l.quality.grainImage} alt="Verified grain sample" />}
               {user.role === "BUYER" && <Offer lot={l} />}
             </article>
           ))
@@ -2276,6 +2319,7 @@ function Offer({ lot }) {
     </>
   );
 }
+
 function Demands() {
   let [rows, setRows] = useState([]),
     [matches, setMatches] = useState([]),
@@ -2381,7 +2425,7 @@ function Offers() {
           </p>
           <Link
             className="primary"
-            to={"/" + user.role.toLowerCase() + "/lots"}
+            to={"/" + user.role.toLowerCase().replaceAll("_", "-") + "/lots"}
           >
             View lots
           </Link>
@@ -2497,7 +2541,7 @@ function Transactions() {
                 <span key={e._id}>✓ {e.status}</span>
               ))}
             </div>
-            {t.status !== "COMPLETED" && t.status !== "CANCELLED" && <Link className="text-action" to={`/${user.role.toLowerCase()}/disputes`}>Raise a dispute ↗</Link>}
+            {t.status !== "COMPLETED" && t.status !== "CANCELLED" && <Link className="text-action" to={`/${user.role.toLowerCase().replaceAll("_", "-")}/disputes`}>Raise a dispute ↗</Link>}
           </div>
         ))
       )}
@@ -2514,6 +2558,15 @@ function FpoAggregation() {
   const toggleLot = (id) => setSelected((current) => current.includes(id) ? current.filter((x) => x !== id) : [...current, id]);
   const aggregate = async (event) => { event.preventDefault(); if (selected.length < 2) { setError("Select at least two farmer lots to create an aggregation."); return; } try { await api.post("/fpo/aggregate", { lotIds: selected, expectedPrice: Number(price) }); setMessage("Combined lot published successfully."); setSelected([]); setPrice(""); load(); } catch (e) { setError(e.response?.data?.message || "Could not create aggregate lot."); } };
   return <section><p className="eyebrow">FPO COLLECTIVE SELLING</p><h1>Build your farmer pool</h1><p>Add farmers, select their available produce, and publish one larger lot with stronger market volume.</p>{error && <div className="form-message error">{error}<button onClick={() => setError("")}>Dismiss</button></div>}{message && <div className="form-message success">{message}</div>}<div className="two-col"><div className="panel"><h3>Add farmers to your FPO</h3><p>Search by name, email, or location.</p><input value={search} placeholder="Search farmers" onChange={(e) => findFarmers(e.target.value)} />{farmers.map((farmer) => <div className="member-row" key={farmer._id}><div><b>{farmer.name}</b><small>{farmer.location} · {farmer.primaryCrop || "Crop not set"}</small></div><button className="primary" onClick={() => addMember(farmer._id)}>Add</button></div>)}<h3 className="subheading">Your members ({members.length})</h3>{members.length === 0 ? <p>No farmers added yet.</p> : members.map((member) => <div className="member-row" key={member._id}><div><b>{member.name}</b><small>{member.location} · {member.email}</small></div><button onClick={() => removeMember(member._id)}>Remove</button></div>)}</div><div className="panel"><div className="section-head"><div><h3>Select produce to aggregate</h3><small>{selected.length} lot{selected.length === 1 ? "" : "s"} selected</small></div></div>{lots.length === 0 ? <p>Add farmers with available lots to begin.</p> : lots.map((lot) => <label className={`select-lot ${selected.includes(lot._id) ? "selected" : ""}`} key={lot._id}><input type="checkbox" checked={selected.includes(lot._id)} onChange={() => toggleLot(lot._id)} /><span><b>{lot.commodity} · {lot.remainingQuantity} kg</b><small>{lot.owner?.name} · {lot.location} · {lot.quality?.grade || "Quality pending"}</small></span><strong>₹{lot.expectedPrice}/kg</strong></label>)}<form className="inline-form" onSubmit={aggregate}><input type="number" min="1" placeholder="Blended selling price per kg" value={price} onChange={(e) => setPrice(e.target.value)} required /><button className="primary">Aggregate selected produce</button></form></div></div></section>;
+}
+function InspectionDesk() {
+  const [lots, setLots] = useState([]), [selected, setSelected] = useState(null), [message, setMessage] = useState(""), [form, setForm] = useState({ grade: "Grade A", moisture: "", foreignMatter: "", damagedPercentage: "", defects: "", inspectionNotes: "", inspectionStatus: "VERIFIED", grainImage: "" });
+  const load = () => api.get("/inspections/lots").then((x) => setLots(x.data.data)).catch((e) => setMessage(e.response?.data?.message || "Could not load inspection lots."));
+  useEffect(() => { load(); }, []);
+  const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const image = (event) => { const file = event.target.files?.[0]; if (!file) return; if (file.size > 3 * 1024 * 1024) return setMessage("Choose an image smaller than 3 MB."); const reader = new FileReader(); reader.onload = () => update("grainImage", reader.result); reader.readAsDataURL(file); };
+  const submit = async (event) => { event.preventDefault(); if (!selected) return setMessage("Select a farmer lot first."); try { await api.post("/inspections", { ...form, lotId: selected._id }); setMessage("Inspection verified and quality record published."); setSelected(null); load(); } catch (e) { setMessage(e.response?.data?.message || "Could not save inspection."); } };
+  return <section><p className="eyebrow">KRISHI KENDRA QUALITY DESK</p><h1>Verify grain quality</h1><p>Farmers bring samples here. Record measurable quality data so buyers and sellers can trade with confidence.</p>{message && <div className="form-message success">{message}</div>}<div className="two-col"><div className="panel"><h3>Farmer lots awaiting inspection</h3>{lots.length === 0 ? <p>No eligible lots found.</p> : lots.map((lot) => <button className={`inspection-lot ${selected?._id === lot._id ? "selected" : ""}`} key={lot._id} onClick={() => setSelected(lot)}><b>{lot.commodity} · {lot.remainingQuantity} kg</b><small>{lot.owner?.name} · {lot.location} · {lot.quality?.inspectionStatus || "PENDING"}</small></button>)}</div><form className="form-card" onSubmit={submit}><h3>{selected ? `${selected.commodity} sample · ${selected.owner?.name}` : "Select a lot to inspect"}</h3><div className="form-grid"><label>Grade<select value={form.grade} onChange={(e) => update("grade", e.target.value)}><option>Grade A</option><option>Grade B</option><option>Grade C</option><option>Reject</option></select></label><label>Moisture (%)<input type="number" min="0" max="100" step="0.1" value={form.moisture} onChange={(e) => update("moisture", e.target.value)} required /></label><label>Foreign matter (%)<input type="number" min="0" max="100" step="0.1" value={form.foreignMatter} onChange={(e) => update("foreignMatter", e.target.value)} required /></label><label>Damaged grain (%)<input type="number" min="0" max="100" step="0.1" value={form.damagedPercentage} onChange={(e) => update("damagedPercentage", e.target.value)} required /></label></div><label>Defects<textarea rows="3" value={form.defects} onChange={(e) => update("defects", e.target.value)} placeholder="Broken grains, discoloration, pests..." /></label><label>Inspection notes<textarea rows="3" value={form.inspectionNotes} onChange={(e) => update("inspectionNotes", e.target.value)} /></label><label>Grain sample photo<input type="file" accept="image/*" onChange={image} /></label>{form.grainImage && <img className="grain-preview" src={form.grainImage} alt="Grain sample preview" />}<button className="primary" disabled={!selected}>Publish verified quality</button></form></div></section>;
 }
 function DisputesWorkspace() {
   const { user } = useA(), [rows, setRows] = useState([]), [transactions, setTransactions] = useState([]), [form, setForm] = useState({ transactionId: "", reason: "", description: "" }), [message, setMessage] = useState("");
@@ -2592,6 +2645,7 @@ function Operational({ title, type }) {
     : rows;
   if (type === "demands" && user.role === "BUYER") return <Demands />;
   if (type === "aggregation" && user.role === "FPO") return <FpoAggregation />;
+  if (type === "inspections" && user.role === "KRISHI_KENDRA") return <InspectionDesk />;
   if (type === "disputes") return <DisputesWorkspace />;
   if (type === "analytics" && user.role === "ADMIN") return <AnalyticsWorkspace />;
   if (type === "admin" && user.role === "ADMIN") {
@@ -2913,6 +2967,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Navigate to="/register/farmer" replace />} />
         <Route path="/register/:role" element={<Login reg />} />
+        <Route path="/:r/inspections" element={module("Inspection desk", "inspections")} />
         <Route
           path="/:r"
           element={

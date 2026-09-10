@@ -5,6 +5,7 @@ import morgan from "morgan";
 import { requireAuth, requireRole } from "./middleware/auth.js";
 import authRoutes from "./routes/authRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import inspectionRoutes from "./routes/inspectionRoutes.js";
 import {
   User,
   Lot,
@@ -52,6 +53,7 @@ const fail = (res, status, message, error = "VALIDATION_ERROR") =>
 app.get("/api/health", (q, s) => ok(s, { status: "healthy" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/inspections", inspectionRoutes);
 app.get("/api/markets", async (q, s, n) => {
   try {
     ok(s, await Market.find(q.query.state ? { state: q.query.state } : {}));
