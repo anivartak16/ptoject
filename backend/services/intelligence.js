@@ -218,5 +218,3 @@ export async function matchesFor(demand) {
     .sort((a, b) => b.matchScore - a.matchScore);
 }
 
-
- 

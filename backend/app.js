@@ -3,9 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import apiRouter from "./routes/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import chatRoutes from "./routes/chatRoutes.js";
 const app = express();
-app.use("/api/chat", chatRoutes);
 app.use(
   cors({
     origin: (origin, cb) => {
@@ -22,7 +20,7 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 
 // API Router

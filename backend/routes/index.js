@@ -17,6 +17,7 @@ import logisticsRoutes from "./logisticsRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import fpoRoutes from "./fpoRoutes.js";
 import buyerRoutes from "./buyerRoutes.js";
+import chatRoutes from "./chatRoutes.js";
 import { ok } from "../utils/response.js";
 
 const apiRouter = Router();
@@ -40,5 +41,6 @@ apiRouter.use("/logistics", logisticsRoutes);
 apiRouter.use("/admin", adminRoutes);
 apiRouter.use("/fpo", fpoRoutes);
 apiRouter.use("/buyers", buyerRoutes);
+apiRouter.use("/chat", chatRoutes);
 
 export default apiRouter;
