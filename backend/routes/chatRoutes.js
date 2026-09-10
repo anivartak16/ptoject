@@ -1,5 +1,9 @@
 import express from "express";
+<<<<<<< HEAD
 import { generateChatResponse } from "../services/intelligence.js";
+=======
+import { generateChatResponse } from "../services/chatServices.js";
+>>>>>>> 719931bac6b098f0ff68f6a02fb3be01dceb4af8
 
 const router = express.Router();
 
@@ -30,4 +34,8 @@ router.post("/", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 export default router;
+=======
+export default router;
+>>>>>>> 719931bac6b098f0ff68f6a02fb3be01dceb4af8

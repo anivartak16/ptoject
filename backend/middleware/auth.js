@@ -1,3 +1,31 @@
-import jwt from 'jsonwebtoken'; import {User} from '../models/index.js';
-export async function requireAuth(req,res,next){try{const token=req.headers.authorization?.split(' ')[1];if(!token)throw Error();const p=jwt.verify(token,process.env.JWT_SECRET);req.user=await User.findById(p.id).select('-password');if(!req.user?.active)throw Error();next()}catch{res.status(401).json({success:false,message:'Authentication required',error:'UNAUTHORIZED'})}}
-export const requireRole=(...roles)=>(req,res,next)=>roles.includes(req.user.role)?next():res.status(403).json({success:false,message:'Insufficient permission',error:'FORBIDDEN'});
+import jwt from "jsonwebtoken";
+import { User } from "../models/index.js";
+import { fail } from "../utils/response.js";
+
+export async function requireAuth(req, res, next) {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return fail(res, 401, "Authentication required", "UNAUTHORIZED");
+    }
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(payload.id).select("-password");
+
+    if (!user || !user.active) {
+      return fail(res, 401, "Authentication required", "UNAUTHORIZED");
+    }
+
+    req.user = user;
+    next();
+  } catch (_err) {
+    return fail(res, 401, "Authentication required", "UNAUTHORIZED");
+  }
+}
+
+export const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return fail(res, 403, "Insufficient permission", "FORBIDDEN");
+  }
+  next();
+};
