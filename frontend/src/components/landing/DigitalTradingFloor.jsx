@@ -1,41 +1,53 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export function DigitalTradingFloor({ language }) {
+  const scrollToDemands = () => {
+    const el = document.getElementById("buyer-demands");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
-    <section className="market-board">
-      <div className="order-floor">
+    <section className="market-board" id="order-flow">
+      <div className="order-floor-clean">
         <div className="floor-intro">
-          <p className="eyebrow">DIGITAL ORDER BOOK & MATCHING</p>
+          <p className="eyebrow">NATIONAL DIGITAL ORDER BOOK</p>
           <h2>
             {language === "en"
-              ? "From Mandi Arrival to Instant Market Match."
-              : "मंडी आवक से सीधा त्वरित मार्केट मैच।"}
+              ? "Transparent Matching from Farmgate to Factory"
+              : "खेत से लेकर कारखाने तक पारदर्शी व्यापार"}
           </h2>
           <p>
             {language === "en"
-              ? "KrishiLink mirrors physical mandi trading onto a transparent digital order book. Compare live procurement offers, see verified grain demand, and lock orders with guaranteed settlement."
-              : "KrishiLink पारंपरिक मंडी व्यापार को एक पारदर्शी डिजिटल ऑर्डर बुक में बदलता है। खरीदारों के लाइव ऑफर्स देखें और सुरक्षित भुगतान के साथ ऑर्डर मैच करें।"}
+              ? "KrishiLink digitizes physical mandi trading onto a national order book. Compare institutional procurement offers, view verified grain demand across states, and close trades with escrow security."
+              : "KrishiLink पारंपरिक मंडी व्यापार को राष्ट्रीय डिजिटल ऑर्डर बुक में बदलता है। विभिन्न राज्यों के खरीदारों के लाइव ऑफर्स देखें और सुरक्षित एस्क्रो के साथ व्यापार करें।"}
           </p>
 
           <div className="floor-highlights">
             <div className="floor-hl-item">
               <CheckCircle2 size={16} />
-              <span>{language === "en" ? "Real-time buyer demand tracking" : "सत्यापित खरीदार मांग की रीयल-टाइम ट्रैकिंग"}</span>
+              <span>{language === "en" ? "Real-time institutional procurement offers" : "संस्थागत खरीदारों के रीयल-टाइम खरीद ऑफर्स"}</span>
             </div>
             <div className="floor-hl-item">
               <CheckCircle2 size={16} />
-              <span>{language === "en" ? "Transparent lot-by-lot price discovery" : "प्रति क्विंटल पारदर्शी मूल्य निर्धारण"}</span>
+              <span>{language === "en" ? "e-NAM aligned quality standards & lab grading" : "मानकीकृत गुणवत्ता जांच व प्रयोगशाला ग्रेडिंग"}</span>
+            </div>
+            <div className="floor-hl-item">
+              <CheckCircle2 size={16} />
+              <span>{language === "en" ? "Guaranteed payout release upon dispatch verification" : "सत्यापन के बाद बैंक खाते में त्वरित भुगतान"}</span>
             </div>
           </div>
         </div>
 
-        <div className="order-card">
+        {/* ORDER BOOK CARD */}
+        <div className="order-card-clean">
           <div className="order-card-top">
             <div className="order-top-left">
               <span className="live-dot" />
-              <b>SHARBATI WHEAT · LIVE ORDER BOOK</b>
+              <b>NATIONAL ORDER FLOW · SHARBATI WHEAT</b>
             </div>
             <span className="order-live-tag">ACTIVE MATCHING</span>
           </div>
@@ -44,44 +56,51 @@ export function DigitalTradingFloor({ language }) {
             <span>BUYER / ENTERPRISE</span>
             <span>BID PRICE</span>
             <span>VOLUME</span>
-            <span>STATUS</span>
+            <span>STATE</span>
           </div>
 
           <div className="order-row">
             <div className="order-buyer-col">
-              <strong>ABC Foods Ltd.</strong>
-              <small>Indore Hub</small>
+              <strong>ITC Agri Business</strong>
+              <small>Processing Unit</small>
             </div>
-            <b className="order-price">₹2,560/qtl</b>
-            <span>120 qtl</span>
-            <span className="order-badge active">Active Bid</span>
+            <b className="order-price">₹2,580/qtl</b>
+            <span>850 qtl</span>
+            <span className="order-state-pill">Madhya Pradesh</span>
           </div>
 
           <div className="order-row">
             <div className="order-buyer-col">
-              <strong>Malwa Agro Processing</strong>
-              <small>Mandsaur</small>
+              <strong>Adani Wilmar Ltd.</strong>
+              <small>Bulk Procurement</small>
             </div>
-            <b className="order-price">₹2,548/qtl</b>
-            <span>80 qtl</span>
-            <span className="order-badge active">Active Bid</span>
+            <b className="order-price">₹2,575/qtl</b>
+            <span>1,200 qtl</span>
+            <span className="order-state-pill">Gujarat</span>
           </div>
 
           <div className="order-row">
             <div className="order-buyer-col">
               <strong>Central Flour Mills</strong>
-              <small>Bhopal</small>
+              <small>Flour Milling Hub</small>
             </div>
-            <b className="order-price">₹2,540/qtl</b>
-            <span>150 qtl</span>
-            <span className="order-badge active">Active Bid</span>
+            <b className="order-price">₹2,560/qtl</b>
+            <span>450 qtl</span>
+            <span className="order-state-pill">Maharashtra</span>
           </div>
 
-          <div className="order-footer">
-            <span>3 verified demands waiting for supply match</span>
-            <Link to="/register/buyer" className="order-join-link">
-              <span>{language === "en" ? "Place Your Demand" : "अपनी मांग रखें"}</span>
-              <ArrowUpRight size={15} />
+          <div className="order-footer-clean">
+            <button
+              type="button"
+              className="order-scroll-link"
+              onClick={scrollToDemands}
+            >
+              <span>View All 5 Active Corporate Demands ↓</span>
+            </button>
+
+            <Link to="/register/buyer" className="order-join-btn">
+              <span>Register as Buyer to Place Bid</span>
+              <ArrowUpRight size={14} />
             </Link>
           </div>
         </div>

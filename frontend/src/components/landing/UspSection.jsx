@@ -11,93 +11,93 @@ import {
 export function UspSection({ language }) {
   const uspFeatures = [
     {
-      icon: <TrendingUp size={24} />,
+      icon: <TrendingUp size={22} />,
       title:
         language === "en"
-          ? "Better Price Discovery"
-          : "पारदर्शी मूल्य खोज",
+          ? "Inter-State Price Discovery"
+          : "पारदर्शी अंतर-राज्यीय मूल्य खोज",
       description:
         language === "en"
-          ? "Compare live mandi prices across Indore, Neemuch, Mandsaur and direct buyer bids before selling."
-          : "बेचने से पहले इंदौर, नीमच, मंदसौर मंडी भाव और खरीदारों के सीधे ऑफर्स की तुलना करें।",
+          ? "Compare real-time prices across 520+ APMC mandis nationwide and sell where realization is highest."
+          : "देशभर की 520+ APMC मंडियों के भाव देखें और जहाँ सबसे अधिक दाम मिले, वहीं बेचें।",
     },
     {
-      icon: <Handshake size={24} />,
+      icon: <Handshake size={22} />,
       title:
         language === "en"
-          ? "Direct Farmer-Buyer Connect"
-          : "सीधा किसान-खरीदार संपर्क",
+          ? "Direct Enterprise Connect"
+          : "सीधा कॉर्पोरेट व मिलर संपर्क",
       description:
         language === "en"
-          ? "Connect farmers, FPOs, and verified millers without intermediate commissions."
-          : "किसानों, FPO और सत्यापित मिल मालिकों को बिना बिचौलियों के एक पारदर्शी मंच से जोड़ें।",
+          ? "Connect directly with food processors, exporters, and large flour mills without middleman cuts."
+          : "बिचौलियों के बिना सीधे बड़े प्रोसेसर्स, निर्यातकों और आटा मिलों से जुड़ें।",
     },
     {
-      icon: <BarChart3 size={24} />,
+      icon: <BarChart3 size={22} />,
       title:
         language === "en"
-          ? "Live Market Depth"
-          : "लाइव बाजार गहराई",
+          ? "National Order Book Depth"
+          : "राष्ट्रीय बाजार गहराई",
       description:
         language === "en"
-          ? "Access arrival volumes, bid-ask spreads, and historical price momentum in real time."
-          : "आवक मात्रा, खरीदार-विक्रेता भाव और मूल्य रुझान वास्तविक समय में देखें।",
+          ? "Access arrival volumes, bid-ask spreads, and multi-state commodity trends in real time."
+          : "दैनिक आवक, खरीदार मांग और विभिन्न राज्यों के मूल्य रुझान वास्तविक समय में देखें।",
     },
     {
-      icon: <BadgeCheck size={24} />,
+      icon: <BadgeCheck size={22} />,
       title:
         language === "en"
-          ? "Krishi Kendra Certified"
-          : "कृषि केंद्र प्रमाणित",
+          ? "District Krishi Kendra Testing"
+          : "कृषि केंद्र गुणवत्ता प्रमाणन",
       description:
         language === "en"
-          ? "Every lot can be verified by local Krishi Kendras for moisture, purity, and grain quality."
-          : "हर लॉट की नमी, शुद्धता और अनाज की गुणवत्ता का स्थानीय कृषि केंद्र द्वारा सत्यापन।",
+          ? "Grain lots inspected for moisture, purity, and grade standard by local agricultural experts."
+          : "स्थानीय कृषि केंद्र पर अनाज की नमी, शुद्धता और गुणवत्ता का निष्पक्ष वैज्ञानिक परीक्षण।",
     },
     {
-      icon: <Truck size={24} />,
+      icon: <Truck size={22} />,
       title:
         language === "en"
-          ? "Tracked Logistics"
-          : "सत्यापित परिवहन ट्रैकिंग",
+          ? "Farmgate Doorstep Logistics"
+          : "खेत से सीधा सुरक्षित परिवहन",
       description:
         language === "en"
-          ? "Transparent pickup and delivery coordination with verified transport partners."
-          : "सत्यापित ट्रांसपोर्टर्स के साथ पारदर्शी लोडिंग और डिलीवरी ट्रैकिंग।",
+          ? "Coordinate bulk freight and GPS-tracked transport from village farmgate to factory destination."
+          : "गांव के खेत से सीधे खरीदार के गोदाम तक जीपीएस-ट्रैक्ड ढुलाई की पारदर्शी व्यवस्था।",
     },
     {
-      icon: <Lock size={24} />,
+      icon: <Lock size={22} />,
       title:
         language === "en"
-          ? "Escrow Payout Security"
-          : "सुरक्षित एस्क्रो भुगतान",
+          ? "100% Escrow Payout Security"
+          : "100% सुरक्षित एस्क्रो भुगतान",
       description:
         language === "en"
-          ? "Buyer funds are deposited in escrow before transport and credited directly to the farmer's account."
-          : "खरीदार की राशि एस्क्रो में सुरक्षित रखी जाती है और डिलीवरी सत्यापन के तुरंत बाद किसान के खाते में जाती है।",
+          ? "Buyer funds are held safely in escrow and transferred directly to the farmer's bank account upon delivery."
+          : "खरीदार की राशि एस्क्रो में सुरक्षित रखी जाती है और डिलीवरी के तुरंत बाद सीधे बैंक खाते में ट्रांसफर होती है।",
     },
   ];
 
   return (
-    <section className="enhanced-section usp-section" id="why-krishilink">
+    <section className="usp-section-clean" id="why-krishilink">
       <div className="section-intro">
         <p className="eyebrow">WHY KRISHILINK</p>
         <h2>
           {language === "en"
-            ? "Engineered for Fairer, Faster Farm Trade"
-            : "किसानों के सशक्तिकरण और न्यायसंगत व्यापार के लिए निर्मित"}
+            ? "Built for India's Agricultural Future"
+            : "भारतीय कृषि के पारदर्शी व आधुनिक भविष्य के लिए"}
         </h2>
         <p>
           {language === "en"
-            ? "A modern digital marketplace replacing guesswork with transparency, testing, and trust."
-            : "पारदर्शिता, परीक्षण और भरोसे के साथ कृषि उपज का आधुनिक डिजिटल प्लेटफॉर्म।"}
+            ? "Replacing offline middlemen opacity with scientific testing, national price discovery, and secure bank payments."
+            : "बिचौलियों की अपारदर्शिता को वैज्ञानिक परीक्षण, राष्ट्रीय भाव खोज और सुरक्षित भुगतान से बदलना।"}
         </p>
       </div>
 
-      <div className="usp-grid">
+      <div className="usp-grid-clean">
         {uspFeatures.map((feature) => (
-          <article className="usp-card" key={feature.title}>
-            <div className="usp-icon">{feature.icon}</div>
+          <article className="usp-card-clean" key={feature.title}>
+            <div className="usp-icon-clean">{feature.icon}</div>
             <h3>{feature.title}</h3>
             <p>{feature.description}</p>
           </article>

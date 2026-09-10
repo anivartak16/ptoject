@@ -12,33 +12,33 @@ export function RolesSection({ language }) {
       badge: language === "en" ? "DIRECT SALES" : "सीधी बिक्री",
       desc:
         language === "en"
-          ? "List harvested produce at transparent market rates, connect with multiple verified buyers, and get guaranteed escrow payouts."
-          : "अपनी फसल पारदर्शी मंडी भाव पर लिस्ट करें, सीधे खरीदारों से जुड़ें और बैंक खाते में सुरक्षित भुगतान पाएं।",
+          ? "List harvested produce at transparent national market rates, receive competitive buyer bids, and get guaranteed escrow payouts."
+          : "अपनी फसल राष्ट्रीय मंडी भाव पर लिस्ट करें, सीधे खरीदारों से बोलियां पाएं और बैंक खाते में सुरक्षित भुगतान प्राप्त करें।",
       points: [
-        language === "en" ? "Zero middleman cut" : "शून्य बिचौलिया कटौती",
-        language === "en" ? "Instant rate comparison" : "त्वरित मंडी भाव तुलना",
-        language === "en" ? "Assured doorstep pickup" : "निश्चित परिवहन व्यवस्था",
+        language === "en" ? "Zero middleman brokerage" : "शून्य बिचौलिया दलाली",
+        language === "en" ? "Real-time mandi rate comparisons" : "रीयल-टाइम मंडी भाव तुलना",
+        language === "en" ? "Assured doorstep pickup & freight" : "निश्चित ढुलाई व परिवहन व्यवस्था",
       ],
       link: "/register/farmer",
-      btnText: language === "en" ? "Join as Farmer" : "किसान के रूप में जुड़ें",
+      btnText: language === "en" ? "Register as Farmer" : "किसान पंजीकरण",
     },
     {
       id: "buyer",
       num: "02",
       icon: <Factory size={24} />,
       title: language === "en" ? "Buyer / Processor" : "खरीदार / मिलर",
-      badge: language === "en" ? "BULK PROCUREMENT" : "थोक खरीद",
+      badge: language === "en" ? "BULK SOURCING" : "थोक खरीद",
       desc:
         language === "en"
-          ? "Post crop requirements, discover verified lots across MP, and procure high-grade grains with lab-certified quality."
-          : "अपनी मांग दर्ज करें, मध्य प्रदेश की मंडियों से सत्यापित फसलें खोजें और प्रयोगशाला प्रमाणित अनाज खरीदें।",
+          ? "Post crop requirements, discover verified lots across producing states, and procure high-grade grains with lab-certified quality."
+          : "अपनी खरीद मांग दर्ज करें, उत्पादक राज्यों से सत्यापित फसलें खोजें और प्रयोगशाला प्रमाणित अनाज खरीदें।",
       points: [
-        language === "en" ? "Direct origin sourcing" : "सीधे स्रोत से खरीद",
-        language === "en" ? "Quality lab test reports" : "प्रमाणित लैब जांच रिपोर्ट",
-        language === "en" ? "Full supply trail tracking" : "पूर्ण आपूर्ति ट्रैकिंग",
+        language === "en" ? "Direct origin farmgate sourcing" : "सीधे खेत से थोक खरीद",
+        language === "en" ? "Krishi Kendra lab test reports" : "प्रमाणित गुणवत्ता जांच रिपोर्ट",
+        language === "en" ? "Full supply trail transparency" : "पूर्ण आपूर्ति श्रृंखला ट्रैकिंग",
       ],
       link: "/register/buyer",
-      btnText: language === "en" ? "Join as Buyer" : "खरीदार के रूप में जुड़ें",
+      btnText: language === "en" ? "Register as Buyer" : "खरीदार पंजीकरण",
     },
     {
       id: "fpo",
@@ -48,77 +48,77 @@ export function RolesSection({ language }) {
       badge: language === "en" ? "AGGREGATION" : "सामूहिक शक्ति",
       desc:
         language === "en"
-          ? "Pool harvests from hundreds of member farmers to negotiate better bulk rates and service corporate contracts."
-          : "सैकड़ों किसान सदस्यों की फसल को एक साथ मिलाकर बड़े कॉर्पोरेट खरीदारों से बेहतर भाव प्राप्त करें।",
+          ? "Pool harvests from hundreds of member farmers to negotiate better bulk rates and service corporate enterprise contracts."
+          : "सैकड़ों किसान सदस्यों की फसल को एकत्रित कर बड़े कॉर्पोरेट खरीदारों से बेहतर थोक भाव प्राप्त करें।",
       points: [
-        language === "en" ? "Bulk bargaining power" : "सामूहिक सौदेबाजी की ताकत",
-        language === "en" ? "Member lot management" : "सदस्य लॉट प्रबंधन",
-        language === "en" ? "Institutional contracts" : "संस्थागत अनुबंध",
+        language === "en" ? "Collective bargaining power" : "सामूहिक सौदेबाजी की ताकत",
+        language === "en" ? "Member lot inventory tracking" : "सदस्य लॉट इन्वेंट्री प्रबंधन",
+        language === "en" ? "Institutional bulk contracts" : "संस्थागत थोक अनुबंध",
       ],
       link: "/register/fpo",
-      btnText: language === "en" ? "Join as FPO" : "FPO के रूप में जुड़ें",
+      btnText: language === "en" ? "Register as FPO" : "FPO पंजीकरण",
     },
     {
       id: "krishi-kendra",
       num: "04",
       icon: <ShieldCheck size={24} />,
       title: language === "en" ? "Krishi Kendra" : "कृषि केंद्र / निरीक्षक",
-      badge: language === "en" ? "VERIFICATION" : "गुणवत्ता प्रमाणन",
+      badge: language === "en" ? "CERTIFICATION" : "गुणवत्ता प्रमाणन",
       desc:
         language === "en"
-          ? "Examine physical grain samples, measure moisture and foreign matter, and award digital quality grade badges."
-          : "फसल के नमूनों की भौतिक जांच करें, नमी मापें और निष्पक्ष डिजिटल गुणवत्ता ग्रेड जारी करें।",
+          ? "Examine physical grain samples, measure moisture and foreign matter, and issue trusted digital quality certificates."
+          : "फसल के नमूनों की भौतिक जांच करें, नमी मापें और निष्पक्ष डिजिटल गुणवत्ता प्रमाण पत्र जारी करें।",
       points: [
-        language === "en" ? "Digital grading badges" : "डिजिटल ग्रेडिंग बैज",
-        language === "en" ? "Moisture & purity checks" : "नमी व शुद्धता परीक्षण",
-        language === "en" ? "Dispute-free settlements" : "विवाद-मुक्त सुरक्षित सौदे",
+        language === "en" ? "Digital grading certificates" : "डिजिटल ग्रेडिंग प्रमाण पत्र",
+        language === "en" ? "Moisture & purity lab tests" : "नमी व शुद्धता वैज्ञानिक परीक्षण",
+        language === "en" ? "Dispute-free settlements" : "विवाद-रहित सुरक्षित सौदे",
       ],
       link: "/register/krishi-kendra",
-      btnText: language === "en" ? "Join as Inspector" : "निरीक्षक के रूप में जुड़ें",
+      btnText: language === "en" ? "Register as Kendra" : "कृषि केंद्र पंजीकरण",
     },
   ];
 
   return (
-    <section className="role-strip" id="roles">
+    <section className="role-section-clean" id="stakeholders">
       <div className="section-intro">
-        <p className="eyebrow">ONE MARKETPLACE · FOUR KEY PLAYERS</p>
+        <p className="eyebrow">ONE NATIONAL PLATFORM · FOUR KEY ROLES</p>
         <h2>
           {language === "en"
-            ? "Tailored for Every Agricultural Stakeholder"
-            : "कृषि क्षेत्र के हर वर्ग के लिए विशेष समाधान"}
+            ? "Dedicated Portals for Every Agricultural Stakeholder"
+            : "कृषि क्षेत्र के हर भागीदार के लिए समर्पित पोर्टल"}
         </h2>
         <p>
           {language === "en"
-            ? "Whether you produce, aggregate, inspect, or process grains, KrishiLink provides dedicated tools for your operations."
-            : "चाहे आप किसान हों, FPO हों, गुणवत्ता निरीक्षक हों या खरीदार - KrishiLink आपको समर्पित सुविधाएं प्रदान करता है।"}
+            ? "Whether you farm, aggregate, inspect, or process grains, KrishiLink provides tailored tools for your trade."
+            : "चाहे आप किसान हों, FPO हों, गुणवत्ता निरीक्षक हों या खरीदार - KrishiLink आपको समर्पित सुविधाएं देता है।"}
         </p>
       </div>
 
-      <div className="role-grid-4">
+      <div className="role-grid-clean">
         {roles.map((role) => (
-          <div className="role-card-modern" key={role.id}>
-            <div className="role-card-top-row">
-              <span className="role-num">{role.num}</span>
-              <span className="role-pill-badge">{role.badge}</span>
+          <div className="role-card-clean" key={role.id}>
+            <div className="role-top-row">
+              <span className="role-index">{role.num}</span>
+              <span className="role-badge-pill">{role.badge}</span>
             </div>
 
-            <div className="role-icon-box">{role.icon}</div>
+            <div className="role-icon-clean">{role.icon}</div>
 
             <h3>{role.title}</h3>
-            <p className="role-desc">{role.desc}</p>
+            <p className="role-desc-text">{role.desc}</p>
 
-            <ul className="role-bullet-list">
+            <ul className="role-points-clean">
               {role.points.map((pt, i) => (
                 <li key={i}>
-                  <CheckCircle2 size={14} />
+                  <CheckCircle2 size={14} className="text-green" />
                   <span>{pt}</span>
                 </li>
               ))}
             </ul>
 
-            <Link to={role.link} className="role-action-link">
+            <Link to={role.link} className="role-cta-btn">
               <span>{role.btnText}</span>
-              <ArrowUpRight size={16} />
+              <ArrowUpRight size={15} />
             </Link>
           </div>
         ))}

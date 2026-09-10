@@ -12,6 +12,7 @@ import { OffersPage } from "./pages/OffersPage.jsx";
 import { TransactionsPage } from "./pages/TransactionsPage.jsx";
 import { OperationalPage } from "./pages/OperationalPage.jsx";
 import { DynamicPage } from "./pages/DynamicPage.jsx";
+import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
 
 function RoleDashboardRedirect() {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<AuthPage reg={false} />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route
           path="/register"
           element={<Navigate to="/register/farmer" replace />}
