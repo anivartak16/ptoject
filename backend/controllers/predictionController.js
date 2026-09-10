@@ -94,3 +94,4 @@ export async function getPredictionsOverview(req, res) {
     return fail(res, 500, "Failed to load market prediction overview");
   }
 }
+

@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import authRoutes from "./authRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
 import inspectionRoutes from "./inspectionRoutes.js";
@@ -21,9 +22,16 @@ import chatRoutes from "./chatRoutes.js";
 import predictionRoutes from "./predictionRoutes.js";
 import { ok } from "../utils/response.js";
 
+import data from "./marketPrice.routes.js";
+
 const apiRouter = Router();
 
-apiRouter.get("/health", (_req, res) => ok(res, { status: "healthy" }));
+apiRouter.get("/health", (_req, res) =>
+  ok(res, { status: "healthy" })
+);
+
+apiRouter.use("/marketPrice", data);
+apiRouter.use("/predictions", predictionRoutes);
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/dashboard", dashboardRoutes);
 apiRouter.use("/inspections", inspectionRoutes);

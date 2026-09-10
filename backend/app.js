@@ -3,6 +3,8 @@ import cors from "cors";
 import morgan from "morgan";
 import apiRouter from "./routes/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import market from './routes/marketPrice.routes.js'
+
 const app = express();
 app.use(
   cors({
@@ -25,6 +27,11 @@ app.use(morgan("dev"));
 
 // API Router
 app.use("/api", apiRouter);
+app.use('/',(req,res)=>{
+  return res.json({
+    success : true,
+  })
+})
 
 // Error Handling Middlewares
 app.use(notFoundHandler);

@@ -12,3 +12,4 @@ router.get("/", getCropPrediction);
 router.post("/", getCropPrediction);
 
 export default router;
+

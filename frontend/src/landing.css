@@ -27,12 +27,12 @@ html {
 
 /* Reset main wrapper inside landing to be 100% full width */
 .landing .landing-main {
-  max-width: 100% !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  max-width: 100% ;
+  width: 100% ;
+  padding: 0 ;
+  margin: 0 ;  
 }
-
+/* this is import ----------------------!import */
 /* Typography Utilities */
 .landing h1,
 .landing h2,

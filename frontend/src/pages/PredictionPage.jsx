@@ -345,3 +345,4 @@ export function PredictionPage() {
 }
 
 export default PredictionPage;
+

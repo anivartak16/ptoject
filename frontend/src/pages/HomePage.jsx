@@ -80,6 +80,7 @@ export function HomePage() {
 
   return (
     <div className="landing">
+      
       <LandingNavbar language={language} setLanguage={setLanguage} />
       <main className="landing-main">
         <HeroSection language={language} />
