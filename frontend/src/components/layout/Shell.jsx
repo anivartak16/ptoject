@@ -18,6 +18,7 @@ export function Shell({ children }) {
     workspaceRole === "ADMIN"
       ? [
           ["Dashboard", "dashboard", "◫"],
+          ["Daily Price Sync", "market-sync", "🔄"],
           ["Users", "users", "◉"],
           ["Market activity", "prices", "↗"],
           ["Market Prediction", "predictions", "📈"],

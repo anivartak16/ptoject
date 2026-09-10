@@ -14,6 +14,7 @@ import { OperationalPage } from "./pages/OperationalPage.jsx";
 import { DynamicPage } from "./pages/DynamicPage.jsx";
 import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
 import { PredictionPage } from "./pages/PredictionPage.jsx";
+import { AdminMarketSyncPage } from "./pages/AdminMarketSyncPage.jsx";
 
 function RoleDashboardRedirect() {
   const { user } = useAuth();
@@ -103,6 +104,14 @@ export function App() {
         <Route
           path="/:r/prices"
           element={op("Market prices & comparison", "prices")}
+        />
+        <Route
+          path="/:r/market-sync"
+          element={
+            <Guard>
+              <AdminMarketSyncPage />
+            </Guard>
+          }
         />
         <Route
           path="/:r/storage"

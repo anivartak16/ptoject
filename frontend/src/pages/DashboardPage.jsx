@@ -94,6 +94,24 @@ export function DashboardPage() {
             />
           ))}
         </div>
+        <div className="panel admin-mandi-sync-banner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", background: "linear-gradient(135deg, rgba(22, 101, 52, 0.08), rgba(34, 197, 94, 0.05))", border: "1px solid rgba(22, 101, 52, 0.2)", borderRadius: "12px", padding: "18px 24px", marginBottom: "20px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+              <span style={{ fontSize: "18px" }}>🌾</span>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700 }}>Daily Mandi Price Feed & Database Sync</h3>
+              <span style={{ background: "#dcfce7", color: "#166534", fontWeight: 700, fontSize: "11px", padding: "2px 8px", borderRadius: "12px" }}>AGMARKNET Active</span>
+            </div>
+            <p style={{ margin: 0, color: "var(--ink-secondary)", fontSize: "13px" }}>
+              Import today's agricultural commodity rates from data.gov.in into MongoDB to update daily prices across KrishiLink.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Link to={`/${r}/market-sync`} className="primary" style={{ display: "inline-flex", alignItems: "center", gap: "6px", textDecoration: "none" }}>
+              <span>Open Daily Price Sync</span>
+              <span>→</span>
+            </Link>
+          </div>
+        </div>
         <OperationalPage
           title="Verification, disputes & analytics"
           type="admin"

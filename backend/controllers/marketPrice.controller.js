@@ -125,40 +125,140 @@ async function getStateCommodityAllDistricts(req, res) {
   }
 }
 
-// POST /api/market-data/prices/sync
-// Body: { state, commodity }
+import MandiPrice from "../models/mandiPriceSchema.js";
+
+// POST /api/marketPrice/prices/sync
+// Body: { state, commodity, limit }
 //
 // Fetches from AGMARKNET and saves every record
-// to MongoDB using upsert.
+// to MongoDB using bulk upsert.
 async function syncToDb(req, res) {
   try {
     const {
       state,
       commodity,
-    } = req.body;
+      limit = 100,
+    } = req.body || {};
 
-    if (!state || !commodity) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Both 'state' and 'commodity' are required in the request body.",
+    // If both state and commodity are given, fetch all district records recursively
+    if (state && commodity) {
+      const result = await syncStateCommodityToDb(
+        state.trim(),
+        commodity.trim()
+      );
+
+      return res.json({
+        success: true,
+        message: `Successfully synced ${result.fetched} records for ${commodity} in ${state}.`,
+        data: result,
       });
     }
 
-    const result =
-      await syncStateCommodityToDb(
-        state,
-        commodity
-      );
+    // Flexible sync: state-only, commodity-only, or general latest mandi prices nationwide
+    const data = await fetchMandiPrices({
+      state: state ? state.trim() : undefined,
+      commodity: commodity ? commodity.trim() : undefined,
+      limit: Math.min(Number(limit) || 100, 1000),
+      persist: true,
+    });
 
-    res.json({
+    return res.json({
       success: true,
-      data: result,
+      message: `Successfully synced ${data.count} mandi records to database.`,
+      data: {
+        total: data.total,
+        fetched: data.count,
+        db: data.db,
+        records: data.records,
+      },
     });
   } catch (error) {
     res.status(502).json({
       success: false,
-      message: "Sync failed.",
+      message: "Sync failed: " + error.message,
+      error: error.message,
+    });
+  }
+}
+
+// GET /api/marketPrice/prices/stats
+// Summary of records stored in MongoDB MandiPrice collection
+async function getDbStats(req, res) {
+  try {
+    const totalRecords = await MandiPrice.countDocuments();
+    const latestRecord = await MandiPrice.findOne().sort({ arrivalDate: -1, createdAt: -1 });
+    const lastSyncRecord = await MandiPrice.findOne().sort({ fetchedAt: -1, updatedAt: -1 });
+    const distinctCommodities = await MandiPrice.distinct("commodity");
+    const distinctStates = await MandiPrice.distinct("state");
+    const recentRecords = await MandiPrice.find()
+      .sort({ fetchedAt: -1, createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      data: {
+        totalRecords,
+        latestArrivalDate: latestRecord?.arrivalDate || null,
+        lastSyncedAt: lastSyncRecord?.fetchedAt || lastSyncRecord?.updatedAt || null,
+        commoditiesCount: distinctCommodities.length,
+        statesCount: distinctStates.length,
+        commodities: distinctCommodities.sort().slice(0, 30),
+        states: distinctStates.sort(),
+        recentRecords,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Could not fetch database stats: " + error.message,
+      error: error.message,
+    });
+  }
+}
+
+// GET /api/marketPrice/prices/db
+// Fetch synced records from MongoDB with filtering & pagination
+async function getDbRecords(req, res) {
+  try {
+    const {
+      state,
+      commodity,
+      district,
+      limit = 50,
+      page = 1,
+    } = req.query;
+
+    const query = {};
+    if (state) query.state = new RegExp(state.trim(), "i");
+    if (commodity) query.commodity = new RegExp(commodity.trim(), "i");
+    if (district) query.district = new RegExp(district.trim(), "i");
+
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(200, Math.max(1, Number(limit) || 50));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [total, records] = await Promise.all([
+      MandiPrice.countDocuments(query),
+      MandiPrice.find(query)
+        .sort({ arrivalDate: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+        records,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Could not fetch DB records: " + error.message,
       error: error.message,
     });
   }
@@ -170,4 +270,6 @@ export {
   getStateCommodities,
   getStateCommodityAllDistricts,
   syncToDb,
+  getDbStats,
+  getDbRecords,
 };

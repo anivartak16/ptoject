@@ -3,11 +3,19 @@ import MandiPrice from "../models/mandiPriceSchema.js";
 
 const BASE_URL = "https://api.data.gov.in/resource";
 
-const RESOURCE_ID =
-  process.env.AGMARKNET_RESOURCE_ID ||
-  "9ef84268-d588-465a-a308-a864a43d0070";
+function getResourceId() {
+  return (
+    process.env.AGMARKNET_RESOURCE_ID ||
+    "9ef84268-d588-465a-a308-a864a43d0070"
+  ).trim();
+}
 
-const API_KEY = process.env.AGMARKNET_API_KEY;
+function getApiKey() {
+  return (
+    process.env.AGMARKNET_API_KEY ||
+    "579b464db66ec23bdd0000014a643905f24d4215470591f5a4ffef2f"
+  ).trim();
+}
 
 // Simple in-memory cache.
 // The government API can be slow/rate-limited, and mandi prices
@@ -65,14 +73,17 @@ async function fetchMandiPrices(
     persist = false,
   } = {}
 ) {
-  if (!API_KEY) {
+  const apiKey = getApiKey();
+  const resourceId = getResourceId();
+
+  if (!apiKey) {
     throw new Error(
       "AGMARKNET_API_KEY is not set in the environment."
     );
   }
 
   const params = {
-    "api-key": API_KEY,
+    "api-key": apiKey,
     format: "json",
     limit,
     offset,
@@ -116,10 +127,10 @@ async function fetchMandiPrices(
 
   // Fetch data from AGMARKNET
   const response = await axios.get(
-    `${BASE_URL}/${RESOURCE_ID}`,
+    `${BASE_URL}/${resourceId}`,
     {
       params,
-      timeout: 15000,
+      timeout: 45000,
     }
   );
 
@@ -246,30 +257,40 @@ async function fetchStateCommodityAllDistricts(
 
   const allRecords = [];
 
-  while (
-    offset < total &&
-    offset < maxRecords
-  ) {
-    const {
-      total: pageTotal,
-      records,
-    } = await fetchMandiPrices({
-      state,
-      commodity,
-      limit: pageSize,
-      offset,
-    });
+  try {
+    while (
+      offset < total &&
+      offset < maxRecords
+    ) {
+      const {
+        total: pageTotal,
+        records,
+      } = await fetchMandiPrices({
+        state,
+        commodity,
+        limit: pageSize,
+        offset,
+      });
 
-    total = pageTotal;
+      total = pageTotal;
 
-    // Stop if API returns an empty page
-    if (records.length === 0) {
-      break;
+      // Stop if API returns an empty page
+      if (!records || records.length === 0) {
+        break;
+      }
+
+      allRecords.push(...records);
+
+      offset += pageSize;
+      if (allRecords.length >= total) {
+        break;
+      }
     }
-
-    allRecords.push(...records);
-
-    offset += pageSize;
+  } catch (err) {
+    console.warn("Partial fetch error in fetchStateCommodityAllDistricts:", err.message);
+    if (allRecords.length === 0) {
+      throw err;
+    }
   }
 
   // Group records by district

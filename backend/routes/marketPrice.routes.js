@@ -6,6 +6,8 @@ import {
   getStateCommodities,
   getStateCommodityAllDistricts,
   syncToDb,
+  getDbStats,
+  getDbRecords,
 } from "../controllers/marketPrice.controller.js";
 
 // Optional: wire in your existing auth middleware if these should be protected
@@ -16,6 +18,16 @@ const router = express.Router();
 router.get(
   "/prices",
   getPrices
+);
+
+router.get(
+  "/prices/stats",
+  getDbStats
+);
+
+router.get(
+  "/prices/db",
+  getDbRecords
 );
 
 router.get(
