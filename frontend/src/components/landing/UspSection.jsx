@@ -11,86 +11,86 @@ import {
 export function UspSection({ language }) {
   const uspFeatures = [
     {
-      icon: <TrendingUp size={25} />,
+      icon: <TrendingUp size={24} />,
       title:
         language === "en"
           ? "Better Price Discovery"
-          : "बेहतर मूल्य खोज",
+          : "पारदर्शी मूल्य खोज",
       description:
         language === "en"
-          ? "Compare mandi prices and buyer offers before deciding where to sell."
-          : "बेचने से पहले मंडी कीमतों और खरीदारों के ऑफर की तुलना करें।",
+          ? "Compare live mandi prices across Indore, Neemuch, Mandsaur and direct buyer bids before selling."
+          : "बेचने से पहले इंदौर, नीमच, मंदसौर मंडी भाव और खरीदारों के सीधे ऑफर्स की तुलना करें।",
     },
     {
-      icon: <Handshake size={25} />,
+      icon: <Handshake size={24} />,
       title:
         language === "en"
           ? "Direct Farmer-Buyer Connect"
           : "सीधा किसान-खरीदार संपर्क",
       description:
         language === "en"
-          ? "Connect farmers, FPOs and buyers through one transparent marketplace."
-          : "किसानों, FPO और खरीदारों को एक पारदर्शी marketplace से जोड़ें।",
+          ? "Connect farmers, FPOs, and verified millers without intermediate commissions."
+          : "किसानों, FPO और सत्यापित मिल मालिकों को बिना बिचौलियों के एक पारदर्शी मंच से जोड़ें।",
     },
     {
-      icon: <BarChart3 size={25} />,
+      icon: <BarChart3 size={24} />,
       title:
         language === "en"
-          ? "Transparent Market Data"
-          : "पारदर्शी बाजार डेटा",
+          ? "Live Market Depth"
+          : "लाइव बाजार गहराई",
       description:
         language === "en"
-          ? "See market prices, demand and trade activity in one place."
-          : "बाजार कीमत, मांग और व्यापार गतिविधि एक ही जगह देखें।",
+          ? "Access arrival volumes, bid-ask spreads, and historical price momentum in real time."
+          : "आवक मात्रा, खरीदार-विक्रेता भाव और मूल्य रुझान वास्तविक समय में देखें।",
     },
     {
-      icon: <BadgeCheck size={25} />,
+      icon: <BadgeCheck size={24} />,
       title:
         language === "en"
-          ? "Verified Participants"
-          : "सत्यापित प्रतिभागी",
+          ? "Krishi Kendra Certified"
+          : "कृषि केंद्र प्रमाणित",
       description:
         language === "en"
-          ? "Build trust by trading with registered marketplace participants."
-          : "पंजीकृत marketplace participants के साथ भरोसे से व्यापार करें।",
+          ? "Every lot can be verified by local Krishi Kendras for moisture, purity, and grain quality."
+          : "हर लॉट की नमी, शुद्धता और अनाज की गुणवत्ता का स्थानीय कृषि केंद्र द्वारा सत्यापन।",
     },
     {
-      icon: <Truck size={25} />,
+      icon: <Truck size={24} />,
       title:
         language === "en"
-          ? "End-to-End Trade Flow"
-          : "पूरी व्यापार प्रक्रिया",
+          ? "Tracked Logistics"
+          : "सत्यापित परिवहन ट्रैकिंग",
       description:
         language === "en"
-          ? "From listing and matching to delivery and payment."
-          : "लिस्टिंग और matching से लेकर delivery और payment तक।",
+          ? "Transparent pickup and delivery coordination with verified transport partners."
+          : "सत्यापित ट्रांसपोर्टर्स के साथ पारदर्शी लोडिंग और डिलीवरी ट्रैकिंग।",
     },
     {
-      icon: <Lock size={25} />,
+      icon: <Lock size={24} />,
       title:
         language === "en"
-          ? "Secure Transactions"
-          : "सुरक्षित लेनदेन",
+          ? "Escrow Payout Security"
+          : "सुरक्षित एस्क्रो भुगतान",
       description:
         language === "en"
-          ? "Keep transaction records visible and structured throughout the trade."
-          : "पूरे व्यापार के दौरान transaction records को सुरक्षित और व्यवस्थित रखें।",
+          ? "Buyer funds are deposited in escrow before transport and credited directly to the farmer's account."
+          : "खरीदार की राशि एस्क्रो में सुरक्षित रखी जाती है और डिलीवरी सत्यापन के तुरंत बाद किसान के खाते में जाती है।",
     },
   ];
 
   return (
-    <section className="enhanced-section usp-section" id="why-agrilink">
+    <section className="enhanced-section usp-section" id="why-krishilink">
       <div className="section-intro">
-        <p className="eyebrow">WHY AGRILINK</p>
+        <p className="eyebrow">WHY KRISHILINK</p>
         <h2>
           {language === "en"
-            ? "Built to give farmers more control"
-            : "किसानों को अधिक नियंत्रण देने के लिए बनाया गया"}
+            ? "Engineered for Fairer, Faster Farm Trade"
+            : "किसानों के सशक्तिकरण और न्यायसंगत व्यापार के लिए निर्मित"}
         </h2>
         <p>
           {language === "en"
-            ? "A marketplace designed around visibility, choice and better coordination."
-            : "एक marketplace जो visibility, choice और बेहतर coordination पर आधारित है।"}
+            ? "A modern digital marketplace replacing guesswork with transparency, testing, and trust."
+            : "पारदर्शिता, परीक्षण और भरोसे के साथ कृषि उपज का आधुनिक डिजिटल प्लेटफॉर्म।"}
         </p>
       </div>
 

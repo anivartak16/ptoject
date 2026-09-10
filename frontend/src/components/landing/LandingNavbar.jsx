@@ -1,56 +1,70 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Sprout } from "lucide-react";
 
 export function LandingNavbar({ language, setLanguage }) {
   return (
-    <nav className="landing-nav">
-      <Link to="/" className="landing-brand">
-        <span>🌾</span>
-        <strong>AgriLink</strong>
-        <small>Digital Mandi</small>
-      </Link>
-
-      <div className="landing-nav-links">
-        <a href="#how-it-works">
-          {language === "en" ? "How it works" : "कैसे काम करता है"}
-        </a>
-        <a href="#why-agrilink">
-          {language === "en" ? "Why AgriLink" : "AgriLink क्यों?"}
-        </a>
-        <a href="#market">{language === "en" ? "Market" : "बाजार"}</a>
-        <Link to="/register/farmer">
-          {language === "en" ? "For farmers" : "किसानों के लिए"}
+    <header className="landing-header">
+      <nav className="landing-nav">
+        <Link to="/" className="landing-brand">
+          <span className="brand-icon">
+            <Sprout size={20} />
+          </span>
+          <div className="brand-text">
+            <strong>KrishiLink</strong>
+            <small>Digital Mandi</small>
+          </div>
         </Link>
-        <Link to="/register/buyer">
-          {language === "en" ? "For buyers" : "खरीदारों के लिए"}
-        </Link>
-      </div>
 
-      <div className="landing-nav-actions">
-        <div className="language-switch">
-          <button
-            className={language === "en" ? "active" : ""}
-            onClick={() => setLanguage("en")}
-          >
-            EN
-          </button>
-          <button
-            className={language === "hi" ? "active" : ""}
-            onClick={() => setLanguage("hi")}
-          >
-            हिंदी
-          </button>
+        <div className="landing-nav-links">
+          <a href="#how-it-works">
+            {language === "en" ? "How it works" : "प्रक्रिया"}
+          </a>
+          <a href="#why-krishilink">
+            {language === "en" ? "Why KrishiLink" : "KrishiLink क्यों?"}
+          </a>
+          <a href="#market">
+            {language === "en" ? "Live Mandi Rates" : "लाइव मंडी भाव"}
+          </a>
+          <Link to="/register/farmer">
+            {language === "en" ? "For Farmers" : "किसानों के लिए"}
+          </Link>
+          <Link to="/register/buyer">
+            {language === "en" ? "For Buyers" : "खरीदारों के लिए"}
+          </Link>
         </div>
 
-        <Link to="/login" className="login-link">
-          {language === "en" ? "Login" : "लॉगिन"}
-        </Link>
+        <div className="landing-nav-actions">
+          <div className="language-switch">
+            <button
+              type="button"
+              className={language === "en" ? "active" : ""}
+              onClick={() => setLanguage("en")}
+              aria-label="Switch to English"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={language === "hi" ? "active" : ""}
+              onClick={() => setLanguage("hi")}
+              aria-label="Switch to Hindi"
+            >
+              हिंदी
+            </button>
+          </div>
 
-        <Link className="primary" to="/register">
-          {language === "en" ? "Get started" : "शुरू करें"}
-        </Link>
-      </div>
-    </nav>
+          <Link to="/login" className="login-link">
+            {language === "en" ? "Sign In" : "लॉगिन"}
+          </Link>
+
+          <Link className="nav-cta-btn" to="/register">
+            {language === "en" ? "Get Started" : "शुरू करें"}
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+      </nav>
+    </header>
   );
 }
 

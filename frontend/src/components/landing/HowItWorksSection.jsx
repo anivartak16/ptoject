@@ -1,65 +1,93 @@
 import React from "react";
-import { ChevronRight, IndianRupee, Sprout, Users } from "lucide-react";
+import {
+  ClipboardList,
+  Search,
+  ShieldCheck,
+  Banknote,
+  ArrowRight,
+} from "lucide-react";
 
 export function HowItWorksSection({ language }) {
-  const howItWorks = [
+  const steps = [
     {
       number: "01",
-      icon: <Sprout size={28} />,
+      icon: <ClipboardList size={26} />,
       title:
         language === "en"
-          ? "Register & List"
-          : "रजिस्टर करें और फसल लिस्ट करें",
-      text:
+          ? "List Your Harvest"
+          : "फसल दर्ज करें",
+      desc:
         language === "en"
-          ? "Create your account and publish the produce you want to sell."
-          : "अपना अकाउंट बनाएं और बेचने वाली फसल लिस्ट करें।",
+          ? "Farmers or FPOs enter crop details, estimated quantity, and expected rate."
+          : "किसान या FPO अपनी फसल, अनुमानित मात्रा और अपेक्षित दर दर्ज करते हैं।",
     },
     {
       number: "02",
-      icon: <Users size={28} />,
-      title: language === "en" ? "Discover & Match" : "खोजें और मैच करें",
-      text:
+      icon: <Search size={26} />,
+      title:
         language === "en"
-          ? "Compare mandi prices and connect with buyers looking for your crop."
-          : "मंडी कीमतों की तुलना करें और अपनी फसल के खरीदारों से जुड़ें।",
+          ? "Match & Place Bids"
+          : "सत्यापित बोलियां",
+      desc:
+        language === "en"
+          ? "Verified millers, traders, and institutional buyers discover lots and place binding bids."
+          : "सत्यापित खरीदार और मिल मालिक फसल देखकर प्रतिस्पर्धी बोलियां लगाते हैं।",
     },
     {
       number: "03",
-      icon: <IndianRupee size={28} />,
-      title: language === "en" ? "Trade & Track" : "व्यापार और ट्रैक करें",
-      text:
+      icon: <ShieldCheck size={26} />,
+      title:
         language === "en"
-          ? "Agree on the offer and follow the trade through delivery and payment."
-          : "ऑफर स्वीकार करें और delivery व payment तक व्यापार को ट्रैक करें।",
+          ? "Krishi Kendra Quality Check"
+          : "कृषि केंद्र गुणवत्ता जांच",
+      desc:
+        language === "en"
+          ? "Local Krishi Kendra inspects grain samples, testing moisture and certifying grade standards."
+          : "स्थानीय कृषि केंद्र नमूने की नमी व शुद्धता जांचकर ग्रेड प्रमाण पत्र जारी करता है।",
+    },
+    {
+      number: "04",
+      icon: <Banknote size={26} />,
+      title:
+        language === "en"
+          ? "Escrow & Fast Payout"
+          : "सुरक्षित भुगतान",
+      desc:
+        language === "en"
+          ? "Funds held securely in escrow are released directly to the farmer's bank account upon dispatch."
+          : "एस्क्रो में सुरक्षित राशि डिलीवरी सत्यापन के तुरंत बाद किसान के बैंक खाते में भेज दी जाती है।",
     },
   ];
 
   return (
     <section className="enhanced-section how-section" id="how-it-works">
       <div className="section-intro">
-        <p className="eyebrow">SIMPLE DIGITAL FLOW</p>
+        <p className="eyebrow">SIMPLE 4-STEP DIGITAL WORKFLOW</p>
         <h2>
           {language === "en"
-            ? "How AgriLink works"
-            : "AgriLink कैसे काम करता है"}
+            ? "How KrishiLink Works"
+            : "KrishiLink कैसे काम करता है"}
         </h2>
         <p>
           {language === "en"
-            ? "A simple flow that connects supply, demand and trade in one marketplace."
-            : "एक सरल प्रक्रिया जो supply, demand और trade को एक ही marketplace में जोड़ती है।"}
+            ? "From initial farm listing to verified quality testing and guaranteed bank payout."
+            : "खेत से लिस्टिंग, कृषि केंद्र पर गुणवत्ता जांच से लेकर बैंक खाते में सुरक्षित भुगतान तक।"}
         </p>
       </div>
 
-      <div className="how-grid">
-        {howItWorks.map((item, index) => (
-          <div className="how-card" key={item.number}>
-            <div className="how-number">{item.number}</div>
-            <div className="how-icon">{item.icon}</div>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-            {index < howItWorks.length - 1 && (
-              <ChevronRight className="how-arrow" />
+      <div className="how-grid-4">
+        {steps.map((step, idx) => (
+          <div className="how-step-card" key={step.number}>
+            <div className="step-card-header">
+              <span className="step-badge">{step.number}</span>
+              <div className="step-icon-wrap">{step.icon}</div>
+            </div>
+            <h3>{step.title}</h3>
+            <p>{step.desc}</p>
+            {idx < steps.length - 1 && (
+              <div className="step-connector">
+                <ArrowRight size={18} />
+              </div>
             )}
           </div>
         ))}
