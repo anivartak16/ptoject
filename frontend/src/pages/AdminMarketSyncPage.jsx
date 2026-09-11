@@ -15,37 +15,124 @@ import {
   Layers,
   MapPin,
   TrendingUp,
+  Calendar,
+  Info,
+  ArrowRight,
 } from "lucide-react";
 
-const POPULAR_STATES = [
+// Complete, comprehensive list of all 28 Indian States & 8 Union Territories
+export const ALL_INDIAN_STATES = [
+  "Andaman and Nicobar",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
   "Madhya Pradesh",
   "Maharashtra",
-  "Uttar Pradesh",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
   "Punjab",
-  "Haryana",
   "Rajasthan",
-  "Gujarat",
-  "Karnataka",
-  "Andhra Pradesh",
-  "West Bengal",
+  "Sikkim",
   "Tamil Nadu",
-  "Bihar",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
 ];
 
-const POPULAR_COMMODITIES = [
+// Comprehensive catalog of all major Indian agricultural commodities
+export const ALL_COMMODITIES = [
   "Wheat",
   "Rice",
-  "Paddy(Dhan)(Common)",
-  "Tomato",
-  "Onion",
-  "Potato",
-  "Soyabean",
-  "Mustard",
-  "Cotton",
+  "Paddy(Common)",
+  "Paddy(Basmati)",
   "Maize",
+  "Bajra(Pearl Millet/Cumbu)",
+  "Jowar(Sorghum)",
+  "Barley(Jau)",
+  "Ragi(Finger Millet)",
   "Gram",
+  "Arhar(Tur/Red Gram)",
+  "Moong(Green Gram)",
+  "Urad(Black Gram)",
+  "Masoor(Lentil)",
+  "Peas Wet",
+  "Potato",
+  "Onion",
+  "Tomato",
+  "Green Chilli",
+  "Cabbage",
+  "Cauliflower",
+  "Brinjal",
+  "Bitter gourd",
+  "Bottle gourd",
+  "Ridgeguard(Tori)",
+  "Bhindi(Ladies Finger)",
+  "Capsicum",
+  "Carrot",
+  "Raddish",
+  "Spinach",
+  "Garlic",
+  "Ginger(Green)",
+  "Ginger(Dry)",
+  "Cucumbar(Kheera)",
+  "Pumpkin",
+  "Mustard",
+  "Soyabean",
+  "Cotton",
+  "Groundnut",
+  "Castor Seed",
+  "Sunflower",
+  "Sesamum(Sesame/Gingelly/Til)",
+  "Sugarcane",
+  "Guar",
+  "Apple",
+  "Banana",
+  "Mango",
+  "Pomegranate",
+  "Orange",
+  "Guava",
+  "Grapes",
+  "Papaya",
+  "Lemon",
+  "Water Melon",
+  "Pineapple",
   "Chikoos(Sapota)",
+  "Turmeric",
+  "Coriander(Leaves)",
+  "Coriander(Dry)",
+  "Cumin Seed(Jeera)",
+  "Black pepper",
+  "Cardamoms",
 ];
+
+// Helper to get formatted date string YYYY-MM-DD
+const formatDateInput = (d) => {
+  if (!d) return "";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
 
 export function AdminMarketSyncPage() {
   const { user } = useAuth();
@@ -56,9 +143,34 @@ export function AdminMarketSyncPage() {
   const [dbStats, setDbStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // Active options fetched from live AGMARKNET feed
+  const [activeOptions, setActiveOptions] = useState({
+    allStates: ALL_INDIAN_STATES,
+    activeStates: [
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Uttar Pradesh",
+      "Haryana",
+      "Punjab",
+      "Rajasthan",
+      "Gujarat",
+      "Karnataka",
+      "Tamil Nadu",
+      "West Bengal",
+      "Andhra Pradesh",
+      "Odisha",
+      "Keralam",
+      "Assam",
+    ],
+    states: ALL_INDIAN_STATES,
+    commodities: ALL_COMMODITIES,
+  });
+
   // Sync Form State
   const [syncState, setSyncState] = useState("");
   const [syncCommodity, setSyncCommodity] = useState("");
+  const [syncFromDate, setSyncFromDate] = useState("");
+  const [syncToDate, setSyncToDate] = useState("");
   const [syncLimit, setSyncLimit] = useState(100);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
@@ -71,6 +183,8 @@ export function AdminMarketSyncPage() {
   const [filterState, setFilterState] = useState("Madhya Pradesh");
   const [filterCommodity, setFilterCommodity] = useState("Wheat");
   const [filterDistrict, setFilterDistrict] = useState("");
+  const [filterFromDate, setFilterFromDate] = useState("");
+  const [filterToDate, setFilterToDate] = useState("");
   const [dataLimit, setDataLimit] = useState(50);
 
   // Explorer Data State
@@ -93,9 +207,40 @@ export function AdminMarketSyncPage() {
     }
   }, []);
 
+  // Fetch active options for suggestions
+  const loadActiveOptions = useCallback(async () => {
+    try {
+      const res = await api.get("/marketPrice/prices/active-options");
+      if (res.data.data) {
+        const returnedStates = res.data.data.states || [];
+        const returnedActive = res.data.data.activeStates || [];
+        const returnedCommodities = res.data.data.commodities || [];
+
+        // Always guarantee all 36 Indian states are available
+        const mergedStates = Array.from(
+          new Set([...ALL_INDIAN_STATES, ...returnedStates])
+        ).sort();
+
+        const mergedCommodities = Array.from(
+          new Set([...ALL_COMMODITIES, ...returnedCommodities])
+        ).sort();
+
+        setActiveOptions((prev) => ({
+          allStates: ALL_INDIAN_STATES,
+          activeStates: returnedActive.length > 0 ? returnedActive : prev.activeStates,
+          states: mergedStates,
+          commodities: mergedCommodities,
+        }));
+      }
+    } catch (e) {
+      console.warn("Could not fetch active options", e);
+    }
+  }, []);
+
   useEffect(() => {
     loadDbStats();
-  }, [loadDbStats]);
+    loadActiveOptions();
+  }, [loadDbStats, loadActiveOptions]);
 
   // Execute Sync to DB via POST /api/marketPrice/prices/sync
   const handleSyncToDb = async (overrideParams = null) => {
@@ -106,14 +251,25 @@ export function AdminMarketSyncPage() {
     const payload = overrideParams || {
       state: syncState || undefined,
       commodity: syncCommodity || undefined,
+      fromDate: syncFromDate || undefined,
+      toDate: syncToDate || undefined,
       limit: syncLimit,
     };
+
+    // If an override updated state or commodity, update the form inputs as well
+    if (overrideParams) {
+      if (overrideParams.state !== undefined) setSyncState(overrideParams.state);
+      if (overrideParams.commodity !== undefined) setSyncCommodity(overrideParams.commodity);
+    }
 
     try {
       const res = await api.post("/marketPrice/prices/sync", payload);
       setSyncResult({
+        warning: res.data.warning || res.data.data?.fetched === 0,
         message: res.data.message || "Daily mandi prices imported into MongoDB successfully.",
         data: res.data.data,
+        targetState: payload.state || "Nationwide (All States)",
+        targetCommodity: payload.commodity || "All Commodities",
         timestamp: new Date().toLocaleTimeString(),
       });
       // Refresh stats after successful sync
@@ -126,6 +282,30 @@ export function AdminMarketSyncPage() {
       );
     } finally {
       setSyncLoading(false);
+    }
+  };
+
+  // Quick Date Preset Handlers
+  const setDatePreset = (preset) => {
+    const today = new Date();
+    if (preset === "today") {
+      const todayStr = formatDateInput(today);
+      setSyncFromDate(todayStr);
+      setSyncToDate(todayStr);
+    } else if (preset === "yesterday") {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const yStr = formatDateInput(y);
+      setSyncFromDate(yStr);
+      setSyncToDate(yStr);
+    } else if (preset === "last7") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      setSyncFromDate(formatDateInput(past));
+      setSyncToDate(formatDateInput(today));
+    } else if (preset === "clear") {
+      setSyncFromDate("");
+      setSyncToDate("");
     }
   };
 
@@ -144,6 +324,8 @@ export function AdminMarketSyncPage() {
         if (filterState) params.state = filterState;
         if (filterCommodity) params.commodity = filterCommodity;
         if (filterDistrict) params.district = filterDistrict;
+        if (filterFromDate) params.fromDate = filterFromDate;
+        if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices", { params });
         const records = res.data.data?.records || [];
         setExplorerData(records);
@@ -154,6 +336,8 @@ export function AdminMarketSyncPage() {
           state: filterState || "Madhya Pradesh",
           commodity: filterCommodity || "Wheat",
         };
+        if (filterFromDate) params.fromDate = filterFromDate;
+        if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/state-commodity", { params });
         const records = res.data.data?.records || [];
         setExplorerData(records);
@@ -181,6 +365,8 @@ export function AdminMarketSyncPage() {
         if (filterState) params.state = filterState;
         if (filterCommodity) params.commodity = filterCommodity;
         if (filterDistrict) params.district = filterDistrict;
+        if (filterFromDate) params.fromDate = filterFromDate;
+        if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/db", { params });
         const records = res.data.data?.records || [];
         setExplorerData(records);
@@ -197,7 +383,7 @@ export function AdminMarketSyncPage() {
     } finally {
       setExplorerLoading(false);
     }
-  }, [activeTab, filterState, filterCommodity, filterDistrict, dataLimit]);
+  }, [activeTab, filterState, filterCommodity, filterDistrict, filterFromDate, filterToDate, dataLimit]);
 
   useEffect(() => {
     fetchExplorerRouteData();
@@ -225,7 +411,7 @@ export function AdminMarketSyncPage() {
           <p className="lead-text">
             Import live agricultural commodity rates directly from AGMARKNET
             (data.gov.in) into MongoDB to keep daily pricing accurate across
-            KrishiLink.
+            KrishiLink Pan-India.
           </p>
         </div>
         <div className="header-actions">
@@ -308,12 +494,12 @@ export function AdminMarketSyncPage() {
             <div>
               <h3>Daily Mandi Price Sync (Feed to Database)</h3>
               <p>
-                Trigger live sync to fetch latest prices from AGMARKNET APIs and
-                upsert them into the database.
+                Select from all 36 Indian States & UTs, filter by crop or date range,
+                and upsert live prices directly into MongoDB.
               </p>
             </div>
           </div>
-          <StatusBadge status="ACTIVE">AGMARKNET LIVE FEED</StatusBadge>
+          <StatusBadge status="ACTIVE">PAN-INDIA FEED ACTIVE</StatusBadge>
         </div>
 
         {/* Quick Sync Presets */}
@@ -348,6 +534,19 @@ export function AdminMarketSyncPage() {
               }
             >
               Sync Wheat in MP (All Districts)
+            </button>
+            <button
+              type="button"
+              className="quick-chip"
+              disabled={syncLoading}
+              onClick={() =>
+                handleSyncToDb({
+                  state: "Haryana",
+                  commodity: "Paddy(Common)",
+                })
+              }
+            >
+              Sync Paddy in Haryana
             </button>
             <button
               type="button"
@@ -399,38 +598,91 @@ export function AdminMarketSyncPage() {
             handleSyncToDb();
           }}
         >
+          {/* Target State Dropdown with ALL 36 States & UTs */}
           <div className="form-item">
-            <label htmlFor="sync-state-input">Target State (Optional)</label>
-            <input
-              id="sync-state-input"
-              list="sync-states-list"
-              type="text"
-              placeholder="e.g. Madhya Pradesh, Maharashtra (or leave blank for all)"
+            <label htmlFor="sync-state-select">
+              <MapPin size={13} style={{ display: "inline", verticalAlign: "text-bottom", marginRight: "4px" }} />
+              Target State (All 36 States & UTs)
+            </label>
+            <select
+              id="sync-state-select"
               value={syncState}
               onChange={(e) => setSyncState(e.target.value)}
-            />
-            <datalist id="sync-states-list">
-              {POPULAR_STATES.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
+            >
+              <option value="">All States (Nationwide Feed)</option>
+              {activeOptions.activeStates?.length > 0 && (
+                <optgroup label="⚡ Actively Reporting in Live Feed">
+                  {activeOptions.activeStates.map((s) => (
+                    <option key={`active-state-${s}`} value={s}>
+                      ● {s}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="All 36 Indian States & Union Territories">
+                {ALL_INDIAN_STATES.map((s) => (
+                  <option key={`all-state-${s}`} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
           </div>
 
+          {/* Target Commodity Dropdown with ALL Major Agricultural Commodities */}
           <div className="form-item">
-            <label htmlFor="sync-comm-input">Target Commodity (Optional)</label>
-            <input
-              id="sync-comm-input"
-              list="sync-comm-list"
-              type="text"
-              placeholder="e.g. Wheat, Rice, Onion (or leave blank for all)"
+            <label htmlFor="sync-comm-select">
+              Target Commodity (Optional)
+            </label>
+            <select
+              id="sync-comm-select"
               value={syncCommodity}
               onChange={(e) => setSyncCommodity(e.target.value)}
+            >
+              <option value="">All Commodities (Full Mandi Feed)</option>
+              <optgroup label="⚡ Popular & High-Volume Commodities">
+                {ALL_COMMODITIES.slice(0, 15).map((c) => (
+                  <option key={`popular-comm-${c}`} value={c}>
+                    ● {c}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="All Indian Agricultural Commodities">
+                {activeOptions.commodities.map((c) => (
+                  <option key={`all-comm-${c}`} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
+          {/* Date From Field */}
+          <div className="form-item">
+            <label htmlFor="sync-from-date">
+              <Calendar size={13} style={{ display: "inline", verticalAlign: "text-bottom", marginRight: "4px" }} />
+              Date From (Optional)
+            </label>
+            <input
+              id="sync-from-date"
+              type="date"
+              value={syncFromDate}
+              onChange={(e) => setSyncFromDate(e.target.value)}
             />
-            <datalist id="sync-comm-list">
-              {POPULAR_COMMODITIES.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
+          </div>
+
+          {/* Date To Field */}
+          <div className="form-item">
+            <label htmlFor="sync-to-date">
+              <Calendar size={13} style={{ display: "inline", verticalAlign: "text-bottom", marginRight: "4px" }} />
+              Date To (Optional)
+            </label>
+            <input
+              id="sync-to-date"
+              type="date"
+              value={syncToDate}
+              onChange={(e) => setSyncToDate(e.target.value)}
+            />
           </div>
 
           <div className="form-item limit-item">
@@ -467,8 +719,137 @@ export function AdminMarketSyncPage() {
           </div>
         </form>
 
-        {/* Sync Success Feedback */}
-        {syncResult && (
+        {/* Quick Date Presets Row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "12px", color: "var(--ink-secondary)" }}>
+          <span style={{ fontWeight: 600 }}>Quick Date Filter:</span>
+          <div className="date-preset-chips">
+            <button type="button" className="date-chip" onClick={() => setDatePreset("today")}>Today</button>
+            <button type="button" className="date-chip" onClick={() => setDatePreset("yesterday")}>Yesterday</button>
+            <button type="button" className="date-chip" onClick={() => setDatePreset("last7")}>Last 7 Days</button>
+            {(syncFromDate || syncToDate) && (
+              <button type="button" className="date-chip" style={{ color: "#b91c1c", borderColor: "#fca5a5" }} onClick={() => setDatePreset("clear")}>
+                ✕ Clear Dates
+              </button>
+            )}
+          </div>
+          {(syncFromDate || syncToDate) && (
+            <span style={{ color: "#166534", fontWeight: 600 }}>
+              Filtering: {syncFromDate || "Any"} to {syncToDate || "Any"}
+            </span>
+          )}
+        </div>
+
+        {/* Actionable Warning on 0 Records */}
+        {syncResult && (syncResult.warning || syncResult.data?.fetched === 0) && (
+          <div className="sync-feedback warning">
+            <div className="feedback-icon" style={{ marginTop: "2px" }}>
+              <Info size={22} color="#b45309" />
+            </div>
+            <div className="feedback-text" style={{ flex: 1 }}>
+              <b style={{ fontSize: "14px", color: "#78350f" }}>
+                {syncResult.message}
+              </b>
+              <p style={{ margin: "6px 0 10px 0", color: "#92400e", lineHeight: 1.45 }}>
+                💡 <strong>Why 0 records?</strong> Agricultural mandi arrivals depend on seasonal harvest and trading cycles.
+                For instance, <em>Wheat</em> is a Rabi crop with peak arrivals in spring, and currently has active arrivals in states like Madhya Pradesh and Uttar Pradesh.
+                Meanwhile, in Haryana, currently active crops in the mandi feed include <em>Paddy, Potato, Onion, and Cotton</em>.
+              </p>
+
+              {/* Actionable Remedy: Switch to active state for this commodity */}
+              {syncResult.data?.commodityActiveStates?.length > 0 && (
+                <div className="remedy-section">
+                  <span className="remedy-title">
+                    🌾 Click to sync "{syncResult.targetCommodity}" from active states:
+                  </span>
+                  <div className="remedy-chips">
+                    {syncResult.data.commodityActiveStates.slice(0, 6).map((activeState) => (
+                      <button
+                        key={activeState}
+                        type="button"
+                        className="remedy-chip"
+                        disabled={syncLoading}
+                        onClick={() =>
+                          handleSyncToDb({
+                            state: activeState,
+                            commodity: syncCommodity || "Wheat",
+                            fromDate: syncFromDate || undefined,
+                            toDate: syncToDate || undefined,
+                          })
+                        }
+                      >
+                        Sync in {activeState} <ArrowRight size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="remedy-chip"
+                      style={{ background: "#dcfce7", borderColor: "#86efac", color: "#166534" }}
+                      disabled={syncLoading}
+                      onClick={() =>
+                        handleSyncToDb({
+                          state: "",
+                          commodity: syncCommodity,
+                          fromDate: syncFromDate || undefined,
+                          toDate: syncToDate || undefined,
+                        })
+                      }
+                    >
+                      Sync {syncCommodity} Nationwide (All States)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Actionable Remedy: Switch to active crop in this state */}
+              {syncResult.data?.stateActiveCommodities?.length > 0 && (
+                <div className="remedy-section">
+                  <span className="remedy-title">
+                    🌱 Click to sync active crops currently reporting in {syncResult.targetState}:
+                  </span>
+                  <div className="remedy-chips">
+                    {syncResult.data.stateActiveCommodities.slice(0, 6).map((activeCrop) => (
+                      <button
+                        key={activeCrop}
+                        type="button"
+                        className="remedy-chip"
+                        disabled={syncLoading}
+                        onClick={() =>
+                          handleSyncToDb({
+                            state: syncState || "Haryana",
+                            commodity: activeCrop,
+                            fromDate: syncFromDate || undefined,
+                            toDate: syncToDate || undefined,
+                          })
+                        }
+                      >
+                        Sync {activeCrop} <ArrowRight size={12} style={{ display: "inline", verticalAlign: "middle" }} />
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="remedy-chip"
+                      style={{ background: "#dcfce7", borderColor: "#86efac", color: "#166534" }}
+                      disabled={syncLoading}
+                      onClick={() =>
+                        handleSyncToDb({
+                          state: syncState || "Haryana",
+                          commodity: "",
+                          fromDate: syncFromDate || undefined,
+                          toDate: syncToDate || undefined,
+                        })
+                      }
+                    >
+                      Sync All Crops in {syncResult.targetState}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Sync Success Feedback (when fetched > 0) */}
+        {syncResult && !syncResult.warning && syncResult.data?.fetched > 0 && (
           <div className="sync-feedback success">
             <div className="feedback-icon">
               <CheckCircle2 size={20} color="#16a34a" />
@@ -491,6 +872,11 @@ export function AdminMarketSyncPage() {
                   <span>
                     · Updated:{" "}
                     <strong>{syncResult.data.db.modifiedCount}</strong>
+                  </span>
+                )}
+                {syncResult.data?.dates?.length > 1 && (
+                  <span>
+                    · Dates: <strong>{syncResult.data.dates.join(", ")}</strong>
                   </span>
                 )}
                 <span>· Time: {syncResult.timestamp}</span>
@@ -589,19 +975,29 @@ export function AdminMarketSyncPage() {
             activeTab === "by-state" ||
             activeTab === "db") && (
             <div className="filter-input-group">
-              <label>State:</label>
-              <input
-                list="explorer-states"
-                type="text"
-                placeholder="State"
+              <label>State (All 36 States & UTs):</label>
+              <select
                 value={filterState}
                 onChange={(e) => setFilterState(e.target.value)}
-              />
-              <datalist id="explorer-states">
-                {POPULAR_STATES.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
+              >
+                <option value="">All States</option>
+                {activeOptions.activeStates?.length > 0 && (
+                  <optgroup label="⚡ Actively Reporting in Live Feed">
+                    {activeOptions.activeStates.map((s) => (
+                      <option key={`exp-active-${s}`} value={s}>
+                        ● {s}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="All 36 Indian States & Union Territories">
+                  {ALL_INDIAN_STATES.map((s) => (
+                    <option key={`exp-all-${s}`} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
             </div>
           )}
 
@@ -611,18 +1007,26 @@ export function AdminMarketSyncPage() {
             activeTab === "db") && (
             <div className="filter-input-group">
               <label>Commodity:</label>
-              <input
-                list="explorer-commodities"
-                type="text"
-                placeholder="Commodity"
+              <select
                 value={filterCommodity}
                 onChange={(e) => setFilterCommodity(e.target.value)}
-              />
-              <datalist id="explorer-commodities">
-                {POPULAR_COMMODITIES.map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
+              >
+                <option value="">All Commodities</option>
+                <optgroup label="⚡ Popular Commodities">
+                  {ALL_COMMODITIES.slice(0, 15).map((c) => (
+                    <option key={`exp-pop-${c}`} value={c}>
+                      ● {c}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="All Agricultural Commodities">
+                  {activeOptions.commodities.map((c) => (
+                    <option key={`exp-comm-${c}`} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
             </div>
           )}
 
@@ -636,6 +1040,28 @@ export function AdminMarketSyncPage() {
                 onChange={(e) => setFilterDistrict(e.target.value)}
               />
             </div>
+          )}
+
+          {/* Date Range in Explorer Bar */}
+          {(activeTab === "prices" || activeTab === "state-commodity" || activeTab === "db") && (
+            <>
+              <div className="filter-input-group">
+                <label>Date From:</label>
+                <input
+                  type="date"
+                  value={filterFromDate}
+                  onChange={(e) => setFilterFromDate(e.target.value)}
+                />
+              </div>
+              <div className="filter-input-group">
+                <label>Date To:</label>
+                <input
+                  type="date"
+                  value={filterToDate}
+                  onChange={(e) => setFilterToDate(e.target.value)}
+                />
+              </div>
+            </>
           )}
 
           {(activeTab === "prices" || activeTab === "db") && (
@@ -710,7 +1136,7 @@ export function AdminMarketSyncPage() {
             <div className="empty-state">
               <Table size={32} />
               <p>No records found matching the current query filters.</p>
-              <small>Try selecting a different state, commodity, or clearing search text.</small>
+              <small>Try selecting a different state, commodity, or date range.</small>
             </div>
           ) : (
             <table className="mandi-data-table">

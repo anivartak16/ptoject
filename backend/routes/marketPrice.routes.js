@@ -8,6 +8,7 @@ import {
   syncToDb,
   getDbStats,
   getDbRecords,
+  getActiveOptions,
 } from "../controllers/marketPrice.controller.js";
 
 // Optional: wire in your existing auth middleware if these should be protected
@@ -23,6 +24,11 @@ router.get(
 router.get(
   "/prices/stats",
   getDbStats
+);
+
+router.get(
+  "/prices/active-options",
+  getActiveOptions
 );
 
 router.get(

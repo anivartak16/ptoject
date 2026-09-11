@@ -1,12 +1,15 @@
 import {
   fetchMandiPrices,
+  fetchMandiPricesDateRange,
   fetchCommodityAcrossStates,
   fetchStateCommodities,
   fetchStateCommodityAllDistricts,
   syncStateCommodityToDb,
+  fetchActiveOptions,
+  toAgmarknetDate,
 } from "../services/agmarknetService.js";
 
-// GET /api/market-data/prices?state=Madhya Pradesh&commodity=Wheat&district=Indore&market=&limit=100&offset=0
+// GET /api/marketPrice/prices?state=...&commodity=...&district=...&date=...&fromDate=...&toDate=...&limit=100&offset=0
 async function getPrices(req, res) {
   try {
     const {
@@ -14,15 +17,39 @@ async function getPrices(req, res) {
       commodity,
       district,
       market,
+      date,
+      arrivalDate,
+      fromDate,
+      toDate,
       limit,
       offset,
     } = req.query;
+
+    if (fromDate || toDate) {
+      const data = await fetchMandiPricesDateRange({
+        state,
+        commodity,
+        district,
+        market,
+        fromDate,
+        toDate,
+        date: arrivalDate || date,
+        limit: limit ? Number(limit) : undefined,
+        persist: false,
+      });
+
+      return res.json({
+        success: true,
+        data,
+      });
+    }
 
     const data = await fetchMandiPrices({
       state,
       commodity,
       district,
       market,
+      date: arrivalDate || date,
       limit: limit ? Number(limit) : undefined,
       offset: offset ? Number(offset) : undefined,
     });
@@ -128,7 +155,7 @@ async function getStateCommodityAllDistricts(req, res) {
 import MandiPrice from "../models/mandiPriceSchema.js";
 
 // POST /api/marketPrice/prices/sync
-// Body: { state, commodity, limit }
+// Body: { state, commodity, limit, fromDate, toDate, date }
 //
 // Fetches from AGMARKNET and saves every record
 // to MongoDB using bulk upsert.
@@ -138,14 +165,42 @@ async function syncToDb(req, res) {
       state,
       commodity,
       limit = 100,
+      date,
+      arrivalDate,
+      fromDate,
+      toDate,
     } = req.body || {};
+
+    const targetDate = arrivalDate || date;
 
     // If both state and commodity are given, fetch all district records recursively
     if (state && commodity) {
       const result = await syncStateCommodityToDb(
         state.trim(),
-        commodity.trim()
+        commodity.trim(),
+        {
+          date: targetDate,
+          fromDate,
+          toDate,
+        }
       );
+
+      // If 0 records were returned for this state + commodity combination
+      if (result.fetched === 0) {
+        const activeStatesMsg = result.commodityActiveStates?.length > 0
+          ? ` Note: "${commodity}" currently has active arrivals in: ${result.commodityActiveStates.slice(0, 6).join(", ")}.`
+          : "";
+        const activeCropsMsg = result.stateActiveCommodities?.length > 0
+          ? ` Active crops reported in ${state} include: ${result.stateActiveCommodities.slice(0, 6).join(", ")}.`
+          : "";
+
+        return res.json({
+          success: true,
+          warning: true,
+          message: `0 records found for ${commodity} in ${state} in the AGMARKNET feed.${activeStatesMsg}${activeCropsMsg}`,
+          data: result,
+        });
+      }
 
       return res.json({
         success: true,
@@ -154,13 +209,25 @@ async function syncToDb(req, res) {
       });
     }
 
-    // Flexible sync: state-only, commodity-only, or general latest mandi prices nationwide
-    const data = await fetchMandiPrices({
+    // Flexible sync: date range, state-only, commodity-only, or general latest mandi prices nationwide
+    const data = await fetchMandiPricesDateRange({
       state: state ? state.trim() : undefined,
       commodity: commodity ? commodity.trim() : undefined,
+      date: targetDate,
+      fromDate,
+      toDate,
       limit: Math.min(Number(limit) || 100, 1000),
       persist: true,
     });
+
+    if (data.count === 0) {
+      return res.json({
+        success: true,
+        warning: true,
+        message: `0 records found for the specified filters in the AGMARKNET feed. Try expanding your date range or selecting another state/commodity.`,
+        data,
+      });
+    }
 
     return res.json({
       success: true,
@@ -170,6 +237,7 @@ async function syncToDb(req, res) {
         fetched: data.count,
         db: data.db,
         records: data.records,
+        dates: data.dates,
       },
     });
   } catch (error) {
@@ -224,6 +292,8 @@ async function getDbRecords(req, res) {
       state,
       commodity,
       district,
+      fromDate,
+      toDate,
       limit = 50,
       page = 1,
     } = req.query;
@@ -232,6 +302,16 @@ async function getDbRecords(req, res) {
     if (state) query.state = new RegExp(state.trim(), "i");
     if (commodity) query.commodity = new RegExp(commodity.trim(), "i");
     if (district) query.district = new RegExp(district.trim(), "i");
+
+    if (fromDate || toDate) {
+      query.arrivalDate = {};
+      if (fromDate) query.arrivalDate.$gte = new Date(fromDate);
+      if (toDate) {
+        const toD = new Date(toDate);
+        toD.setUTCHours(23, 59, 59, 999);
+        query.arrivalDate.$lte = toD;
+      }
+    }
 
     const pageNum = Math.max(1, Number(page) || 1);
     const limitNum = Math.min(200, Math.max(1, Number(limit) || 50));
@@ -264,6 +344,23 @@ async function getDbRecords(req, res) {
   }
 }
 
+// GET /api/marketPrice/active-options
+async function getActiveOptions(req, res) {
+  try {
+    const data = await fetchActiveOptions();
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Could not fetch active options: " + error.message,
+      error: error.message,
+    });
+  }
+}
+
 export {
   getPrices,
   getCommodityAcrossStates,
@@ -272,4 +369,5 @@ export {
   syncToDb,
   getDbStats,
   getDbRecords,
+  getActiveOptions,
 };

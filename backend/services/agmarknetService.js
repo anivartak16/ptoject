@@ -17,6 +17,67 @@ function getApiKey() {
   ).trim();
 }
 
+function toAgmarknetDate(input) {
+  if (!input) return null;
+  if (input instanceof Date) {
+    const d = String(input.getUTCDate()).padStart(2, "0");
+    const m = String(input.getUTCMonth() + 1).padStart(2, "0");
+    const y = input.getUTCFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  const str = String(input).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
+    return str;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split("-");
+    return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+  }
+  if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+    const [d, m, y] = str.split("-");
+    return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+  }
+  return str;
+}
+
+const STATE_ALIASES = {
+  kerala: "Keralam",
+  chhattisgarh: "Chattisgarh",
+  "andaman and nicobar islands": "Andaman and Nicobar",
+  orissa: "Odisha",
+  pondicherry: "Puducherry",
+};
+
+function normalizeState(st) {
+  if (!st) return st;
+  const key = st.trim().toLowerCase();
+  return STATE_ALIASES[key] || st.trim();
+}
+
+function getDatesInRange(fromDateStr, toDateStr) {
+  const dates = [];
+  if (!fromDateStr && !toDateStr) return dates;
+  if (!toDateStr) return [toAgmarknetDate(fromDateStr)];
+  if (!fromDateStr) return [toAgmarknetDate(toDateStr)];
+
+  const start = new Date(fromDateStr);
+  const end = new Date(toDateStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    const single = toAgmarknetDate(fromDateStr || toDateStr);
+    return single ? [single] : [];
+  }
+
+  // Cap at 31 days to prevent excessive API requests
+  const cur = new Date(start);
+  let count = 0;
+  while (cur <= end && count < 31) {
+    dates.push(toAgmarknetDate(cur));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+    count++;
+  }
+  return dates.filter(Boolean);
+}
+
 // Simple in-memory cache.
 // The government API can be slow/rate-limited, and mandi prices
 // generally update once a day.
@@ -68,6 +129,8 @@ async function fetchMandiPrices(
     commodity,
     district,
     market,
+    date,
+    arrivalDate,
     limit = 100,
     offset = 0,
     persist = false,
@@ -90,19 +153,24 @@ async function fetchMandiPrices(
   };
 
   if (state) {
-    params["filters[state]"] = state;
+    params["filters[state]"] = normalizeState(state);
   }
 
   if (commodity) {
-    params["filters[commodity]"] = commodity;
+    params["filters[commodity]"] = commodity.trim();
   }
 
   if (district) {
-    params["filters[district]"] = district;
+    params["filters[district]"] = district.trim();
   }
 
   if (market) {
-    params["filters[market]"] = market;
+    params["filters[market]"] = market.trim();
+  }
+
+  const targetDate = toAgmarknetDate(arrivalDate || date);
+  if (targetDate) {
+    params["filters[arrival_date]"] = targetDate;
   }
 
   // Check cache
@@ -160,6 +228,83 @@ async function fetchMandiPrices(
   }
 
   return result;
+}
+
+/**
+ * Fetch mandi price records across a date range (fromDate to toDate).
+ * If persist = true, bulk-upserts all combined records into MongoDB.
+ */
+async function fetchMandiPricesDateRange({
+  state,
+  commodity,
+  district,
+  market,
+  date,
+  fromDate,
+  toDate,
+  limit = 100,
+  persist = false,
+} = {}) {
+  const dates = getDatesInRange(fromDate || date, toDate || date);
+
+  if (dates.length <= 1) {
+    const singleDate = dates[0] || toAgmarknetDate(date || fromDate || toDate);
+    return fetchMandiPrices({
+      state,
+      commodity,
+      district,
+      market,
+      arrivalDate: singleDate,
+      limit,
+      persist,
+    });
+  }
+
+  // Fetch sequentially/in batches across the date range
+  const allRecords = [];
+  let totalAcrossDays = 0;
+
+  for (const d of dates) {
+    try {
+      const res = await fetchMandiPrices({
+        state,
+        commodity,
+        district,
+        market,
+        arrivalDate: d,
+        limit,
+        persist: false,
+      });
+
+      totalAcrossDays += res.total;
+      if (res.records?.length > 0) {
+        allRecords.push(...res.records);
+      }
+    } catch (err) {
+      console.warn(`Date range fetch warning for ${d}:`, err.message);
+    }
+  }
+
+  // Deduplicate records by unique compound index keys
+  const uniqueMap = new Map();
+  for (const rec of allRecords) {
+    const key = `${rec.state}|${rec.district}|${rec.market}|${rec.commodity}|${rec.variety || ""}|${rec.arrivalDate}`;
+    uniqueMap.set(key, rec);
+  }
+  const uniqueRecords = Array.from(uniqueMap.values());
+
+  let dbResult = null;
+  if (persist && uniqueRecords.length > 0) {
+    dbResult = await MandiPrice.bulkUpsert(uniqueRecords);
+  }
+
+  return {
+    total: totalAcrossDays,
+    count: uniqueRecords.length,
+    records: uniqueRecords,
+    db: dbResult,
+    dates,
+  };
 }
 
 /**
@@ -235,11 +380,9 @@ async function fetchStateCommodities(
 /**
  * Fetch every record for a state + commodity combination.
  *
- * Automatically handles pagination so that records
- * from different districts are not missed.
- *
- * If opts.persist = true, all records are saved
- * to MongoDB in one bulk operation.
+ * Supports optional arrivalDate or fromDate/toDate range.
+ * If 0 records are found, auto-detects active states for that commodity
+ * and active crops in that state to explain why.
  */
 async function fetchStateCommodityAllDistricts(
   state,
@@ -252,46 +395,58 @@ async function fetchStateCommodityAllDistricts(
   const maxRecords =
     opts.maxRecords || 5000;
 
-  let offset = 0;
-  let total = Infinity;
+  const dates = getDatesInRange(opts.fromDate || opts.date, opts.toDate || opts.date);
+  const targetDates = dates.length > 0 ? dates : [opts.arrivalDate ? toAgmarknetDate(opts.arrivalDate) : null];
 
-  const allRecords = [];
+  let allRecords = [];
+  let total = 0;
 
-  try {
-    while (
-      offset < total &&
-      offset < maxRecords
-    ) {
-      const {
-        total: pageTotal,
-        records,
-      } = await fetchMandiPrices({
-        state,
-        commodity,
-        limit: pageSize,
-        offset,
-      });
+  for (const targetDate of targetDates) {
+    let offset = 0;
+    let pageTotal = Infinity;
 
-      total = pageTotal;
+    try {
+      while (
+        offset < pageTotal &&
+        allRecords.length < maxRecords
+      ) {
+        const res = await fetchMandiPrices({
+          state,
+          commodity,
+          arrivalDate: targetDate || undefined,
+          limit: pageSize,
+          offset,
+        });
 
-      // Stop if API returns an empty page
-      if (!records || records.length === 0) {
-        break;
+        pageTotal = res.total;
+        total = Math.max(total, pageTotal);
+
+        if (!res.records || res.records.length === 0) {
+          break;
+        }
+
+        allRecords.push(...res.records);
+        offset += pageSize;
+
+        if (allRecords.length >= pageTotal) {
+          break;
+        }
       }
-
-      allRecords.push(...records);
-
-      offset += pageSize;
-      if (allRecords.length >= total) {
-        break;
+    } catch (err) {
+      console.warn("Partial fetch error in fetchStateCommodityAllDistricts:", err.message);
+      if (allRecords.length === 0 && targetDates.length === 1) {
+        throw err;
       }
-    }
-  } catch (err) {
-    console.warn("Partial fetch error in fetchStateCommodityAllDistricts:", err.message);
-    if (allRecords.length === 0) {
-      throw err;
     }
   }
+
+  // Deduplicate
+  const uniqueMap = new Map();
+  for (const rec of allRecords) {
+    const key = `${rec.state}|${rec.district}|${rec.market}|${rec.commodity}|${rec.variety || ""}|${rec.arrivalDate}`;
+    uniqueMap.set(key, rec);
+  }
+  allRecords = Array.from(uniqueMap.values());
 
   // Group records by district
   const districtMap = new Map();
@@ -307,7 +462,6 @@ async function fetchStateCommodityAllDistricts(
     districtMap.get(key).push(rec);
   }
 
-  // Convert map into an array
   const districts = Array.from(
     districtMap.entries()
   )
@@ -329,7 +483,24 @@ async function fetchStateCommodityAllDistricts(
     districts,
   };
 
-  // Save all records to MongoDB
+  // If 0 records were returned, check why: find active states for commodity and active crops for state
+  if (allRecords.length === 0) {
+    try {
+      const [otherStates, otherCommodities] = await Promise.all([
+        fetchCommodityAcrossStates(commodity, 100).catch(() => []),
+        fetchStateCommodities(state, 100).catch(() => []),
+      ]);
+
+      result.commodityActiveStates = otherStates.map((x) => x.state);
+      result.stateActiveCommodities = Array.from(
+        new Set(otherCommodities.map((x) => x.commodity))
+      ).slice(0, 15);
+    } catch (detectErr) {
+      console.warn("Could not check alternative suggestions:", detectErr.message);
+    }
+  }
+
+  // Save all records to MongoDB if requested
   if (
     opts.persist &&
     allRecords.length > 0
@@ -346,17 +517,11 @@ async function fetchStateCommodityAllDistricts(
 /**
  * Fetch the complete state + commodity data
  * and save it into MongoDB.
- *
- * Example:
- *
- * await syncStateCommodityToDb(
- *   "Madhya Pradesh",
- *   "Wheat"
- * );
  */
 async function syncStateCommodityToDb(
   state,
-  commodity
+  commodity,
+  opts = {}
 ) {
   const result =
     await fetchStateCommodityAllDistricts(
@@ -364,6 +529,7 @@ async function syncStateCommodityToDb(
       commodity,
       {
         persist: true,
+        ...opts,
       }
     );
 
@@ -371,16 +537,131 @@ async function syncStateCommodityToDb(
     total: result.total,
     fetched: result.fetched,
     db: result.db,
+    commodityActiveStates: result.commodityActiveStates || [],
+    stateActiveCommodities: result.stateActiveCommodities || [],
   };
+}
+
+const ALL_INDIAN_STATES = [
+  "Andaman and Nicobar",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
+
+const POPULAR_COMMODITIES = [
+  "Wheat",
+  "Rice",
+  "Paddy(Common)",
+  "Paddy(Basmati)",
+  "Tomato",
+  "Onion",
+  "Potato",
+  "Soyabean",
+  "Mustard",
+  "Cotton",
+  "Maize",
+  "Gram",
+  "Green Chilli",
+  "Cabbage",
+  "Cauliflower",
+  "Brinjal",
+  "Garlic",
+  "Ginger(Green)",
+  "Banana",
+  "Apple",
+  "Mango",
+  "Pomegranate",
+  "Groundnut",
+  "Guar",
+  "Bajra(Pearl Millet/Cumbu)",
+  "Jowar(Sorghum)",
+  "Turmeric",
+  "Arhar(Tur/Red Gram)",
+  "Moong(Green Gram)",
+  "Urad(Black Gram)",
+];
+
+/**
+ * Fetch top active states and commodities for auto-suggestions.
+ * Always guarantees all 36 Indian states/UTs are present in the list.
+ */
+async function fetchActiveOptions() {
+  const cacheKeyStr = "active_options_summary_v2";
+  const cached = getFromCache(cacheKeyStr);
+  if (cached) return cached;
+
+  try {
+    const res = await fetchMandiPrices({ limit: 1000 });
+    const feedStates = Array.from(new Set(res.records.map((r) => r.state)));
+    const feedCommodities = Array.from(new Set(res.records.map((r) => r.commodity)));
+
+    // Union all Indian states with feed states
+    const states = Array.from(new Set([...ALL_INDIAN_STATES, ...feedStates])).sort();
+    const commodities = Array.from(new Set([...POPULAR_COMMODITIES, ...feedCommodities])).sort();
+
+    const data = {
+      states,
+      allStates: ALL_INDIAN_STATES,
+      activeStates: feedStates.sort(),
+      commodities,
+    };
+
+    setCache(cacheKeyStr, data);
+    return data;
+  } catch (err) {
+    return {
+      states: ALL_INDIAN_STATES,
+      allStates: ALL_INDIAN_STATES,
+      activeStates: [],
+      commodities: POPULAR_COMMODITIES,
+    };
+  }
 }
 
 /**
  * ESM exports
  */
 export {
+  toAgmarknetDate,
+  getDatesInRange,
   fetchMandiPrices,
+  fetchMandiPricesDateRange,
   fetchCommodityAcrossStates,
   fetchStateCommodities,
   fetchStateCommodityAllDistricts,
   syncStateCommodityToDb,
+  fetchActiveOptions,
 };
