@@ -6,7 +6,13 @@ import { useAuth, getDashboardPath } from "../context/AuthContext.jsx";
 export function AuthPage({ reg = false }) {
   const navigate = useNavigate();
   const { role: routeRole } = useParams();
-  const { setUser } = useAuth();
+  const { user, ready, setUser } = useAuth();
+
+  useEffect(() => {
+    if (ready && user) {
+      navigate(getDashboardPath(user.role), { replace: true });
+    }
+  }, [ready, user, navigate]);
 
   const selectedRole = ["farmer", "buyer", "fpo", "krishi-kendra"].includes(
     routeRole?.toLowerCase()
@@ -190,7 +196,7 @@ export function AuthPage({ reg = false }) {
 
       localStorage.token = token;
       setUser(user);
-      navigate(getDashboardPath(user.role));
+      navigate(getDashboardPath(user.role), { replace: true });
     } catch (e) {
       setErr(e.response?.data?.message || "Request failed");
     }

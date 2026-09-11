@@ -7,7 +7,13 @@ import { useAuth, getDashboardPath } from "../context/AuthContext.jsx";
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { user, ready, setUser } = useAuth();
+
+  useEffect(() => {
+    if (ready && user) {
+      navigate(getDashboardPath(user.role || "ADMIN"), { replace: true });
+    }
+  }, [ready, user, navigate]);
 
   const [email, setEmail] = useState("admin@krishilink.com");
   const [password, setPassword] = useState("Demo@12345");
@@ -24,7 +30,7 @@ export function AdminLoginPage() {
       const { token, user } = res.data.data;
       localStorage.token = token;
       setUser(user);
-      navigate(getDashboardPath(user.role || "ADMIN"));
+      navigate(getDashboardPath(user.role || "ADMIN"), { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message ||
