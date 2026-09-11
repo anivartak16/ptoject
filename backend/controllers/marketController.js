@@ -22,16 +22,21 @@ export async function getNearbyMarkets(req, res, next) {
       origin = [longitude, latitude];
     } else if (req.user?.geo?.coordinates?.length === 2) {
       origin = req.user.geo.coordinates;
-    } else if (req.user?.location) {
-      const market = await Market.findOne({
-        location: new RegExp(`^${req.user.location}$`, "i"),
-      });
-      if (market?.geo?.coordinates?.length === 2) {
-        origin = market.geo.coordinates;
-      }
     }
 
-    const rows = await marketsFor(req.query.commodity || "Wheat", origin);
+    const commodity = req.query.commodity || req.user?.primaryCrop || "Wheat";
+    const district = req.query.district || req.user?.district || "";
+    const state = req.query.state || req.user?.state || "";
+    const location = req.query.location || req.user?.location || "";
+    const role = req.query.role || req.user?.role || "FARMER";
+
+    const rows = await marketsFor(commodity, {
+      origin,
+      district,
+      state,
+      location,
+      role,
+    });
     return ok(res, rows, "Nearest grain mandis");
   } catch (error) {
     next(error);
@@ -56,12 +61,12 @@ export async function getPrices(req, res, next) {
 
 export async function getPriceTrends(req, res, next) {
   try {
-    const commodity = req.query.commodity || "Wheat";
+    const commodity = req.query.commodity || req.user?.primaryCrop || "Wheat";
     const insight = await priceInsight(commodity);
     if (!insight) return fail(res, 404, "No prices found", "NOT_FOUND");
 
     const demands = await Demand.countDocuments({
-      commodity,
+      commodity: new RegExp(`^${commodity}$`, "i"),
       status: "ACTIVE",
     });
 

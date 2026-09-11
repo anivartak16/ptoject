@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { User } from "../models/index.js";
 import { ok, fail } from "../utils/response.js";
+import { resolveCoordinates } from "../utils/geoCoordinates.js";
 
 const signToken = (user) =>
   jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -87,6 +88,11 @@ export async function register(req, res, next) {
       return fail(res, 409, "Email already registered", "CONFLICT");
     }
 
+    const resolvedCoords =
+      Number.isFinite(Number(req.body.longitude)) && Number.isFinite(Number(req.body.latitude))
+        ? [Number(req.body.longitude), Number(req.body.latitude)]
+        : resolveCoordinates({ district, state, location });
+
     const user = await User.create({
       name,
       email,
@@ -105,26 +111,47 @@ export async function register(req, res, next) {
       primaryCrop,
       registrationNumber,
       memberCount: memberCount ? Number(memberCount) : undefined,
+      geo: {
+        type: "Point",
+        coordinates: resolvedCoords,
+      },
     });
 
     return ok(
       res,
       {
         token: signToken(user),
-        user: {
-          id: user._id,
-          name: user.name,
-          role: user.role,
-          email: user.email,
-          phone: user.phone,
-          location: user.location,
-        },
+        user: sanitizeUser(user),
       },
       "Registration successful",
     );
   } catch (error) {
     next(error);
   }
+}
+
+function sanitizeUser(user) {
+  return {
+    id: user._id,
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone,
+    location: user.location,
+    address: user.address,
+    district: user.district,
+    state: user.state,
+    pincode: user.pincode,
+    organizationName: user.organizationName,
+    buyerType: user.buyerType,
+    farmName: user.farmName,
+    landSize: user.landSize,
+    primaryCrop: user.primaryCrop,
+    registrationNumber: user.registrationNumber,
+    memberCount: user.memberCount,
+    geo: user.geo,
+  };
 }
 
 export async function login(req, res, next) {
@@ -154,13 +181,7 @@ export async function login(req, res, next) {
       res,
       {
         token: signToken(user),
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          location: user.location,
-        },
+        user: sanitizeUser(user),
       },
       "Login successful",
     );

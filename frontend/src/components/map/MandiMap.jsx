@@ -89,16 +89,19 @@ export default function MandiMap({ markets = [], userLocation, compact = false }
     return Array.isArray(coordinates) && coordinates.length === 2;
   });
   const firstMarket = pinnedMarkets[0]?.market || pinnedMarkets[0];
-  const center = firstMarket
-    ? [...firstMarket.geo.coordinates].reverse()
-    : fallbackCenter;
+  const center =
+    userLocation?.length === 2
+      ? [userLocation[1], userLocation[0]]
+      : firstMarket
+        ? [...firstMarket.geo.coordinates].reverse()
+        : fallbackCenter;
   const nearest = pinnedMarkets.find((row) => row.isNearest) || pinnedMarkets[0];
 
   if (!pinnedMarkets.length) {
     return (
       <div className="map-unavailable">
-        No mapped mandi coordinates are available yet. Run the demo seed once to
-        load them.
+        No mapped mandi coordinates are available yet. Market prices and nearby mandi details
+        remain available in the list.
       </div>
     );
   }
@@ -107,6 +110,7 @@ export default function MandiMap({ markets = [], userLocation, compact = false }
     <MapErrorBoundary>
       <div className={`mandi-map ${compact ? "mandi-map--compact" : ""}`}>
         <MapContainer
+          key={`${center[0]}-${center[1]}-${pinnedMarkets.length}`}
           center={center}
           zoom={compact ? 7 : 6}
           scrollWheelZoom={false}

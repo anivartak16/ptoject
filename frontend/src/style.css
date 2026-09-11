@@ -2400,3 +2400,102 @@ main {
   }
 }
 
+/* Personalized Dashboard & Mandi Badges */
+.dashboard-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.dashboard-crop-selector-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 20px 0;
+  padding: 12px 16px;
+  background: var(--surface-card, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius-sm, 8px);
+}
+
+.crop-selector-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary, #475569);
+  margin-right: 4px;
+}
+
+.crop-selector-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crop-pill {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid var(--line, #cbd5e1);
+  background: var(--surface-bg, #f8fafc);
+  color: var(--ink, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crop-pill:hover {
+  background: #e2e8f0;
+}
+
+.crop-pill.active {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #15803d;
+  box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
+}
+
+.recommended-badge {
+  display: inline-block;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.recommended-badge.badge-district {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.recommended-badge.badge-price {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.recommended-badge.badge-nearest {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.market-reasons {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-secondary, #64748b);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
