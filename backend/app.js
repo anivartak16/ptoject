@@ -8,19 +8,26 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 const app = express();
 app.use(
   cors({
-    origin: (origin, cb) => {
-      if (
-        !origin ||
-        origin === process.env.CLIENT_URL ||
-        /^http:\/\/localhost:517\d$/.test(origin)
-      ) {
-        return cb(null, true);
-      }
-      cb(new Error("CORS origin not allowed"));
-    },
+    origin: "https://krishilink-three.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  }),
+  })
 );
+// app.use(
+//   cors({
+//     origin: (origin, cb) => {
+//       if (
+//         !origin ||
+//         origin === process.env.CLIENT_URL ||
+//         /^http:\/\/localhost:517\d$/.test(origin)
+//       ) {
+//         return cb(null, true);
+//       }
+//       cb(new Error("CORS origin not allowed"));
+//     },
+//     credentials: true,
+//   }),
+// );
 
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
