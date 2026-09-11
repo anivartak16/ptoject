@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { Card } from "../components/common/Card.jsx";
 import { MandiRateChart } from "../components/charts/MandiRateChart.jsx";
 import MandiMap from "../components/map/MandiMap.jsx";
@@ -10,6 +11,7 @@ import { OperationalPage } from "./OperationalPage.jsx";
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { r: routeRole } = useParams();
   const r = routeRole || user?.role?.toLowerCase().replaceAll("_", "-") || "farmer";
 
@@ -366,7 +368,7 @@ export function DashboardPage() {
                 : "Compare nearby mandi rates, then list produce when the price and demand align."}
           </p>
         </div>
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
           {isBuyer ? (
             <>
               <Link className="primary" to={`/${r}/demands`}>
@@ -388,15 +390,99 @@ export function DashboardPage() {
               >
                 Browse Lots →
               </Link>
+              <Link
+                to={`/${r}/payments`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #bbf7d0",
+                }}
+              >
+                💳 Payments & Escrow
+              </Link>
+              <Link
+                to={`/${r}/transactions`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  color: "#334155",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #cbd5e1",
+                }}
+              >
+                ✓ Trade Orders
+              </Link>
             </>
           ) : isFpo ? (
-            <Link className="primary" to={`/${r}/aggregation`}>
-              Open aggregation
-            </Link>
+            <>
+              <Link className="primary" to={`/${r}/aggregation`}>
+                Open aggregation
+              </Link>
+              <Link
+                to={`/${r}/transactions`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  color: "#334155",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #cbd5e1",
+                }}
+              >
+                ✓ Trade Orders
+              </Link>
+            </>
           ) : (
-            <Link className="primary" to={`/${r}/lots`}>
-              Manage my lots
-            </Link>
+            <>
+              <Link className="primary" to={`/${r}/lots`}>
+                {t("addLot", "Manage / Add Lots")}
+              </Link>
+              <Link
+                to={`/${r}/payments`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #bbf7d0",
+                }}
+              >
+                💳 Payments & Escrow
+              </Link>
+              <Link
+                to={`/${r}/transactions`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  color: "#334155",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #cbd5e1",
+                }}
+              >
+                ✓ Trade Orders
+              </Link>
+            </>
           )}
         </div>
       </div>

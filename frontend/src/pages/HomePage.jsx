@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "../landing.css";
+import { useLanguage } from "../context/LanguageContext.jsx";
 import { LandingNavbar } from "../components/landing/LandingNavbar.jsx";
 import { HeroSection } from "../components/landing/HeroSection.jsx";
 import { TrustValueSection } from "../components/landing/TrustValueSection.jsx";
@@ -14,7 +15,7 @@ import { RolesSection } from "../components/landing/RolesSection.jsx";
 import { LandingCtaSection } from "../components/landing/LandingCtaSection.jsx";
 
 export function HomePage() {
-  const [language, setLanguage] = useState("en");
+  const { language, setLanguage } = useLanguage();
   const [selectedCrop, setSelectedCrop] = useState("Wheat");
 
   const marketRows = [

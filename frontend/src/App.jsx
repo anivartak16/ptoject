@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth, getDashboardPath } from "./context/AuthContext.jsx";
+import { LanguageProvider } from "./context/LanguageContext.jsx";
 import { Guard } from "./components/auth/Guard.jsx";
 import { ChatBot } from "./components/chatbot/ChatBot.jsx";
 
@@ -10,6 +11,7 @@ import { DashboardPage } from "./pages/DashboardPage.jsx";
 import { LotsPage } from "./pages/LotsPage.jsx";
 import { OffersPage } from "./pages/OffersPage.jsx";
 import { TransactionsPage } from "./pages/TransactionsPage.jsx";
+import { PaymentPage } from "./pages/PaymentPage.jsx";
 import { OperationalPage } from "./pages/OperationalPage.jsx";
 import { DynamicPage } from "./pages/DynamicPage.jsx";
 import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
@@ -27,6 +29,22 @@ function RoleDashboardRedirect() {
   );
 }
 
+function PredictionRouteGuard() {
+  const { r } = useParams();
+  if (r?.toLowerCase() === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  return <PredictionPage />;
+}
+
+function PricesRouteGuard({ op }) {
+  const { r } = useParams();
+  if (r?.toLowerCase() === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+  return op("Market prices & comparison", "prices");
+}
+
 export function App() {
   const op = (title, type) => (
     <Guard>
@@ -35,7 +53,7 @@ export function App() {
   );
 
   return (
-    <>
+    <LanguageProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<AuthPage reg={false} />} />
@@ -69,7 +87,7 @@ export function App() {
           path="/:r/predictions"
           element={
             <Guard>
-              <PredictionPage />
+              <PredictionRouteGuard />
             </Guard>
           }
         />
@@ -98,12 +116,28 @@ export function App() {
           }
         />
         <Route
+          path="/:r/payments"
+          element={
+            <Guard>
+              <PaymentPage />
+            </Guard>
+          }
+        />
+        <Route
+          path="/:r/payments/:transactionId"
+          element={
+            <Guard>
+              <PaymentPage />
+            </Guard>
+          }
+        />
+        <Route
           path="/:r/demands"
           element={op("Buyer demands", "demands")}
         />
         <Route
           path="/:r/prices"
-          element={op("Market prices & comparison", "prices")}
+          element={<PricesRouteGuard op={op} />}
         />
         <Route
           path="/:r/market-sync"
@@ -124,10 +158,6 @@ export function App() {
         <Route
           path="/:r/notifications"
           element={op("Notifications", "notifications")}
-        />
-        <Route
-          path="/:r/payments"
-          element={op("Payment tracking", "payments")}
         />
         <Route
           path="/:r/aggregation"
@@ -156,8 +186,9 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ChatBot />
-    </>
+    </LanguageProvider>
   );
 }
 
 export default App;
+
