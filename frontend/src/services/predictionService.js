@@ -172,7 +172,7 @@ function generateClientFallbackPrediction({ crop = "Wheat", location = "Indore",
 
 export async function fetchCropPrediction({ crop = "Wheat", location = "Indore", role = "FARMER", horizon = 14 }) {
   try {
-    const res = await api.get(`/predictions/${crop}`, {
+    const res = await api.get(`/predictions/${encodeURIComponent(crop)}`, {
       params: { location, role, horizon },
     });
     if (res.data?.data) {

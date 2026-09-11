@@ -29,6 +29,8 @@ export function PredictionPage() {
   const [horizon, setHorizon] = useState(14);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [commodityOptions, setCommodityOptions] = useState(COMMODITY_LIST);
+  const [regionOptions, setRegionOptions] = useState(REGIONS_LIST);
 
   useEffect(() => {
     let alive = true;
@@ -42,6 +44,14 @@ export function PredictionPage() {
       });
       if (alive) {
         setPrediction(res);
+        if (res?.availableCommodities?.length > 0) {
+          setCommodityOptions(res.availableCommodities);
+        }
+        if (res?.availableStates?.length > 0) {
+          setRegionOptions(
+            Array.from(new Set([...REGIONS_LIST, ...res.availableStates, ...(res.reportingMarkets || [])]))
+          );
+        }
         setLoading(false);
       }
     };
@@ -76,7 +86,8 @@ export function PredictionPage() {
           </p>
           <h1>Agricultural Market Prediction</h1>
           <p>
-            Multi-factor mathematical and trend intelligence modeling to help{" "}
+            Multi-factor mathematical and trend intelligence modeling backed by{" "}
+            <strong>live AGMARKNET mandi records stored in MongoDB</strong> to help{" "}
             <strong>{currentRole.toUpperCase()}</strong> make informed <strong>BUY, SELL, HOLD, or WAIT</strong> decisions.
           </p>
         </div>
@@ -84,13 +95,13 @@ export function PredictionPage() {
         {/* Controls Toolbar */}
         <div className="prediction-controls">
           <div className="control-group">
-            <label>Commodity</label>
+            <label>Commodity ({commodityOptions.length} available)</label>
             <select
               value={commodity}
               onChange={(e) => setCommodity(e.target.value)}
               className="control-select"
             >
-              {COMMODITY_LIST.map((c) => (
+              {commodityOptions.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -105,7 +116,8 @@ export function PredictionPage() {
               onChange={(e) => setLocation(e.target.value)}
               className="control-select"
             >
-              {REGIONS_LIST.map((loc) => (
+              <option value="All Mandis">All Regional APMCs</option>
+              {regionOptions.map((loc) => (
                 <option key={loc} value={loc}>
                   {loc}
                 </option>
@@ -133,10 +145,66 @@ export function PredictionPage() {
 
       {loading && !prediction ? (
         <div className="panel loading-panel">
-          <p>Analyzing historical mandi rates, supply arrivals and demand signals for {commodity}…</p>
+          <p>Analyzing historical mandi rates, supply arrivals and demand signals for {commodity} from MongoDB…</p>
         </div>
       ) : prediction ? (
         <>
+          {/* DB Data Verification Strip */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "10px",
+              padding: "10px 16px",
+              background: prediction.dbBacked ? "#f0fdf4" : "#fefce8",
+              border: `1px solid ${prediction.dbBacked ? "#bbf7d0" : "#fef08a"}`,
+              borderRadius: "8px",
+              marginBottom: "16px",
+              fontSize: "13px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: prediction.dbBacked ? "#16a34a" : "#ca8a04",
+                }}
+              />
+              <strong style={{ color: prediction.dbBacked ? "#15803d" : "#854d0e" }}>
+                {prediction.dbBacked
+                  ? `✓ Backed by ${prediction.dbRecordsCount} Live AGMARKNET Records in MongoDB`
+                  : "Statistical Baseline Forecast"}
+              </strong>
+              {prediction.latestArrivalDate && (
+                <span style={{ color: "#166534" }}>
+                  (Latest Arrival Date: {new Date(prediction.latestArrivalDate).toLocaleDateString("en-IN")})
+                </span>
+              )}
+              {prediction.reportingMarketsCount > 0 && (
+                <span style={{ color: "#4b5563" }}>
+                  · {prediction.reportingMarketsCount} APMC reporting mandis
+                </span>
+              )}
+            </div>
+            {currentRole.toUpperCase() === "ADMIN" && (
+              <a
+                href="/admin/market-sync"
+                style={{
+                  color: "#15803d",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  fontSize: "12px",
+                }}
+              >
+                Sync More Mandi Data →
+              </a>
+            )}
+          </div>
           {/* Main Hero Recommendation Banner */}
           <div className={`panel prediction-hero ${getActionBadgeClass(prediction.action)}`}>
             <div className="hero-action-section">
@@ -152,15 +220,17 @@ export function PredictionPage() {
               <div className="metric-box">
                 <small>Current Modal Rate</small>
                 <div className="metric-value">
-                  ₹{prediction.currentPrice.toLocaleString("en-IN")}/kg
+                  ₹{prediction.currentPrice.toLocaleString("en-IN")}/qtl
                 </div>
-                <small className="metric-sub">Base APMC price</small>
+                <small className="metric-sub">
+                  ~₹{(prediction.currentPrice / 100).toFixed(1)}/kg · Live APMC
+                </small>
               </div>
 
               <div className="metric-box">
                 <small>Expected {prediction.horizonDays}-Day Price</small>
                 <div className="metric-value predicted">
-                  ₹{prediction.predictedPrice.toLocaleString("en-IN")}/kg
+                  ₹{prediction.predictedPrice.toLocaleString("en-IN")}/qtl
                 </div>
                 <div
                   className={`metric-change ${
@@ -175,7 +245,7 @@ export function PredictionPage() {
               <div className="metric-box">
                 <small>Expected Range</small>
                 <div className="metric-value range">
-                  ₹{prediction.priceRange.min} – ₹{prediction.priceRange.max}
+                  ₹{prediction.priceRange.min} – ₹{prediction.priceRange.max}/qtl
                 </div>
                 <small className="metric-sub">95% confidence bounds</small>
               </div>
@@ -231,7 +301,7 @@ export function PredictionPage() {
                     tickFormatter={(v) => `₹${v}`}
                     width={56}
                   />
-                  <Tooltip formatter={(value) => [`₹${value}/kg`, "Price"]} />
+                  <Tooltip formatter={(value) => [`₹${value}/qtl`, "Projected Rate"]} />
                   <Legend />
                   <Area
                     type="monotone"
@@ -260,7 +330,7 @@ export function PredictionPage() {
                 </AreaChart>
               </ResponsiveContainer>
               <small className="chart-caption">
-                * Mathematical projection combines historical seasonality with live demand velocity and arrival momentum.
+                * Forecast cone originates from live database baseline (₹{prediction.currentPrice}/qtl) with statistical confidence margins.
               </small>
             </div>
 
@@ -268,10 +338,12 @@ export function PredictionPage() {
             <div className="panel">
               <div className="chart-heading">
                 <div>
-                  <p className="eyebrow">HISTORICAL BENCHMARK</p>
-                  <h3>Recent {commodity} Mandi Price Velocity</h3>
+                  <p className="eyebrow">HISTORICAL BENCHMARK (MONGODB)</p>
+                  <h3>Recent {commodity} Stored Mandi Rates</h3>
                 </div>
-                <span className="chart-change">MSP: ₹{prediction.msp}/qtl</span>
+                <span className="chart-change">
+                  {prediction.msp ? `MSP: ₹${prediction.msp}/qtl` : `${prediction.historicalSeries?.length || 0} DB Points`}
+                </span>
               </div>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart
@@ -281,14 +353,48 @@ export function PredictionPage() {
                   <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={false} tickLine={false} />
                   <YAxis
-                    domain={["dataMin - 30", "dataMax + 30"]}
+                    domain={["dataMin - 50", "dataMax + 50"]}
                     tick={{ fontSize: 11, fill: "#64748b" }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `₹${v}`}
                     width={56}
                   />
-                  <Tooltip formatter={(value) => [`₹${value}/kg`, "Mandi Rate"]} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const item = payload[0].payload;
+                        return (
+                          <div
+                            style={{
+                              background: "#ffffff",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              padding: "8px 12px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                              fontSize: "12px",
+                            }}
+                          >
+                            <strong style={{ display: "block", color: "#0f172a" }}>
+                              {item.market || "APMC Mandi"}
+                            </strong>
+                            <span style={{ color: "#64748b", display: "block", fontSize: "11px" }}>
+                              {item.district && item.state ? `${item.district}, ${item.state}` : item.state || ""} · {item.date}
+                            </span>
+                            <div style={{ marginTop: "4px", color: "#0284c7", fontWeight: 700 }}>
+                              Modal: ₹{item.modalPrice?.toLocaleString("en-IN")}/qtl
+                            </div>
+                            {item.minPrice && item.maxPrice && (
+                              <div style={{ color: "#64748b", fontSize: "11px" }}>
+                                Range: ₹{item.minPrice} – ₹{item.maxPrice}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Line
                     type="monotone"
                     dataKey="modalPrice"
@@ -300,7 +406,7 @@ export function PredictionPage() {
                 </LineChart>
               </ResponsiveContainer>
               <small className="chart-caption">
-                Recorded historical rates across {location} & surrounding APMC centers.
+                Actual reported rates from {prediction.reportingMarketsCount || 1} APMC mandis stored in MongoDB.
               </small>
             </div>
           </div>
@@ -338,6 +444,88 @@ export function PredictionPage() {
               ))}
             </div>
           </div>
+
+          {/* Stored Mandi Records from MongoDB */}
+          {prediction.rawDbRecords?.length > 0 && (
+            <div className="panel" style={{ marginTop: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "16px",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                }}
+              >
+                <div>
+                  <p className="eyebrow" style={{ color: "#16a34a" }}>
+                    MONGODB STORED MANDIPRICES
+                  </p>
+                  <h3 style={{ margin: "4px 0" }}>
+                    Live Mandi Records in DB Used for {commodity} Prediction
+                  </h3>
+                  <p style={{ margin: 0, fontSize: "13px", color: "var(--muted)" }}>
+                    The prediction model directly ingested these {prediction.dbRecordsCount} records stored in your MongoDB database from AGMARKNET.
+                  </p>
+                </div>
+                <span
+                  style={{
+                    background: "#ecfdf5",
+                    color: "#15803d",
+                    border: "1px solid #86efac",
+                    padding: "4px 12px",
+                    borderRadius: "999px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                  }}
+                >
+                  ✓ {prediction.dbRecordsCount} Records in DB
+                </span>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table className="table" style={{ width: "100%", fontSize: "13px" }}>
+                  <thead>
+                    <tr>
+                      <th>APMC Market</th>
+                      <th>District</th>
+                      <th>State</th>
+                      <th>Arrival Date</th>
+                      <th>Min Rate</th>
+                      <th>Max Rate</th>
+                      <th>Modal Rate</th>
+                      <th>Variety</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prediction.rawDbRecords.map((rec, i) => (
+                      <tr key={rec._id || i}>
+                        <td>
+                          <strong>{rec.market}</strong>
+                        </td>
+                        <td>{rec.district}</td>
+                        <td>{rec.state}</td>
+                        <td>
+                          {rec.arrivalDate
+                            ? new Date(rec.arrivalDate).toLocaleDateString("en-IN")
+                            : "-"}
+                        </td>
+                        <td>₹{rec.minPrice?.toLocaleString("en-IN")}/qtl</td>
+                        <td>₹{rec.maxPrice?.toLocaleString("en-IN")}/qtl</td>
+                        <td style={{ color: "#16a34a", fontWeight: 700 }}>
+                          ₹{rec.modalPrice?.toLocaleString("en-IN")}/qtl
+                        </td>
+                        <td>
+                          <small>{rec.variety || "-"}</small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       ) : null}
     </div>

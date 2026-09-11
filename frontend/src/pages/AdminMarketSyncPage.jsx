@@ -19,6 +19,18 @@ import {
   Info,
   ArrowRight,
 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 // Complete, comprehensive list of all 28 Indian States & 8 Union Territories
 export const ALL_INDIAN_STATES = [
@@ -193,6 +205,38 @@ export function AdminMarketSyncPage() {
   const [explorerLoading, setExplorerLoading] = useState(false);
   const [explorerError, setExplorerError] = useState("");
   const [tableSearch, setTableSearch] = useState("");
+
+  // Live Prediction Explorer State (Backed by MongoDB mandiprices)
+  const [predCrop, setPredCrop] = useState("Wheat");
+  const [predHorizon, setPredHorizon] = useState(14);
+  const [predRole, setPredRole] = useState("FARMER");
+  const [predData, setPredData] = useState(null);
+  const [predLoading, setPredLoading] = useState(false);
+  const [predError, setPredError] = useState("");
+
+  const fetchPredictionForAdmin = useCallback(
+    async (crop = predCrop, horizon = predHorizon, role = predRole) => {
+      setPredLoading(true);
+      setPredError("");
+      try {
+        const res = await api.get(`/predictions/${encodeURIComponent(crop)}`, {
+          params: { horizon, role, location: "All Mandis" },
+        });
+        if (res.data?.data) {
+          setPredData(res.data.data);
+        }
+      } catch (err) {
+        setPredError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load prediction"
+        );
+      } finally {
+        setPredLoading(false);
+      }
+    },
+    [predCrop, predHorizon, predRole]
+  );
 
   // Fetch DB Stats
   const loadDbStats = useCallback(async () => {
@@ -919,6 +963,8 @@ export function AdminMarketSyncPage() {
                 ? `GET /api/marketPrice/prices/by-commodity/${encodeURIComponent(filterCommodity || "Wheat")}`
                 : activeTab === "by-state"
                 ? `GET /api/marketPrice/prices/by-state/${encodeURIComponent(filterState || "Madhya Pradesh")}`
+                : activeTab === "prediction"
+                ? `GET /api/predictions/${encodeURIComponent(predCrop)}?horizon=${predHorizon}&role=${predRole}`
                 : "GET /api/marketPrice/prices/db (MongoDB Saved)"}
             </code>
           </div>
@@ -966,11 +1012,566 @@ export function AdminMarketSyncPage() {
             <Database size={14} />
             <span>5. Database Records (/prices/db)</span>
           </button>
+          <button
+            type="button"
+            className={`tab-btn ${activeTab === "prediction" ? "active" : ""}`}
+            style={activeTab === "prediction" ? { borderColor: "#16a34a", color: "#16a34a", fontWeight: 700 } : {}}
+            onClick={() => {
+              setActiveTab("prediction");
+              fetchPredictionForAdmin(predCrop, predHorizon, predRole);
+            }}
+          >
+            <TrendingUp size={14} color="#16a34a" />
+            <span>6. 📈 Live DB Prediction & Forecast Engine</span>
+          </button>
         </div>
 
-        {/* Filter Controls for Current Route */}
-        <div className="explorer-filter-bar">
-          {(activeTab === "prices" ||
+        {activeTab === "prediction" ? (
+          <div className="admin-prediction-workbench" style={{ marginTop: "16px" }}>
+            {/* Controls Bar for Prediction */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "16px",
+                alignItems: "flex-end",
+                padding: "16px",
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-secondary)" }}>
+                  Target Crop / Commodity:
+                </label>
+                <select
+                  value={predCrop}
+                  onChange={(e) => {
+                    const c = e.target.value;
+                    setPredCrop(c);
+                    fetchPredictionForAdmin(c, predHorizon, predRole);
+                  }}
+                  style={{
+                    minWidth: "180px",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "14px",
+                  }}
+                >
+                  <optgroup label="⚡ Crops with Synced DB Records">
+                    {(dbStats?.commodities || ["Wheat", "Tomato", "Onion", "Potato", "Soyabean"]).map((c) => (
+                      <option key={`pred-db-${c}`} value={c}>
+                        ● {c}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="All Agricultural Commodities">
+                    {ALL_COMMODITIES.map((c) => (
+                      <option key={`pred-all-${c}`} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-secondary)" }}>
+                  Forecast Horizon:
+                </label>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {[7, 14, 30].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      style={{
+                        padding: "7px 14px",
+                        borderRadius: "6px",
+                        border: "1px solid",
+                        borderColor: predHorizon === h ? "#16a34a" : "#cbd5e1",
+                        background: predHorizon === h ? "#dcfce7" : "#ffffff",
+                        color: predHorizon === h ? "#15803d" : "#334155",
+                        fontWeight: predHorizon === h ? 700 : 500,
+                        cursor: "pointer",
+                        fontSize: "13px",
+                      }}
+                      onClick={() => {
+                        setPredHorizon(h);
+                        fetchPredictionForAdmin(predCrop, h, predRole);
+                      }}
+                    >
+                      {h} Days
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-secondary)" }}>
+                  Simulated Stakeholder Role:
+                </label>
+                <select
+                  value={predRole}
+                  onChange={(e) => {
+                    const r = e.target.value;
+                    setPredRole(r);
+                    fetchPredictionForAdmin(predCrop, predHorizon, r);
+                  }}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "14px",
+                  }}
+                >
+                  <option value="FARMER">Farmer (Producer)</option>
+                  <option value="BUYER">Buyer / Trader</option>
+                  <option value="FPO">FPO Collective</option>
+                  <option value="ADMIN">Market Administrator</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="secondary"
+                disabled={predLoading}
+                onClick={() => fetchPredictionForAdmin(predCrop, predHorizon, predRole)}
+                style={{ padding: "8px 16px", alignSelf: "flex-end" }}
+              >
+                <RefreshCw size={14} className={predLoading ? "spin" : ""} />
+                <span>Recalculate Model</span>
+              </button>
+
+              <button
+                type="button"
+                className="primary"
+                disabled={syncLoading}
+                onClick={() =>
+                  handleSyncToDb({
+                    commodity: predCrop,
+                    limit: 100,
+                  }).then(() => fetchPredictionForAdmin(predCrop, predHorizon, predRole))
+                }
+                style={{ padding: "8px 16px", alignSelf: "flex-end" }}
+              >
+                <CloudDownload size={14} />
+                <span>Sync Fresh {predCrop} & Forecast</span>
+              </button>
+            </div>
+
+            {/* Prediction Error */}
+            {predError && (
+              <div className="sync-feedback error" style={{ marginBottom: "16px" }}>
+                <AlertTriangle size={18} color="#dc2626" />
+                <span>{predError}</span>
+              </div>
+            )}
+
+            {predLoading && !predData ? (
+              <div className="loading-state">
+                <RefreshCw size={24} className="spin" />
+                <p>Computing statistical model and projecting prices from MongoDB records...</p>
+              </div>
+            ) : predData ? (
+              <>
+                {/* Metric Summary Cards */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "14px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                      background:
+                        predData.action === "HOLD" || predData.action === "BUY NOW"
+                          ? "#f0fdf4"
+                          : predData.action === "SELL NOW"
+                          ? "#fef2f2"
+                          : "#fefce8",
+                    }}
+                  >
+                    <small style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>
+                      Recommended Action
+                    </small>
+                    <div
+                      style={{
+                        fontSize: "22px",
+                        fontWeight: 900,
+                        margin: "4px 0",
+                        color:
+                          predData.action === "HOLD" || predData.action === "BUY NOW"
+                            ? "#15803d"
+                            : predData.action === "SELL NOW"
+                            ? "#b91c1c"
+                            : "#a16207",
+                      }}
+                    >
+                      {predData.action}
+                    </div>
+                    <small style={{ color: "#334155" }}>{predData.actionTagline}</small>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <small style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>
+                      Current DB Stored Rate
+                    </small>
+                    <div style={{ fontSize: "22px", fontWeight: 800, margin: "4px 0", color: "#0f172a" }}>
+                      ₹{predData.currentPrice?.toLocaleString("en-IN")}/qtl
+                    </div>
+                    <small style={{ color: "#64748b" }}>
+                      ~₹{(predData.currentPrice / 100).toFixed(1)}/kg · Latest APMC
+                    </small>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <small style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>
+                      Projected {predData.horizonDays}d Target
+                    </small>
+                    <div style={{ fontSize: "22px", fontWeight: 800, margin: "4px 0", color: "#16a34a" }}>
+                      ₹{predData.predictedPrice?.toLocaleString("en-IN")}/qtl
+                    </div>
+                    <small
+                      style={{
+                        color: predData.projectedChangePct >= 0 ? "#16a34a" : "#dc2626",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {predData.projectedChangePct >= 0 ? "↑ +" : "↓ "}
+                      {predData.projectedChangePct}% Expected Shift
+                    </small>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <small style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>
+                      Model Confidence
+                    </small>
+                    <div style={{ fontSize: "22px", fontWeight: 800, margin: "4px 0", color: "#0284c7" }}>
+                      {predData.confidence}%
+                    </div>
+                    <small style={{ color: "#64748b" }}>Multi-factor signal alignment</small>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "16px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <small style={{ fontWeight: 700, textTransform: "uppercase", color: "#64748b" }}>
+                      MongoDB Stored Records
+                    </small>
+                    <div style={{ fontSize: "22px", fontWeight: 800, margin: "4px 0", color: "#7c3aed" }}>
+                      {predData.dbRecordsCount || 0}
+                    </div>
+                    <small style={{ color: "#64748b" }}>
+                      Across {predData.reportingMarketsCount || 1} APMC reporting mandis
+                    </small>
+                  </div>
+                </div>
+
+                {/* Dual Graphs: Forecast Cone + Historical Mandi Rates */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "20px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  {/* Forecast Cone AreaChart */}
+                  <div
+                    style={{
+                      padding: "16px",
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div>
+                        <strong style={{ fontSize: "14px" }}>
+                          {predCrop} {predHorizon}-Day Projected Cone
+                        </strong>
+                        <span style={{ display: "block", fontSize: "11px", color: "#64748b" }}>
+                          Originates from DB baseline rate (₹{predData.currentPrice}/qtl)
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>
+                        {predData.projectedChangePct >= 0 ? "+" : ""}
+                        {predData.projectedChangePct}% Projected
+                      </span>
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={240}>
+                      <AreaChart
+                        data={predData.forecastSeries}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="adminPriceGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#16a34a" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
+                        <XAxis
+                          dataKey="day"
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => `₹${v}`}
+                          width={54}
+                        />
+                        <ChartTooltip formatter={(v) => [`₹${v}/qtl`, "Projected Price"]} />
+                        <Area
+                          type="monotone"
+                          dataKey="upperBound"
+                          stroke="#cbd5e1"
+                          strokeDasharray="3 3"
+                          fill="transparent"
+                          name="Upper Margin"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="projectedPrice"
+                          stroke="#16a34a"
+                          strokeWidth={2.5}
+                          fill="url(#adminPriceGrad)"
+                          name="Target Price"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="lowerBound"
+                          stroke="#cbd5e1"
+                          strokeDasharray="3 3"
+                          fill="transparent"
+                          name="Lower Margin"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Historical Rates LineChart from MongoDB */}
+                  <div
+                    style={{
+                      padding: "16px",
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div>
+                        <strong style={{ fontSize: "14px" }}>
+                          Stored Mandi Modal Rates in MongoDB
+                        </strong>
+                        <span style={{ display: "block", fontSize: "11px", color: "#64748b" }}>
+                          {predData.historicalSeries?.length || 0} API records stored from AGMARKNET
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "12px", color: "#0284c7", fontWeight: 700 }}>
+                        {predData.msp ? `MSP: ₹${predData.msp}/qtl` : "Live APMC Feed"}
+                      </span>
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={240}>
+                      <LineChart
+                        data={predData.historicalSeries}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => `₹${v}`}
+                          width={54}
+                        />
+                        <ChartTooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const item = payload[0].payload;
+                              return (
+                                <div
+                                  style={{
+                                    background: "#ffffff",
+                                    border: "1px solid #cbd5e1",
+                                    borderRadius: "6px",
+                                    padding: "8px 12px",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  <strong>{item.market}</strong>
+                                  <span
+                                    style={{
+                                      display: "block",
+                                      color: "#64748b",
+                                      fontSize: "11px",
+                                    }}
+                                  >
+                                    {item.district}, {item.state} · {item.date}
+                                  </span>
+                                  <div
+                                    style={{
+                                      color: "#0284c7",
+                                      fontWeight: 700,
+                                      marginTop: "4px",
+                                    }}
+                                  >
+                                    Modal: ₹{item.modalPrice}/qtl
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="modalPrice"
+                          stroke="#0284c7"
+                          strokeWidth={2.5}
+                          dot={{ r: 3, fill: "#0284c7" }}
+                          name="Modal Price"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Stored DB Records Table */}
+                {predData.rawDbRecords?.length > 0 && (
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      padding: "16px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <strong>
+                        MongoDB `mandiprices` Documents Used for this Forecast ({predData.rawDbRecords.length} records shown)
+                      </strong>
+                      <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>
+                        ✓ Live Database Records
+                      </span>
+                    </div>
+
+                    <div style={{ overflowX: "auto" }}>
+                      <table className="mandi-data-table" style={{ width: "100%", fontSize: "13px" }}>
+                        <thead>
+                          <tr>
+                            <th>Market / Mandi</th>
+                            <th>District</th>
+                            <th>State</th>
+                            <th>Arrival Date</th>
+                            <th>Min Rate</th>
+                            <th>Max Rate</th>
+                            <th>Modal Rate</th>
+                            <th>Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {predData.rawDbRecords.map((r, idx) => (
+                            <tr key={r._id || idx}>
+                              <td>
+                                <strong>{r.market}</strong>
+                              </td>
+                              <td>{r.district}</td>
+                              <td>{r.state}</td>
+                              <td>
+                                {r.arrivalDate
+                                  ? new Date(r.arrivalDate).toLocaleDateString("en-IN")
+                                  : "—"}
+                              </td>
+                              <td>₹{(r.minPrice || 0).toLocaleString("en-IN")}/qtl</td>
+                              <td>₹{(r.maxPrice || 0).toLocaleString("en-IN")}/qtl</td>
+                              <td style={{ color: "#16a34a", fontWeight: 700 }}>
+                                ₹{(r.modalPrice || 0).toLocaleString("en-IN")}/qtl
+                              </td>
+                              <td>
+                                <span className="source-pill db-source">MongoDB</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            {/* Filter Controls for Current Route */}
+            <div className="explorer-filter-bar">
+              {(activeTab === "prices" ||
             activeTab === "state-commodity" ||
             activeTab === "by-state" ||
             activeTab === "db") && (
@@ -1204,6 +1805,8 @@ export function AdminMarketSyncPage() {
             </table>
           )}
         </div>
+        </>
+      )}
       </div>
     </section>
   );

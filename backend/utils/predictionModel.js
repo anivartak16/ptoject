@@ -77,9 +77,91 @@ export const COMMODITY_PROFILES = {
     harvestMonths: [2, 3, 4],
     sowingMonths: [10, 11],
     msp: 5440,
-    unit: "kg",
+    unit: "qtl",
+  },
+  Soyabean: {
+    basePrice: 4200,
+    volatility: 0.12,
+    season: "Kharif",
+    harvestMonths: [9, 10, 11],
+    sowingMonths: [6, 7],
+    msp: 4892,
+    unit: "qtl",
+  },
+  Tomato: {
+    basePrice: 2800,
+    volatility: 0.25,
+    season: "All-season",
+    harvestMonths: [1, 2, 3, 4, 11, 12],
+    sowingMonths: [6, 7, 8],
+    msp: 0,
+    unit: "qtl",
+  },
+  "Green Chilli": {
+    basePrice: 4800,
+    volatility: 0.22,
+    season: "All-season",
+    harvestMonths: [1, 2, 3, 4, 5],
+    sowingMonths: [6, 7],
+    msp: 0,
+    unit: "qtl",
+  },
+  Cauliflower: {
+    basePrice: 3500,
+    volatility: 0.20,
+    season: "Rabi",
+    harvestMonths: [11, 12, 1, 2],
+    sowingMonths: [8, 9],
+    msp: 0,
+    unit: "qtl",
+  },
+  Rice: {
+    basePrice: 3800,
+    volatility: 0.08,
+    season: "Kharif",
+    harvestMonths: [10, 11, 12],
+    sowingMonths: [6, 7],
+    msp: 2320,
+    unit: "qtl",
+  },
+  "Paddy(Common)": {
+    basePrice: 2300,
+    volatility: 0.08,
+    season: "Kharif",
+    harvestMonths: [10, 11, 12],
+    sowingMonths: [6, 7],
+    msp: 2300,
+    unit: "qtl",
   },
 };
+
+/**
+ * Resolves or dynamically synthesizes a commodity profile
+ */
+export function getCommodityProfile(commodity = "Wheat", fallbackBasePrice = null) {
+  if (COMMODITY_PROFILES[commodity]) {
+    return { ...COMMODITY_PROFILES[commodity] };
+  }
+
+  // Case-insensitive match
+  const lower = String(commodity).toLowerCase().trim();
+  for (const [key, prof] of Object.entries(COMMODITY_PROFILES)) {
+    if (key.toLowerCase() === lower || lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) {
+      return { ...prof };
+    }
+  }
+
+  // Dynamic fallback for any newly synced agricultural commodity
+  return {
+    basePrice: fallbackBasePrice || 2500,
+    volatility: 0.14,
+    season: "All-season",
+    harvestMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    sowingMonths: [6, 7, 10, 11],
+    msp: 0,
+    unit: "qtl",
+  };
+}
 
 export const DEFAULT_WEIGHTS = {
   demandTrend: 0.22,
@@ -114,7 +196,7 @@ export function extractModelFactors({
   availableLotsVolume = 0,
   customWeights = {},
 }) {
-  const profile = COMMODITY_PROFILES[commodity] || COMMODITY_PROFILES.Wheat;
+  const profile = getCommodityProfile(commodity);
   const now = new Date();
   const currentMonth = now.getMonth() + 1; // 1-12
 
@@ -131,10 +213,10 @@ export function extractModelFactors({
   // 3. Historical Price Trend: Velocity over recent days
   let priceTrend = 0.15;
   if (historicalPrices.length >= 2) {
-    const sorted = [...historicalPrices].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sorted = [...historicalPrices].sort((a, b) => new Date(a.date || a.arrivalDate) - new Date(b.date || b.arrivalDate));
     const first = sorted[0].modalPrice || profile.basePrice;
     const last = sorted[sorted.length - 1].modalPrice || profile.basePrice;
-    priceTrend = Math.max(-1, Math.min(1, (last - first) / (first * profile.volatility * 2)));
+    priceTrend = Math.max(-1, Math.min(1, (last - first) / (first * (profile.volatility || 0.1) * 2)));
   }
 
   // 4. Seasonal Trend: Harvest peak vs lean period
@@ -181,8 +263,10 @@ export function computeMarketPrediction({
   availableLotsCount = 3,
   availableLotsVolume = 3200,
   customWeights = {},
+  currentPriceOverride = null,
 }) {
-  const { factors, weights, profile } = extractModelFactors({
+  const profile = getCommodityProfile(commodity);
+  const { factors, weights } = extractModelFactors({
     commodity,
     location,
     historicalPrices,
@@ -205,11 +289,14 @@ export function computeMarketPrediction({
 
   const normalizedScore = Math.max(-1, Math.min(1, compositeScore));
 
-  // Determine current baseline price
-  const latestPriceRecord = historicalPrices.length
-    ? historicalPrices[historicalPrices.length - 1].modalPrice
+  // Determine current baseline price from real DB records if available
+  const sortedPrices = [...historicalPrices].sort(
+    (a, b) => new Date(a.date || a.arrivalDate) - new Date(b.date || b.arrivalDate)
+  );
+  const latestPriceRecord = sortedPrices.length
+    ? sortedPrices[sortedPrices.length - 1].modalPrice
     : null;
-  const currentPrice = latestPriceRecord || profile.basePrice;
+  const currentPrice = currentPriceOverride || latestPriceRecord || profile.basePrice;
 
   // Horizon price projection with square root time scaling
   const timeScale = Math.sqrt(horizonDays / 30);
