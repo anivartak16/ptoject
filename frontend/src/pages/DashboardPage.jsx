@@ -65,6 +65,13 @@ export function DashboardPage() {
           return;
         }
 
+        if (user.role === "KRISHI_KENDRA") {
+          if (alive) {
+            setLoading(false);
+          }
+          return;
+        }
+
         const coordinates =
           user.geo?.coordinates?.length === 2 ? user.geo.coordinates : null;
         const locationQuery = coordinates

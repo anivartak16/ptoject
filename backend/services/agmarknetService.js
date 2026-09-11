@@ -193,24 +193,75 @@ async function fetchMandiPrices(
     return cached;
   }
 
-  // Fetch data from AGMARKNET
-  const response = await axios.get(
-    `${BASE_URL}/${resourceId}`,
-    {
-      params,
-      timeout: 45000,
-    }
-  );
+  // Fetch data from AGMARKNET with short timeout and resilient fallback to MongoDB
+  let response = null;
+  try {
+    response = await axios.get(
+      `${BASE_URL}/${resourceId}`,
+      {
+        params,
+        timeout: 5000,
+      }
+    );
+  } catch (apiErr) {
+    console.warn("AGMARKNET live government API unreachable/timed out. Falling back to MongoDB records:", apiErr.message);
+  }
 
-  // Normalize API records
-  const records = (
-    response.data?.records || []
-  ).map(normalizeRecord);
+  let records = [];
+  let total = 0;
+
+  if (response?.data?.records?.length) {
+    records = response.data.records.map(normalizeRecord);
+    total = Number(response.data?.total || records.length);
+  } else {
+    // FALLBACK TO MONGODB MandiPrice
+    const query = {};
+    if (state) {
+      const normState = normalizeState(state);
+      query.state = new RegExp(`^${normState.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")}$`, "i");
+    }
+    if (commodity) {
+      query.commodity = new RegExp(commodity.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
+    }
+    if (district) {
+      query.district = new RegExp(district.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
+    }
+    if (market) {
+      query.market = new RegExp(market.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i");
+    }
+
+    try {
+      const [dbCount, dbRecords] = await Promise.all([
+        MandiPrice.countDocuments(query),
+        MandiPrice.find(query)
+          .sort({ arrivalDate: -1, createdAt: -1 })
+          .skip(offset || 0)
+          .limit(limit || 50)
+          .lean(),
+      ]);
+
+      records = dbRecords.map((doc) => ({
+        state: doc.state,
+        district: doc.district,
+        market: doc.market,
+        commodity: doc.commodity,
+        variety: doc.variety || "Normal",
+        grade: doc.grade || "FAQ",
+        arrivalDate: doc.arrivalDate
+          ? new Date(doc.arrivalDate).toLocaleDateString("en-GB")
+          : "",
+        minPrice: doc.minPrice || 0,
+        maxPrice: doc.maxPrice || 0,
+        modalPrice: doc.modalPrice || 0,
+      }));
+      total = dbCount || records.length;
+    } catch (_dbErr) {
+      console.warn("MongoDB fallback query error:", _dbErr.message);
+    }
+  }
 
   const result = {
-    total: Number(
-      response.data?.total || records.length
-    ),
+    total,
     count: records.length,
     records,
   };
@@ -219,7 +270,7 @@ async function fetchMandiPrices(
   setCache(key, result);
 
   // Save records to MongoDB if requested
-  if (persist && records.length > 0) {
+  if (persist && records.length > 0 && response?.data?.records?.length) {
     const dbResult = await MandiPrice.bulkUpsert(
       records
     );
@@ -624,9 +675,13 @@ async function fetchActiveOptions() {
   if (cached) return cached;
 
   try {
-    const res = await fetchMandiPrices({ limit: 1000 });
-    const feedStates = Array.from(new Set(res.records.map((r) => r.state)));
-    const feedCommodities = Array.from(new Set(res.records.map((r) => r.commodity)));
+    const [dbStates, dbCommodities] = await Promise.all([
+      MandiPrice.distinct("state").catch(() => []),
+      MandiPrice.distinct("commodity").catch(() => []),
+    ]);
+
+    let feedStates = (dbStates || []).filter(Boolean);
+    let feedCommodities = (dbCommodities || []).filter(Boolean);
 
     // Union all Indian states with feed states
     const states = Array.from(new Set([...ALL_INDIAN_STATES, ...feedStates])).sort();
@@ -635,7 +690,7 @@ async function fetchActiveOptions() {
     const data = {
       states,
       allStates: ALL_INDIAN_STATES,
-      activeStates: feedStates.sort(),
+      activeStates: feedStates.length > 0 ? feedStates.sort() : ALL_INDIAN_STATES,
       commodities,
     };
 
@@ -645,7 +700,7 @@ async function fetchActiveOptions() {
     return {
       states: ALL_INDIAN_STATES,
       allStates: ALL_INDIAN_STATES,
-      activeStates: [],
+      activeStates: ALL_INDIAN_STATES,
       commodities: POPULAR_COMMODITIES,
     };
   }

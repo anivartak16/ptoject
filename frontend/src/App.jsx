@@ -17,6 +17,7 @@ import { DynamicPage } from "./pages/DynamicPage.jsx";
 import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
 import { PredictionPage } from "./pages/PredictionPage.jsx";
 import { AdminMarketSyncPage } from "./pages/AdminMarketSyncPage.jsx";
+import { InspectionPage } from "./pages/InspectionPage.jsx";
 
 function RoleDashboardRedirect() {
   const { user } = useAuth();
@@ -65,7 +66,11 @@ export function App() {
         <Route path="/register/:role" element={<AuthPage reg={true} />} />
         <Route
           path="/:r/inspections"
-          element={op("Inspection desk", "inspections")}
+          element={
+            <Guard>
+              <InspectionPage />
+            </Guard>
+          }
         />
         <Route
           path="/:r"

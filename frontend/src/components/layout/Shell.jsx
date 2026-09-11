@@ -75,6 +75,7 @@ export function Shell({ children }) {
 
   if (workspaceRole === "KRISHI_KENDRA") {
     items = [
+      [t("dashboard", "Dashboard"), "dashboard", "◫"],
       [t("inspectionDesk", "Inspection Desk"), "inspections", "✓"],
       [t("myLots", "Market Lots"), "lots", "▦"],
       [t("myProfile", "KVK Profile"), "profile", "👤"],

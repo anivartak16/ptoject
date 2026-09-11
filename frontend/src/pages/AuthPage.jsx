@@ -14,13 +14,17 @@ export function AuthPage({ reg = false }) {
     }
   }, [ready, user, navigate]);
 
-  const selectedRole = ["farmer", "buyer", "fpo", "krishi-kendra"].includes(
-    routeRole?.toLowerCase()
-  )
-    ? routeRole.toLowerCase() === "krishi-kendra"
-      ? "KRISHI_KENDRA"
-      : routeRole.toUpperCase()
-    : "FARMER";
+  const normalizeRole = (r) => {
+    if (!r) return "FARMER";
+    const clean = r.toLowerCase().replace(/[-_]/g, "");
+    if (clean === "krishikendra" || clean === "kvk" || clean === "kendra") return "KRISHI_KENDRA";
+    if (clean === "buyer") return "BUYER";
+    if (clean === "fpo") return "FPO";
+    if (clean === "admin") return "ADMIN";
+    return "FARMER";
+  };
+
+  const selectedRole = normalizeRole(routeRole);
 
   const [f, setF] = useState({
     name: "",
@@ -59,6 +63,13 @@ export function AuthPage({ reg = false }) {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (routeRole) {
+      const role = normalizeRole(routeRole);
+      setF((x) => ({ ...x, role }));
+    }
+  }, [routeRole]);
 
   const reverseGeocode = async (lat, lon) => {
     try {
@@ -328,12 +339,11 @@ export function AuthPage({ reg = false }) {
 
           <select
             value={f.role}
-            onChange={(e) =>
-              navigate(
-                "/register/" +
-                  e.target.value.toLowerCase().replaceAll("_", "-")
-              )
-            }
+            onChange={(e) => {
+              const val = e.target.value;
+              set("role", val);
+              navigate("/register/" + val.toLowerCase().replaceAll("_", "-"));
+            }}
           >
             <option value="FARMER">Farmer</option>
             <option value="BUYER">Buyer</option>
