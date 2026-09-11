@@ -192,12 +192,13 @@ export function AdminMarketSyncPage() {
   const [activeTab, setActiveTab] = useState("prices");
 
   // Explorer Filter State
-  const [filterState, setFilterState] = useState("Madhya Pradesh");
+  const [filterState, setFilterState] = useState("");
   const [filterCommodity, setFilterCommodity] = useState("Wheat");
   const [filterDistrict, setFilterDistrict] = useState("");
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
   const [dataLimit, setDataLimit] = useState(50);
+  const [fallbackNotice, setFallbackNotice] = useState(null);
 
   // Explorer Data State
   const [explorerData, setExplorerData] = useState([]);
@@ -371,21 +372,93 @@ export function AdminMarketSyncPage() {
         if (filterFromDate) params.fromDate = filterFromDate;
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices", { params });
-        const records = res.data.data?.records || [];
+        let records = res.data.data?.records || [];
+        let total = res.data.data?.total || records.length;
+
+        // Smart Fallback: If 0 records because state filter is too restrictive for this crop
+        if (records.length === 0 && filterState && filterCommodity) {
+          const fallbackParams = {
+            limit: dataLimit,
+            offset: 0,
+            commodity: filterCommodity,
+          };
+          if (filterFromDate) fallbackParams.fromDate = filterFromDate;
+          if (filterToDate) fallbackParams.toDate = filterToDate;
+          try {
+            const fallbackRes = await api.get("/marketPrice/prices", { params: fallbackParams });
+            const altRecords = fallbackRes.data.data?.records || [];
+            if (altRecords.length > 0) {
+              records = altRecords;
+              total = fallbackRes.data.data?.total || altRecords.length;
+              const altStates = Array.from(new Set(altRecords.map((r) => r.state))).filter(Boolean);
+              setFallbackNotice({
+                type: "state_empty_crop_found",
+                searchedState: filterState,
+                commodity: filterCommodity,
+                count: altRecords.length,
+                availableStates: altStates,
+              });
+            } else {
+              setFallbackNotice(null);
+            }
+          } catch (_fallbackErr) {
+            setFallbackNotice(null);
+          }
+        } else {
+          setFallbackNotice(null);
+        }
+
         setExplorerData(records);
-        setExplorerTotal(res.data.data?.total || records.length);
+        setExplorerTotal(total);
       } else if (activeTab === "state-commodity") {
         // GET /api/marketPrice/prices/state-commodity?state=...&commodity=...
+        const targetState = filterState || "Madhya Pradesh";
+        const targetComm = filterCommodity || "Wheat";
         const params = {
-          state: filterState || "Madhya Pradesh",
-          commodity: filterCommodity || "Wheat",
+          state: targetState,
+          commodity: targetComm,
         };
         if (filterFromDate) params.fromDate = filterFromDate;
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/state-commodity", { params });
-        const records = res.data.data?.records || [];
+        let records = res.data.data?.records || [];
+        let total = res.data.data?.total || records.length;
+
+        // If 0 records and backend provided alternative active states for this crop
+        if (records.length === 0 && res.data.data?.commodityActiveStates?.length > 0) {
+          const topState = res.data.data.commodityActiveStates[0];
+          try {
+            const altRes = await api.get("/marketPrice/prices/state-commodity", {
+              params: {
+                state: topState,
+                commodity: targetComm,
+                fromDate: filterFromDate || undefined,
+                toDate: filterToDate || undefined,
+              },
+            });
+            const altRecords = altRes.data.data?.records || [];
+            if (altRecords.length > 0) {
+              records = altRecords;
+              total = altRes.data.data?.total || altRecords.length;
+              setFallbackNotice({
+                type: "auto_switched_state",
+                originalState: targetState,
+                activeState: topState,
+                commodity: targetComm,
+                availableStates: res.data.data.commodityActiveStates,
+              });
+            } else {
+              setFallbackNotice(null);
+            }
+          } catch (_altErr) {
+            setFallbackNotice(null);
+          }
+        } else {
+          setFallbackNotice(null);
+        }
+
         setExplorerData(records);
-        setExplorerTotal(res.data.data?.total || records.length);
+        setExplorerTotal(total);
       } else if (activeTab === "by-commodity") {
         // GET /api/marketPrice/prices/by-commodity/:commodity
         const targetCommodity = filterCommodity || "Wheat";
@@ -393,6 +466,7 @@ export function AdminMarketSyncPage() {
         const rows = res.data.data || [];
         setExplorerData(rows);
         setExplorerTotal(rows.length);
+        setFallbackNotice(null);
       } else if (activeTab === "by-state") {
         // GET /api/marketPrice/prices/by-state/:state
         const targetState = filterState || "Madhya Pradesh";
@@ -400,6 +474,7 @@ export function AdminMarketSyncPage() {
         const rows = res.data.data || [];
         setExplorerData(rows);
         setExplorerTotal(rows.length);
+        setFallbackNotice(null);
       } else if (activeTab === "db") {
         // GET /api/marketPrice/prices/db
         const params = {
@@ -412,9 +487,39 @@ export function AdminMarketSyncPage() {
         if (filterFromDate) params.fromDate = filterFromDate;
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/db", { params });
-        const records = res.data.data?.records || [];
+        let records = res.data.data?.records || [];
+        let total = res.data.data?.total || 0;
+
+        // If 0 records in DB for selected state, check across all states in DB
+        if (records.length === 0 && filterState && filterCommodity) {
+          const fallbackParams = { ...params };
+          delete fallbackParams.state;
+          try {
+            const fallbackRes = await api.get("/marketPrice/prices/db", { params: fallbackParams });
+            const altRecords = fallbackRes.data.data?.records || [];
+            if (altRecords.length > 0) {
+              records = altRecords;
+              total = fallbackRes.data.data?.total || altRecords.length;
+              const altStates = Array.from(new Set(altRecords.map((r) => r.state))).filter(Boolean);
+              setFallbackNotice({
+                type: "db_state_empty_crop_found",
+                searchedState: filterState,
+                commodity: filterCommodity,
+                count: altRecords.length,
+                availableStates: altStates,
+              });
+            } else {
+              setFallbackNotice(null);
+            }
+          } catch (_dbFallbackErr) {
+            setFallbackNotice(null);
+          }
+        } else {
+          setFallbackNotice(null);
+        }
+
         setExplorerData(records);
-        setExplorerTotal(res.data.data?.total || 0);
+        setExplorerTotal(total);
       }
     } catch (e) {
       setExplorerError(
@@ -424,6 +529,7 @@ export function AdminMarketSyncPage() {
       );
       setExplorerData([]);
       setExplorerTotal(0);
+      setFallbackNotice(null);
     } finally {
       setExplorerLoading(false);
     }
@@ -1726,6 +1832,79 @@ export function AdminMarketSyncPage() {
           </div>
         )}
 
+        {/* Active Smart Fallback Banner */}
+        {fallbackNotice && (
+          <div
+            className="sync-feedback warning"
+            style={{
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: "280px" }}>
+              <Info size={22} color="#b45309" style={{ flexShrink: 0 }} />
+              <div>
+                <strong style={{ color: "#78350f", fontSize: "14px" }}>
+                  {fallbackNotice.type === "auto_switched_state"
+                    ? `0 arrivals for ${fallbackNotice.commodity} in ${fallbackNotice.originalState}. Showing active arrivals in ${fallbackNotice.activeState}.`
+                    : `0 arrivals reported in ${fallbackNotice.searchedState} for "${fallbackNotice.commodity}". Showing ${fallbackNotice.count} arrivals from active states.`}
+                </strong>
+                <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "#92400e" }}>
+                  Active states reporting arrivals:{" "}
+                  <strong>{fallbackNotice.availableStates?.slice(0, 5).join(", ") || "Nationwide"}</strong>
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+              {filterState && (
+                <button
+                  type="button"
+                  className="date-chip"
+                  style={{
+                    background: "#dcfce7",
+                    borderColor: "#86efac",
+                    color: "#166534",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                  }}
+                  onClick={() => setFilterState("")}
+                >
+                  🌐 View All States (Nationwide)
+                </button>
+              )}
+              {fallbackNotice.availableStates?.slice(0, 3).map((st) => (
+                <button
+                  key={`switch-${st}`}
+                  type="button"
+                  className="date-chip"
+                  style={{
+                    background: "#ffffff",
+                    borderColor: "#cbd5e1",
+                    color: "#1e293b",
+                    cursor: "pointer",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                  }}
+                  onClick={() => setFilterState(st)}
+                >
+                  📍 Switch to {st}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Table Data */}
         <div className="table-container">
           {explorerLoading ? (
@@ -1738,6 +1917,38 @@ export function AdminMarketSyncPage() {
               <Table size={32} />
               <p>No records found matching the current query filters.</p>
               <small>Try selecting a different state, commodity, or date range.</small>
+              <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+                {filterState && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    style={{ fontSize: "12px", padding: "6px 12px" }}
+                    onClick={() => setFilterState("")}
+                  >
+                    🌐 Search "{filterCommodity || 'This Crop'}" Nationwide
+                  </button>
+                )}
+                {tableSearch && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    style={{ fontSize: "12px", padding: "6px 12px" }}
+                    onClick={() => setTableSearch("")}
+                  >
+                    ✕ Clear Search Text
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="primary"
+                  style={{ fontSize: "12px", padding: "6px 12px" }}
+                  disabled={syncLoading}
+                  onClick={() => handleSyncToDb({ commodity: filterCommodity, state: filterState || undefined })}
+                >
+                  <CloudDownload size={13} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                  Import Fresh {filterCommodity || "Mandi"} Data
+                </button>
+              </div>
             </div>
           ) : (
             <table className="mandi-data-table">
