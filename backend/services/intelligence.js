@@ -98,6 +98,7 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
   let district = "";
   let state = "";
   let location = "";
+  let address = "";
   let role = "FARMER";
 
   if (Array.isArray(originOrOptions)) {
@@ -105,12 +106,14 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
     district = extraOptions.district || "";
     state = extraOptions.state || "";
     location = extraOptions.location || "";
+    address = extraOptions.address || "";
     role = extraOptions.role || "FARMER";
   } else if (typeof originOrOptions === "object" && originOrOptions !== null) {
     origin = originOrOptions.origin;
     district = originOrOptions.district || "";
     state = originOrOptions.state || "";
     location = originOrOptions.location || "";
+    address = originOrOptions.address || "";
     role = originOrOptions.role || "FARMER";
   } else {
     origin = [75.8577, 22.7196];
@@ -122,6 +125,7 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
     district,
     state,
     location,
+    address,
   });
 
   const targetState = state || "Madhya Pradesh";
@@ -205,7 +209,7 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
       const mDistKey = cleanKey(price.district);
       const mMarketKey = cleanKey(price.market);
 
-      const isSameTown = Boolean(locKey) && mMarketKey.includes(locKey);
+      const isSameTown = Boolean(locKey) && (mMarketKey.includes(locKey) || locKey.includes(mMarketKey));
       const isSameDistrict =
         isSameTown ||
         (Boolean(distKey) &&
@@ -215,7 +219,7 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
 
       let dist = calculateDistanceKm(userOrigin, mandiCoords);
       if (isSameTown) {
-        dist = 2 + (hashString(price.market) % 4); // 2-5 km for same town (e.g. Khurai APMC)!
+        dist = 2 + (hashString(price.market) % 4); // 2-5 km for same town (e.g. Prithvipur APMC)!
       } else if (isSameDistrict && dist <= 8) {
         dist = 12 + (hashString(price.market) % 12); // 12-23 km for same district!
       }
@@ -323,9 +327,9 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
   const base = [...newest.values()];
   if (!base.length) return [];
 
-  // STRICT PROXIMITY FILTER: Mandis beyond 450 km are never shown as "nearby" if regional mandis exist!
-  const withinRegion = base.filter((r) => r.distanceKm <= 450);
-  const pool = withinRegion.length > 0 ? withinRegion : base.filter((r) => r.distanceKm <= 600);
+  // STRICT PROXIMITY FILTER: Mandis beyond 300 km are never shown as "nearby" if regional mandis exist!
+  const withinRegion = base.filter((r) => r.distanceKm <= 300);
+  const pool = withinRegion.length > 0 ? withinRegion : base.filter((r) => r.distanceKm <= 450);
   const finalCandidates = pool.length > 0 ? pool : base;
 
   const minNet = Math.min(...finalCandidates.map((r) => r.netPrice));

@@ -28,6 +28,7 @@ export async function getNearbyMarkets(req, res, next) {
     const district = req.query.district || req.user?.district || "";
     const state = req.query.state || req.user?.state || "";
     const location = req.query.location || req.user?.location || "";
+    const address = req.query.address || req.user?.address || "";
     const role = req.query.role || req.user?.role || "FARMER";
 
     const rows = await marketsFor(commodity, {
@@ -35,6 +36,7 @@ export async function getNearbyMarkets(req, res, next) {
       district,
       state,
       location,
+      address,
       role,
     });
     return ok(res, rows, "Nearest grain mandis");

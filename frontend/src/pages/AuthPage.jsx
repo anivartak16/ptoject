@@ -50,7 +50,14 @@ export function AuthPage({ reg = false }) {
   const [locationStatus, setLocationStatus] = useState("idle");
 
   const set = (key, value) => {
-    setF((x) => ({ ...x, [key]: value }));
+    setF((x) => {
+      const next = { ...x, [key]: value };
+      if (key === "location" || key === "district" || key === "address") {
+        next.latitude = "";
+        next.longitude = "";
+      }
+      return next;
+    });
   };
 
   const reverseGeocode = async (lat, lon) => {
@@ -202,15 +209,61 @@ export function AuthPage({ reg = false }) {
     }
   };
 
+  const quickAccounts = [
+    { role: "Farmer", email: "farmer@krishilink.com", icon: "🌾", desc: "List & sell crops" },
+    { role: "Krishi Kendra", email: "kvk@krishilink.com", icon: "🔬", desc: "Inspect & verify quality" },
+    { role: "Buyer", email: "buyer@krishilink.com", icon: "🏢", desc: "Discover & procure lots" },
+    { role: "FPO", email: "fpo@krishilink.com", icon: "🤝", desc: "Aggregate member produce" },
+  ];
+
+  const handleQuickSelect = (email) => {
+    setF((prev) => ({
+      ...prev,
+      email,
+      password: "Demo@12345",
+    }));
+  };
+
   if (!reg) {
     return (
       <div className="auth">
         <h1>Welcome back</h1>
 
-        <p>
-          Demo accounts: farmer@krishilink.com · buyer@krishilink.com ·
-          fpo@krishilink.com · password Demo@12345
-        </p>
+        <div style={{ marginBottom: "16px" }}>
+          <p style={{ margin: "0 0 8px", fontSize: "13px", color: "var(--muted)" }}>
+            ⚡ <strong>Quick Demo Login</strong> (Click to prefill & select):
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            {quickAccounts.map((acc) => {
+              const active = f.email.toLowerCase() === acc.email.toLowerCase();
+              return (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => handleQuickSelect(acc.email)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    border: active ? "2px solid #16a34a" : "1px solid #e2e8f0",
+                    background: active ? "#f0fdf4" : "#ffffff",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                  }}
+                >
+                  <span style={{ fontWeight: 600, fontSize: "13px", color: active ? "#15803d" : "#1e293b" }}>
+                    {acc.icon} {acc.role}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#64748b" }}>
+                    {acc.email}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <input

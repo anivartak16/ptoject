@@ -88,10 +88,16 @@ export async function register(req, res, next) {
       return fail(res, 409, "Email already registered", "CONFLICT");
     }
 
-    const resolvedCoords =
-      Number.isFinite(Number(req.body.longitude)) && Number.isFinite(Number(req.body.latitude))
-        ? [Number(req.body.longitude), Number(req.body.latitude)]
-        : resolveCoordinates({ district, state, location });
+    const resolvedCoords = resolveCoordinates({
+      coordinates:
+        Number.isFinite(Number(req.body.longitude)) && Number.isFinite(Number(req.body.latitude))
+          ? [Number(req.body.longitude), Number(req.body.latitude)]
+          : undefined,
+      district,
+      state,
+      location,
+      address,
+    });
 
     const user = await User.create({
       name,
@@ -192,3 +198,48 @@ export async function login(req, res, next) {
 
 export const logout = (_req, res) => ok(res, {}, "Logged out");
 export const me = (req, res) => ok(res, req.user);
+
+export async function updateProfile(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return fail(res, 404, "User not found");
+
+    const allowed = [
+      "name",
+      "phone",
+      "location",
+      "address",
+      "district",
+      "state",
+      "pincode",
+      "organizationName",
+      "registrationNumber",
+      "primaryCrop",
+      "farmName",
+      "landSize",
+    ];
+
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        user[field] = req.body[field];
+      }
+    });
+
+    if (req.body.location || req.body.district || req.body.state || req.body.address) {
+      user.geo = {
+        type: "Point",
+        coordinates: resolveCoordinates({
+          district: user.district,
+          state: user.state,
+          location: user.location,
+          address: user.address,
+        }),
+      };
+    }
+
+    await user.save();
+    return ok(res, sanitizeUser(user), "Profile updated successfully");
+  } catch (error) {
+    next(error);
+  }
+}

@@ -264,6 +264,99 @@ export function PredictionPage() {
             </div>
           </div>
 
+          {/* Deep Quantitative Analytics & Indicators Bar */}
+          {prediction.analytics && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: "12px",
+                margin: "18px 0",
+              }}
+            >
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid var(--line, #e2e8f0)",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                }}
+              >
+                <small style={{ color: "var(--muted, #64748b)", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  OLS Trend Velocity
+                </small>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: prediction.analytics.regression?.dailyDriftPct >= 0 ? "#16a34a" : "#dc2626", marginTop: "2px" }}>
+                  {prediction.analytics.regression?.dailyDriftPct >= 0 ? "+" : ""}
+                  {prediction.analytics.regression?.dailyDriftPct}% / day
+                </div>
+                <small style={{ color: "#94a3b8", fontSize: "10px" }}>
+                  Slope: ₹{prediction.analytics.regression?.slope}/pt (R²: {prediction.analytics.regression?.rSquared})
+                </small>
+              </div>
+
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid var(--line, #e2e8f0)",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                }}
+              >
+                <small style={{ color: "var(--muted, #64748b)", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Momentum RSI (14)
+                </small>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: prediction.analytics.rsi > 70 ? "#b45309" : prediction.analytics.rsi < 30 ? "#0284c7" : "#0f172a", marginTop: "2px" }}>
+                  {prediction.analytics.rsi} / 100
+                </div>
+                <small style={{ color: "#94a3b8", fontSize: "10px" }}>
+                  {prediction.analytics.rsi > 65 ? "Bullish Demand Surge" : prediction.analytics.rsi < 35 ? "Oversold Supply Drop" : "Neutral Equilibrium"}
+                </small>
+              </div>
+
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid var(--line, #e2e8f0)",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                }}
+              >
+                <small style={{ color: "var(--muted, #64748b)", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  EMA-7 Moving Avg
+                </small>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: "#166534", marginTop: "2px" }}>
+                  ₹{prediction.analytics.ema7?.toLocaleString("en-IN")}/qtl
+                </div>
+                <small style={{ color: "#94a3b8", fontSize: "10px" }}>
+                  Exponential short-term anchor
+                </small>
+              </div>
+
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid var(--line, #e2e8f0)",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                }}
+              >
+                <small style={{ color: "var(--muted, #64748b)", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" }}>
+                  Demand / Supply Ratio
+                </small>
+                <div style={{ fontSize: "16px", fontWeight: 800, color: prediction.analytics.demandSupplyRatio >= 1 ? "#16a34a" : "#ca8a04", marginTop: "2px" }}>
+                  {prediction.analytics.demandSupplyRatio}x
+                </div>
+                <small style={{ color: "#94a3b8", fontSize: "10px" }}>
+                  {prediction.analytics.demandSupplyRatio >= 1 ? "Buyer Demand Leading" : "Farmer Lots Expanding"}
+                </small>
+              </div>
+            </div>
+          )}
+
           {/* Charts Row */}
           <div className="two-col prediction-charts-grid">
             {/* Projected Price Trajectory */}

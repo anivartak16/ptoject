@@ -12,6 +12,7 @@ import {
 export function MandiRateChart({
   markets = [],
   title = "Nearby grain mandi rates",
+  height = 280,
 }) {
   const data = markets.map((row) => ({
     name: row.market?.name?.replace(/ Mandi$/, "") || "Mandi",
@@ -31,7 +32,7 @@ export function MandiRateChart({
         </div>
         <span className="chart-change positive">{data.length} mandis</span>
       </div>
-      <ResponsiveContainer width="100%" height={260}>
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart
           data={data}
           margin={{ top: 14, right: 10, left: 0, bottom: 4 }}

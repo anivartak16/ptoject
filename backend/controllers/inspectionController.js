@@ -1,14 +1,31 @@
-import { Lot, Quality } from "../models/index.js";
+import { Lot, Quality, Notification } from "../models/index.js";
 import { ok, fail } from "../utils/response.js";
 
-export async function inspectionLots(_req, res, next) {
+export async function inspectionLots(req, res, next) {
   try {
-    const lots = await Lot.find({
-      status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] },
-    })
+    const filter = {};
+    if (req.query.status) {
+      filter.status = req.query.status;
+    } else {
+      filter.status = {
+        $in: [
+          "PENDING_VERIFICATION",
+          "VERIFIED",
+          "REJECTED",
+          "AVAILABLE",
+          "PARTIALLY_SOLD",
+        ],
+      };
+    }
+
+    if (req.query.commodity) {
+      filter.commodity = req.query.commodity;
+    }
+
+    const lots = await Lot.find(filter)
       .populate(
         "owner quality",
-        "name email location commodity grade moisture inspectionStatus",
+        "name email phone location district state primaryCrop farmName organizationName grade moisture foreignMatter damagedPercentage defects inspectionStatus inspectionNotes certification inspectionDate",
       )
       .sort({ createdAt: -1 });
     return ok(res, lots);
@@ -57,28 +74,62 @@ export async function createInspection(req, res, next) {
       ? await Quality.findById(lot.quality)
       : await Quality.create({});
 
+    const centerName =
+      req.user.organizationName || req.user.name || "Krishi Vigyan Kendra";
+
     Object.assign(quality, {
-      grade,
+      grade: inspectionStatus === "REJECTED" ? "Rejected" : grade || "Grade A",
       moisture: Number(moisture),
       foreignMatter: Number(foreignMatter || 0),
       damagedPercentage: Number(damagedPercentage || 0),
-      defects,
+      defects: defects || "",
       grainImage,
-      inspectionNotes,
+      inspectionNotes: inspectionNotes || "",
       inspectionStatus,
       inspectedBy: req.user._id,
       inspectionDate: new Date(),
-      certification: "Krishi Kendra verified",
+      certification:
+        inspectionStatus === "VERIFIED"
+          ? `Krishi Vigyan Kendra Certified (${centerName})`
+          : `Inspection Rejected (${centerName})`,
     });
 
     await quality.save();
     lot.quality = quality._id;
+
+    if (inspectionStatus === "VERIFIED") {
+      lot.status = "VERIFIED"; // Ready for farmer to list on marketplace
+    } else if (inspectionStatus === "REJECTED") {
+      lot.status = "REJECTED";
+    }
     await lot.save();
 
+    // Notify farmer of verification result
+    try {
+      if (lot.owner?._id) {
+        await Notification.create({
+          user: lot.owner._id,
+          type:
+            inspectionStatus === "VERIFIED"
+              ? "LOT_VERIFIED"
+              : "LOT_INSPECTION_REJECTED",
+          message:
+            inspectionStatus === "VERIFIED"
+              ? `✓ Your lot of ${lot.commodity} (${lot.remainingQuantity || lot.quantity} kg) was verified by ${centerName} as ${grade}. You can now list it on the marketplace!`
+              : `✕ Inspection Notice: Your lot of ${lot.commodity} was rejected by ${centerName}. Reason: ${defects || inspectionNotes || "Failed moisture/quality standards"}.`,
+        });
+      }
+    } catch (_notifyErr) {
+      // Non-blocking notification failure
+    }
+
+    const populated = await Lot.findById(lot._id).populate("owner quality");
     return ok(
       res,
-      await Lot.findById(lot._id).populate("owner quality"),
-      "Grain inspection recorded",
+      populated,
+      inspectionStatus === "VERIFIED"
+        ? "Quality verified and certified! Farmer can now list produce on the marketplace."
+        : "Inspection recorded as rejected.",
     );
   } catch (error) {
     next(error);

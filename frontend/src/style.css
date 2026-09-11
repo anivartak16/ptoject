@@ -2499,3 +2499,334 @@ main {
   line-height: 1.4;
 }
 
+/* Dashboard Two-Col Height Alignment & Scrollable Markets List */
+.dashboard-mandi-grid {
+  align-items: stretch;
+}
+
+.dashboard-chart-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-markets-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-markets-list {
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-top: 6px;
+  overscroll-behavior: contain;
+}
+
+.dashboard-markets-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-markets-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.dashboard-markets-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dashboard-markets-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dashboard-markets-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-subtle, #f1f5f9);
+}
+
+/* Dedicated Buyer Dashboard Components */
+.buyer-dashboard-section {
+  margin: 24px 0;
+}
+
+.buyer-supply-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.buyer-lot-card {
+  background: #ffffff;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius-md, 10px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+
+.buyer-lot-card:hover {
+  border-color: #94a3b8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.buyer-lot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.buyer-lot-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink, #0f172a);
+}
+
+.buyer-demand-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.buyer-demand-chip strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.buyer-badge-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+.buyer-tag-farmer {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.buyer-tag-fpo {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.buyer-demand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.buyer-demand-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.buyer-demand-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Lot Quality Verification Box States */
+.lot-verification-box {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.lot-verification-box p {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+}
+
+.lot-verification-box small {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+.lot-verification-box.pending {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fef08a;
+}
+
+.lot-verification-box.verified {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.lot-verification-box.live {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.lot-verification-box.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Krishi Vigyan Kendra Command Center Styles */
+.kvk-header-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f8fafc 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.kvk-badge-center {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.kvk-tab-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.kvk-tab {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kvk-tab:hover {
+  background: #f1f5f9;
+}
+
+.kvk-tab.active {
+  background: #166534;
+  color: #ffffff;
+  border-color: #166534;
+}
+
+.inspection-lot-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.inspection-lot-card:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.inspection-lot-card.selected {
+  border-color: #166534;
+  background: #f0fdf4;
+  box-shadow: 0 0 0 1px #166534;
+}
+
+.kvk-cert-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.kvk-cert-pending {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.kvk-cert-verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.kvk-cert-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.digital-certificate-box {
+  background: #ffffff;
+  border: 2px solid #86efac;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  box-shadow: 0 4px 14px rgba(22, 101, 52, 0.08);
+}
+
+.digital-certificate-header {
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.digital-certificate-seal {
+  background: #166534;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.grain-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  object-fit: cover;
+  margin-top: 8px;
+}
+

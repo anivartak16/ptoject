@@ -45,6 +45,7 @@ export function DashboardPage() {
   const [admin, setAdmin] = useState(null);
   const [summary, setSummary] = useState(null);
   const [markets, setMarkets] = useState([]);
+  const [buyerLots, setBuyerLots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -71,18 +72,24 @@ export function DashboardPage() {
         const stateQuery = user.state ? `&state=${encodeURIComponent(user.state)}` : "";
         const locQuery = user.location ? `&location=${encodeURIComponent(user.location)}` : "";
 
-        const [trendRes, nearbyRes, summaryRes] = await Promise.all([
+        const [trendRes, nearbyRes, summaryRes, lotsRes] = await Promise.all([
           api.get(`/prices/trends?commodity=${encodeURIComponent(selectedCrop)}`),
-          api.get(
-            `/markets/nearby?commodity=${encodeURIComponent(selectedCrop)}${locationQuery}${distQuery}${stateQuery}${locQuery}&role=${user.role}`
-          ),
+          user.role === "BUYER"
+            ? Promise.resolve({ data: { data: [] } })
+            : api.get(
+                `/markets/nearby?commodity=${encodeURIComponent(selectedCrop)}${locationQuery}${distQuery}${stateQuery}${locQuery}&role=${user.role}`
+              ),
           api.get("/dashboard/summary"),
+          user.role === "BUYER" ? api.get("/lots") : Promise.resolve({ data: { data: [] } }),
         ]);
 
         if (alive) {
           setD(trendRes.data.data);
           setSummary(summaryRes.data.data);
           setMarkets(nearbyRes.data.data || []);
+          if (user.role === "BUYER") {
+            setBuyerLots((lotsRes.data?.data || []).slice(0, 6));
+          }
           setLoading(false);
         }
       } catch (e) {
@@ -248,10 +255,26 @@ export function DashboardPage() {
 
   const roleCards = isBuyer
     ? [
-        ["ACTIVE DEMANDS", summary?.activeDemands ?? "—", "Buying requirements currently open"],
-        ["PENDING OFFERS", summary?.pendingOffers ?? "—", "Offers awaiting seller response"],
-        ["ACTIVE TRADES", summary?.activeTransactions ?? "—", "Procurement commitments in motion"],
-        ["NEXT ACTION", "Find lots", "Browse supply matched to your demands"],
+        [
+          "OPEN DEMANDS",
+          summary?.activeDemands ?? 0,
+          "Procurement requirements awaiting fulfillment",
+        ],
+        [
+          "MARKETPLACE SUPPLY",
+          `${(summary?.availableVolume || 0).toLocaleString("en-IN")} kg`,
+          `${summary?.availableLots || 0} active farmer lots ready`,
+        ],
+        [
+          "OFFERS SENT",
+          summary?.pendingOffers ?? 0,
+          "Offers awaiting seller acceptance",
+        ],
+        [
+          "ACTIVE ORDERS",
+          summary?.activeTransactions ?? 0,
+          "Orders in fulfillment & dispatch",
+        ],
       ]
     : isFpo
       ? [
@@ -325,29 +348,177 @@ export function DashboardPage() {
       {/* Workspace Primary Action Banner */}
       <div className="dashboard-actions panel">
         <div>
-          <p className="eyebrow">WORKSPACE ACTION</p>
+          <p className="eyebrow">
+            {isBuyer ? "QUICK PROCUREMENT ACTIONS" : "WORKSPACE ACTION"}
+          </p>
           <h3>
             {isBuyer
-              ? "Source your next lot"
+              ? "Procurement & Sourcing Desk"
               : isFpo
                 ? "Build collective supply"
                 : "Sell with better information"}
           </h3>
           <p>
             {isBuyer
-              ? "Turn an open demand into a matched purchase from verified local sellers."
+              ? "Post immediate procurement demands, browse verified farmer supply lots, and negotiate directly with zero middlemen."
               : isFpo
                 ? "Add members and combine their available produce into one bulk market lot."
                 : "Compare nearby mandi rates, then list produce when the price and demand align."}
           </p>
         </div>
-        <Link
-          className="primary"
-          to={isBuyer ? `/${r}/lots` : isFpo ? `/${r}/aggregation` : `/${r}/lots`}
-        >
-          {isBuyer ? "Browse lots" : isFpo ? "Open aggregation" : "Manage my lots"}
-        </Link>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          {isBuyer ? (
+            <>
+              <Link className="primary" to={`/${r}/demands`}>
+                + Post Demand
+              </Link>
+              <Link
+                to={`/${r}/lots`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f1f5f9",
+                  color: "#1e293b",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  border: "1px solid #cbd5e1",
+                }}
+              >
+                Browse Lots →
+              </Link>
+            </>
+          ) : isFpo ? (
+            <Link className="primary" to={`/${r}/aggregation`}>
+              Open aggregation
+            </Link>
+          ) : (
+            <Link className="primary" to={`/${r}/lots`}>
+              Manage my lots
+            </Link>
+          )}
+        </div>
       </div>
+
+      {/* Buyer-Specific: Active Demands & Live Farmer Supply Feed */}
+      {isBuyer && (
+        <>
+          {/* Active Demands Section */}
+          <div className="panel buyer-dashboard-section" style={{ marginTop: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px" }}>My Active Procurement Demands</h3>
+                <p style={{ margin: "4px 0 0 0", color: "var(--ink-secondary)", fontSize: "13px" }}>
+                  Real-time status of your buying requisitions and automated lot matching.
+                </p>
+              </div>
+              <Link className="primary" to={`/${r}/demands`} style={{ textDecoration: "none", fontSize: "13px", padding: "6px 14px" }}>
+                + Post New Demand
+              </Link>
+            </div>
+
+            {summary?.recentDemands?.length > 0 ? (
+              <div className="buyer-demand-grid">
+                {summary.recentDemands.map((demand) => (
+                  <div key={demand._id} className="buyer-demand-card">
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: "16px" }}>{demand.commodity}</span>
+                        <span className="buyer-badge-tag buyer-tag-farmer">{demand.status || "ACTIVE"}</span>
+                      </div>
+                      <div style={{ fontSize: "13px", color: "var(--ink-secondary)", marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <div><b>Volume:</b> {(demand.requiredQuantity || 0).toLocaleString("en-IN")} kg</div>
+                        <div><b>Quality:</b> {demand.requiredQuality || "Standard"}</div>
+                        <div><b>Max Budget:</b> ₹{(demand.maxPrice || 0).toLocaleString("en-IN")}/qtl</div>
+                        <div><b>Location:</b> {demand.preferredLocation || userLocationLabel}</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <small style={{ color: "var(--ink-secondary)" }}>
+                        Posted {new Date(demand.createdAt).toLocaleDateString("en-IN")}
+                      </small>
+                      <Link
+                        to={`/${r}/recommendations?demandId=${demand._id}`}
+                        style={{ fontSize: "12px", fontWeight: 700, color: "var(--brand, #166534)", textDecoration: "none" }}
+                      >
+                        View Matches →
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: "20px", background: "#f8fafc", borderRadius: "8px", textAlign: "center", border: "1px dashed #cbd5e1" }}>
+                <p style={{ margin: "0 0 10px 0", color: "var(--ink-secondary)", fontSize: "14px" }}>
+                  You don't have any open procurement demands yet. Post what you need and our algorithmic engine will match verified farmer lots.
+                </p>
+                <Link className="primary" to={`/${r}/demands`} style={{ display: "inline-block", textDecoration: "none" }}>
+                  + Post First Demand
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Verified Local Farmer Supply Feed */}
+          <div className="panel buyer-dashboard-section">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px" }}>Verified Local Farmer & FPO Supply Lots</h3>
+                <p style={{ margin: "4px 0 0 0", color: "var(--ink-secondary)", fontSize: "13px" }}>
+                  Direct farm produce ready for procurement with verified quality and location.
+                </p>
+              </div>
+              <Link to={`/${r}/lots`} style={{ fontSize: "13px", fontWeight: 600, color: "var(--brand, #166534)", textDecoration: "none" }}>
+                Browse All ({summary?.availableLots || buyerLots.length}) Lots →
+              </Link>
+            </div>
+
+            {buyerLots.length > 0 ? (
+              <div className="buyer-supply-grid">
+                {buyerLots.map((lot) => (
+                  <div key={lot._id} className="buyer-lot-card">
+                    <div>
+                      <div className="buyer-lot-header">
+                        <h4>{lot.commodity}</h4>
+                        <span className={`buyer-badge-tag ${lot.ownerType === "FPO" ? "buyer-tag-fpo" : "buyer-tag-farmer"}`}>
+                          {lot.ownerType || "FARMER"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "13px", color: "var(--ink-secondary)", display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div><b>Available:</b> {(lot.remainingQuantity || lot.quantity).toLocaleString("en-IN")} {lot.unit || "kg"}</div>
+                        <div><b>Expected:</b> <span style={{ color: "var(--brand, #166534)", fontWeight: 700 }}>₹{lot.expectedPrice}/qtl</span></div>
+                        <div><b>Location:</b> 📍 {lot.location || lot.owner?.location || lot.owner?.district || "Nearby Region"}</div>
+                        <div><b>Quality:</b> {lot.quality?.grade || "Grade A"}</div>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/${r}/lots`}
+                      className="primary"
+                      style={{
+                        textAlign: "center",
+                        display: "block",
+                        textDecoration: "none",
+                        marginTop: "14px",
+                        fontSize: "13px",
+                        padding: "8px 12px",
+                      }}
+                    >
+                      Make Direct Offer
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: "20px", background: "#f8fafc", borderRadius: "8px", textAlign: "center", border: "1px dashed #cbd5e1" }}>
+                <p style={{ margin: 0, color: "var(--ink-secondary)", fontSize: "14px" }}>
+                  No farmer supply lots currently listed. New harvests are synchronized daily.
+                </p>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Market Prediction Spotlight Banner */}
       <div className="panel prediction-spotlight-card">
@@ -365,7 +536,9 @@ export function DashboardPage() {
             </h3>
             <p>
               {isBuyer
-                ? `Predicting procurement windows for ${selectedCrop} based on APMC arrivals and buyer trends.`
+                ? d?.changePercentage && d.changePercentage < 0
+                  ? `Wholesale arrivals are strong and prices are trending softer (-${Math.abs(d.changePercentage)}% outlook). Consider staggered procurement batches to maximize margins.`
+                  : `Wholesale mandi supplies are tightening and prices are trending upward (${d?.changePercentage >= 0 ? "+" : ""}${d?.changePercentage || 0}% outlook). Lock in farmer contracts now before rates escalate.`
                 : isFpo
                   ? `Evaluating member ${selectedCrop} inventory against prospective institutional buyer contracts.`
                   : advice.reason ||
@@ -374,7 +547,7 @@ export function DashboardPage() {
           </div>
           <div className="prediction-spotlight-badges">
             <span className="spotlight-badge badge-hold">
-              ★ {isBuyer ? "BUY NOW" : isFpo ? "AGGREGATE & HOLD" : advice.recommendation || "HOLD PRODUCE"}
+              ★ {isBuyer ? (d?.changePercentage && d.changePercentage > 3 ? "WAIT FOR SOFTENING" : "BUY NOW") : isFpo ? "AGGREGATE & HOLD" : advice.recommendation || "HOLD PRODUCE"}
             </span>
             <small>84% Model Confidence · 14-Day Horizon</small>
           </div>
@@ -391,186 +564,205 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Interactive Commodity Switcher Bar */}
-      <div className="dashboard-crop-selector-bar">
-        <div className="crop-selector-label">
-          <span>🔍 View Nearby Mandis For:</span>
-        </div>
-        <div className="crop-selector-pills">
-          {popularCrops.map((crop) => {
-            const isUserCrop =
-              user.primaryCrop &&
-              crop.toLowerCase() === user.primaryCrop.toLowerCase();
-            const isActive = selectedCrop.toLowerCase() === crop.toLowerCase();
-            return (
-              <button
-                key={crop}
-                type="button"
-                className={`crop-pill ${isActive ? "active" : ""}`}
-                onClick={() => setSelectedCrop(crop)}
-              >
-                {isUserCrop ? `★ ${crop} (My Crop)` : crop}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Two Column: Live Mandi Chart + Personalized Nearby Markets List */}
-      <div className="two-col">
-        <div className="panel">
-          <MandiRateChart
-            markets={markets}
-            title={
-              isBuyer
-                ? `Nearby ${selectedCrop} Procurement Rates`
-                : isFpo
-                  ? `Regional ${selectedCrop} Mandi Comparison`
-                  : `Nearby ${selectedCrop} Mandi Rates`
-            }
-          />
-          <small>
-            {advice.disclaimer} · Live APMC trading rates · Last checked{" "}
-            {new Date(d?.lastUpdated || Date.now()).toLocaleTimeString("en-IN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </small>
-        </div>
-
-        <div className="panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-            <h3 style={{ margin: 0 }}>
-              {isBuyer
-                ? `Top Procurement Mandis Nearby`
-                : isFpo
-                  ? `Optimal Aggregation Mandis`
-                  : `Best Nearby Markets`}
-            </h3>
-            <span style={{ fontSize: "12px", color: "var(--ink-secondary)", fontWeight: 600 }}>
-              {markets.length} verified mandis
-            </span>
-          </div>
-          <p style={{ fontSize: "13px", color: "var(--ink-secondary)", margin: "0 0 14px 0" }}>
-            {isBuyer
-              ? `Ranked for lowest purchase rate & freight to ${userLocationLabel}.`
-              : isFpo
-                ? `Ranked for collective member produce aggregation around ${userLocationLabel}.`
-                : `Ranked by net profit in your pocket after transport from ${userLocationLabel}.`}
-          </p>
-
-          {markets.length === 0 ? (
-            <div style={{ padding: "20px 0", color: "var(--ink-secondary)", fontSize: "14px" }}>
-              No nearby mandis currently reporting live trades for {selectedCrop}. Try selecting another commodity above.
+      {/* Interactive Commodity Switcher Bar & Mandi Panels (For Farmers & FPOs only) */}
+      {!isBuyer && (
+        <>
+          <div className="dashboard-crop-selector-bar">
+            <div className="crop-selector-label">
+              <span>🔍 View Nearby Mandis For:</span>
             </div>
-          ) : (
-            markets.map((p, i) => (
-              <div
-                className="market-row"
-                key={p._id || p.market?._id || p.market?.name || i}
-              >
-                <div>
-                  <b>
-                    {p.isSameTown && (
-                      <span className="recommended-badge" style={{ background: "#dbeafe", color: "#1e40af", fontWeight: 800 }}>
-                        📍 IN YOUR TOWN
-                      </span>
-                    )}
-                    {p.isSameDistrict && !p.isSameTown && (
-                      <span className="recommended-badge badge-district">
-                        📍 LOCAL DISTRICT APMC
-                      </span>
-                    )}
-                    {p.badge && !p.isSameDistrict && !p.isSameTown && (
-                      <span className={`recommended-badge ${p.badge.includes("TOP") ? "badge-price" : p.badge.includes("NEAREST") ? "badge-nearest" : ""}`}>
-                        {p.badge}
-                      </span>
-                    )}
-                    {i === 0 && !p.badge && !p.isSameDistrict && !p.isSameTown && (
-                      <span className="recommended-badge">BEST FIT</span>
-                    )}{" "}
-                    {i + 1}. {p.market?.name}
-                  </b>
-                  <div style={{ marginTop: "4px" }}>
-                    <small>
-                      {p.market?.location || p.market?.district} · {p.distanceKm} km away · net ₹
-                      {p.netPrice ?? p.modalPrice}/kg · rating{" "}
-                      {p.reviewAverage ?? "4.3"}/5 · transport ₹
-                      {p.estimatedTransportCost ?? 1}/kg
-                    </small>
-                  </div>
-                  {p.recommendationReasons?.length > 0 && (
-                    <small className="market-reasons">
-                      {p.recommendationReasons.join(" · ")}
-                    </small>
-                  )}
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--brand, #166534)" }}>
-                    ₹{p.modalPrice}/kg
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--ink-secondary)" }}>
-                    ₹{p.modalPricePerQtl || p.modalPrice * 100}/qtl
-                  </div>
-                  <div style={{ fontSize: "11px", fontWeight: 600, color: "#475569", marginTop: "2px" }}>
-                    Score: {p.recommendationScore ?? "—"}/100
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-
-          <div style={{ marginTop: "16px" }}>
-            <Link className="primary" to={"/" + r + "/prices"}>
-              Compare all regional mandis →
-            </Link>
+            <div className="crop-selector-pills">
+              {popularCrops.map((crop) => {
+                const isUserCrop =
+                  user.primaryCrop &&
+                  crop.toLowerCase() === user.primaryCrop.toLowerCase();
+                const isActive = selectedCrop.toLowerCase() === crop.toLowerCase();
+                return (
+                  <button
+                    key={crop}
+                    type="button"
+                    className={`crop-pill ${isActive ? "active" : ""}`}
+                    onClick={() => setSelectedCrop(crop)}
+                  >
+                    {isUserCrop ? `★ ${crop} (My Crop)` : crop}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Nearest Mandis on Interactive Map */}
-      <div className="panel mandi-map-panel">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-          <h3 style={{ margin: 0 }}>
-            {isBuyer
-              ? "Procurement Mandis on the Map"
-              : isFpo
-                ? "Regional Member Supply & Mandis Map"
-                : "Nearest Mandis on the Map"}
-          </h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-secondary)", fontWeight: 600 }}>
-            Measured from {userLocationLabel}
-          </span>
-        </div>
-        <p style={{ fontSize: "13px", color: "var(--ink-secondary)", marginBottom: "16px" }}>
-          Pins show verified APMC locations and today's modal rate. Tap any pin to compare arrivals and distance.
-        </p>
-        <MandiMap markets={markets} userLocation={userCoordinates} compact />
-      </div>
+          {/* Two Column: Live Mandi Chart + Personalized Nearby Markets List */}
+          <div className="two-col dashboard-mandi-grid">
+            <div className="panel dashboard-chart-panel">
+              <MandiRateChart
+                markets={markets}
+                height={320}
+                title={
+                  isFpo
+                    ? `Regional ${selectedCrop} Mandi Comparison`
+                    : `Nearby ${selectedCrop} Mandi Rates`
+                }
+              />
+              <div style={{ marginTop: "auto", paddingTop: "12px" }}>
+                <small style={{ color: "var(--ink-secondary)", display: "block", lineHeight: "1.4" }}>
+                  {advice.disclaimer} · Live APMC trading rates · Last checked{" "}
+                  {new Date(d?.lastUpdated || Date.now()).toLocaleTimeString("en-IN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </small>
+              </div>
+            </div>
+
+            <div className="panel dashboard-markets-panel">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+                <h3 style={{ margin: 0 }}>
+                  {isFpo
+                    ? `Optimal Aggregation Mandis`
+                    : `Best Nearby Markets`}
+                </h3>
+                <span style={{ fontSize: "12px", color: "var(--ink-secondary)", fontWeight: 600 }}>
+                  {markets.length} verified mandis
+                </span>
+              </div>
+              <p style={{ fontSize: "13px", color: "var(--ink-secondary)", margin: "0 0 10px 0" }}>
+                {isFpo
+                  ? `Ranked for collective member produce aggregation around ${userLocationLabel}.`
+                  : `Ranked by net profit in your pocket after transport from ${userLocationLabel}.`}
+              </p>
+
+              <div className="dashboard-markets-list">
+                {markets.length === 0 ? (
+                  <div style={{ padding: "20px 0", color: "var(--ink-secondary)", fontSize: "14px" }}>
+                    No nearby mandis currently reporting live trades for {selectedCrop}. Try selecting another commodity above.
+                  </div>
+                ) : (
+                  markets.map((p, i) => (
+                    <div
+                      className="market-row"
+                      key={p._id || p.market?._id || p.market?.name || i}
+                    >
+                      <div>
+                        <b>
+                          {p.isSameTown && (
+                            <span className="recommended-badge" style={{ background: "#dbeafe", color: "#1e40af", fontWeight: 800 }}>
+                              📍 IN YOUR TOWN
+                            </span>
+                          )}
+                          {p.isSameDistrict && !p.isSameTown && (
+                            <span className="recommended-badge badge-district">
+                              📍 LOCAL DISTRICT APMC
+                            </span>
+                          )}
+                          {p.badge && !p.isSameDistrict && !p.isSameTown && (
+                            <span className={`recommended-badge ${p.badge.includes("TOP") ? "badge-price" : p.badge.includes("NEAREST") ? "badge-nearest" : ""}`}>
+                              {p.badge}
+                            </span>
+                          )}
+                          {i === 0 && !p.badge && !p.isSameDistrict && !p.isSameTown && (
+                            <span className="recommended-badge">BEST FIT</span>
+                          )}{" "}
+                          {i + 1}. {p.market?.name}
+                        </b>
+                        <div style={{ marginTop: "4px" }}>
+                          <small>
+                            {p.market?.location || p.market?.district} · {p.distanceKm} km away · net ₹
+                            {p.netPrice ?? p.modalPrice}/kg · rating{" "}
+                            {p.reviewAverage ?? "4.3"}/5 · transport ₹
+                            {p.estimatedTransportCost ?? 1}/kg
+                          </small>
+                        </div>
+                        {p.recommendationReasons?.length > 0 && (
+                          <small className="market-reasons">
+                            {p.recommendationReasons.join(" · ")}
+                          </small>
+                        )}
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0, paddingLeft: "8px" }}>
+                        <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--brand, #166534)" }}>
+                          ₹{p.modalPrice}/kg
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--ink-secondary)" }}>
+                          ₹{p.modalPricePerQtl || p.modalPrice * 100}/qtl
+                        </div>
+                        <div style={{ fontSize: "11px", fontWeight: 600, color: "#475569", marginTop: "2px" }}>
+                          Score: {p.recommendationScore ?? "—"}/100
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="dashboard-markets-footer">
+                <Link className="primary" to={"/" + r + "/prices"}>
+                  Compare all regional mandis →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Nearest Mandis on Interactive Map */}
+          <div className="panel mandi-map-panel">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+              <h3 style={{ margin: 0 }}>
+                {isFpo
+                  ? "Regional Member Supply & Mandis Map"
+                  : "Nearest Mandis on the Map"}
+              </h3>
+              <span style={{ fontSize: "12px", color: "var(--ink-secondary)", fontWeight: 600 }}>
+                Measured from {userLocationLabel}
+              </span>
+            </div>
+            <p style={{ fontSize: "13px", color: "var(--ink-secondary)", marginBottom: "16px" }}>
+              Pins show verified APMC locations and today's modal rate. Tap any pin to compare arrivals and distance.
+            </p>
+            <MandiMap markets={markets} userLocation={userCoordinates} compact />
+          </div>
+        </>
+      )}
 
       {/* Role-Specific Activity Panels */}
       {isBuyer && (
-        <div className="two-col dashboard-role-panels">
+        <div className="two-col dashboard-role-panels" style={{ marginTop: "24px" }}>
           <div className="panel">
-            <p className="eyebrow">BUY-SIDE ACTIVITY</p>
-            <h3>Procurement desk</h3>
+            <p className="eyebrow">DEMAND BOOK</p>
+            <h3>Procurement Requirements</h3>
             <p>
-              Manage open demands, review ranked matches, and turn the best
-              available lots into offers.
+              Manage open demand requisitions, define quantity tolerances, target specifications, and maximum landed budgets.
             </p>
             <Link className="primary" to={`/${r}/demands`}>
-              Open demand book
+              Open Demand Book →
             </Link>
           </div>
           <div className="panel">
             <p className="eyebrow">FAIR MATCHING</p>
-            <h3>Explainable rankings</h3>
+            <h3>Explainable Sourcing Engine</h3>
             <p>
-              Every match is scored on quantity, quality, price, location, and
-              availability. No hidden ranking.
+              Algorithmic scoring matching your requirements against available farmer and FPO lots with transparent scoring breakdown.
             </p>
             <Link className="primary" to={`/${r}/recommendations`}>
-              View recommendations
+              View Recommended Lots →
+            </Link>
+          </div>
+          <div className="panel">
+            <p className="eyebrow">NEGOTIATION DESK</p>
+            <h3>Offers & Proposals</h3>
+            <p>
+              Send formal bids directly to verified growers, manage counter-offers, and lock in volume contracts.
+            </p>
+            <Link className="primary" to={`/${r}/offers`}>
+              Manage Offers ({summary?.pendingOffers ?? 0}) →
+            </Link>
+          </div>
+          <div className="panel">
+            <p className="eyebrow">FULFILLMENT & ORDERS</p>
+            <h3>Active Orders & Logistics</h3>
+            <p>
+              Track orders in fulfillment, monitor dispatch from farmgate to warehouse, and inspect digital quality certificates.
+            </p>
+            <Link className="primary" to={`/${r}/transactions`}>
+              Track Orders ({summary?.activeTransactions ?? 0}) →
             </Link>
           </div>
         </div>
