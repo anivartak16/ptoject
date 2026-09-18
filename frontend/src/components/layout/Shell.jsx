@@ -195,28 +195,35 @@ export function Shell({ children }) {
 
           <div className="header-right">
             {/* Direct Profile Button in Header */}
-            <Link
-              to={`/${r}/profile`}
-              className="header-direct-profile-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 14px",
-                borderRadius: "8px",
-                background: "#f0fdf4",
-                border: "1px solid #86efac",
-                color: "#166534",
-                fontWeight: 700,
-                fontSize: "13px",
-                textDecoration: "none",
-                boxShadow: "0 1px 2px rgba(22, 101, 52, 0.08)",
-              }}
-              title="Open My Profile"
-            >
-              <span>👤</span>
-              <span>{workspaceRole === "BUYER" ? "Buyer Profile" : workspaceRole === "FPO" ? "FPO Leader" : "My Profile"}</span>
-            </Link>
+            {(() => {
+              const isProfileActive = location.pathname.endsWith("/profile");
+              return (
+                <Link
+                  to={`/${r}/profile`}
+                  className={`header-direct-profile-btn ${isProfileActive ? "active" : ""}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 14px",
+                    borderRadius: "8px",
+                    background: isProfileActive ? "#15803d" : "#f0fdf4",
+                    border: isProfileActive ? "1px solid #166534" : "1px solid #86efac",
+                    color: isProfileActive ? "#ffffff" : "#166534",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    boxShadow: isProfileActive ? "0 2px 4px rgba(21, 128, 61, 0.25)" : "0 1px 2px rgba(22, 101, 52, 0.08)",
+                    transition: "all 0.15s ease",
+                  }}
+                  title="Open My Profile"
+                >
+                  <span>{workspaceRole === "BUYER" ? "🏢" : workspaceRole === "FPO" ? "🏛️" : "👤"}</span>
+                  <span>{workspaceRole === "BUYER" ? "Buyer Profile" : workspaceRole === "FPO" ? "FPO Leader" : "My Profile"}</span>
+                  {isProfileActive && <span style={{ fontSize: "9px", background: "rgba(255,255,255,0.25)", padding: "1px 5px", borderRadius: "10px" }}>Active</span>}
+                </Link>
+              );
+            })()}
 
             {/* Multilingual Switcher */}
             <div className="shell-lang-switcher">

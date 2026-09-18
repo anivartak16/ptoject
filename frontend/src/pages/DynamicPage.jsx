@@ -36,6 +36,12 @@ import {
   Calendar,
   DollarSign,
   Package,
+  Calculator,
+  Printer,
+  Download,
+  UploadCloud,
+  CheckCircle,
+  TrendingUp,
 } from "lucide-react";
 
 export function DynamicPage() {
@@ -63,6 +69,25 @@ export function DynamicPage() {
   const [ekycLoading, setEkycLoading] = useState(false);
   const [ekycModalMsg, setEkycModalMsg] = useState("");
   const [ekycModalErr, setEkycModalErr] = useState("");
+
+  // Buyer Profile Interactive Tools State
+  const [gstVerifyStatus, setGstVerifyStatus] = useState(null);
+  const [buyerDocuments, setBuyerDocuments] = useState([
+    { id: 1, name: "GSTIN_Certificate_REG06.pdf", type: "GSTIN Registration", size: "1.2 MB", date: "15 Sep 2026", verified: true },
+    { id: 2, name: "APMC_Mandi_Trader_License.pdf", type: "Mandi Trading License", size: "840 KB", date: "18 Sep 2026", verified: true },
+    { id: 3, name: "Corporate_PAN_Card.pdf", type: "Income Tax PAN", size: "620 KB", date: "10 Sep 2026", verified: true },
+  ]);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
+  // FPO Produce Aggregation Pooling Calculator State
+  const [aggCrop, setAggCrop] = useState("Soyabean");
+  const [aggFarmersCount, setAggFarmersCount] = useState(25);
+  const [aggYieldPerFarmer, setAggYieldPerFarmer] = useState(40);
+  const [aggBaseMandiPrice, setAggBaseMandiPrice] = useState(4850);
+  const [aggBulkOfferPrice, setAggBulkOfferPrice] = useState(4980);
+
+  // Farmer Digital Card & Preview Modal State
+  const [showFarmerCardModal, setShowFarmerCardModal] = useState(false);
 
   // Buyer Form state
   const [buyerForm, setBuyerForm] = useState({
@@ -281,6 +306,11 @@ export function DynamicPage() {
         "Groundnut",
       ];
 
+      const hasGstin = Boolean(buyerForm.gstNumber && buyerForm.gstNumber.trim().length >= 10);
+      const hasLicense = Boolean(buyerForm.mandiLicenseNumber && buyerForm.mandiLicenseNumber.trim().length >= 4);
+      const progressPercent = 25 + (hasGstin ? 25 : 0) + (hasLicense ? 25 : 0) + 25;
+      const isFullyVerified = progressPercent >= 100;
+
       return (
         <section className="profile-page animate-fadeIn">
           {/* Header Banner */}
@@ -307,6 +337,71 @@ export function DynamicPage() {
 
           {profileMsg && <div className="form-message success" style={{ marginBottom: "16px" }}>✓ {profileMsg}</div>}
           {profileErr && <div className="form-message error" style={{ marginBottom: "16px" }}>✕ {profileErr}</div>}
+
+          {/* Verification Progress Bar */}
+          <div
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              marginBottom: "20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>
+                  {getLabel("Buyer Verification Level:", "खरीदार सत्यापन स्तर:", "खरेदीदार पडताळणी स्तर:")}
+                </span>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    padding: "3px 10px",
+                    borderRadius: "12px",
+                    background: isFullyVerified ? "#dcfce7" : "#fef3c7",
+                    color: isFullyVerified ? "#166534" : "#92400e",
+                    fontWeight: 700,
+                  }}
+                >
+                  {isFullyVerified
+                    ? getLabel("Tier-1 APMC Institutional Verified (100%)", "टियर-1 एपीएमसी संस्थागत सत्यापित (100%)", "टियर-१ बाजार समिती अधिकृत खरेदीदार (१००%)")
+                    : getLabel("Tier-2 Commercial Buyer (75%)", "टियर-2 वाणिज्यिक खरीदार (75%)", "टियर-२ व्यावसायिक खरेदीदार (७५%)")}
+                </span>
+              </div>
+              <span style={{ fontSize: "13px", fontWeight: 800, color: "#16a34a" }}>
+                {progressPercent}% Complete
+              </span>
+            </div>
+
+            <div style={{ background: "#e2e8f0", borderRadius: "8px", height: "8px", overflow: "hidden" }}>
+              <div
+                style={{
+                  width: `${progressPercent}%`,
+                  height: "100%",
+                  background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                  transition: "width 0.4s ease",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "8px", marginTop: "12px", fontSize: "12px" }}>
+              <div style={{ color: "#16a34a", display: "flex", alignItems: "center", gap: "6px" }}>
+                <CheckCircle2 size={15} /> <span>Basic Account Profile</span>
+              </div>
+              <div style={{ color: hasGstin ? "#16a34a" : "#64748b", display: "flex", alignItems: "center", gap: "6px" }}>
+                {hasGstin ? <CheckCircle2 size={15} /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #cbd5e1" }} />}
+                <span>GSTIN {hasGstin ? "Validated" : "Pending"}</span>
+              </div>
+              <div style={{ color: hasLicense ? "#16a34a" : "#64748b", display: "flex", alignItems: "center", gap: "6px" }}>
+                {hasLicense ? <CheckCircle2 size={15} /> : <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #cbd5e1" }} />}
+                <span>APMC Mandi License {hasLicense ? "Linked" : "Pending"}</span>
+              </div>
+              <div style={{ color: "#16a34a", display: "flex", alignItems: "center", gap: "6px" }}>
+                <CheckCircle2 size={15} /> <span>100% Escrow Vault Active</span>
+              </div>
+            </div>
+          </div>
 
           {/* Top 4 Metric KPI Cards */}
           <div className="grid" style={{ marginBottom: "24px" }}>
@@ -340,11 +435,13 @@ export function DynamicPage() {
               gap: "8px",
               borderBottom: "2px solid #e2e8f0",
               marginBottom: "22px",
+              overflowX: "auto",
             }}
           >
             {[
               { id: "identity", label: getLabel("🏢 Business Identity & Credentials", "🏢 व्यावसायिक पहचान व लाइसेंस", "🏢 व्यावसायिक ओळख व परवाना") },
-              { id: "procurement", label: getLabel("🌾 Procurement Capacity & Commodities", "🌾 खरीद क्षमता व फसलें", "🌾 खरेदी क्षमता व पिके") },
+              { id: "procurement", label: getLabel("🌾 Procurement Specs & Live Demands", "🌾 खरीद विनिर्देश व मांग", "🌾 खरेदी निकष व थेट मागण्या") },
+              { id: "compliance", label: getLabel("📁 Document Vault & Verification", "📁 दस्तावेज वॉल्ट व सत्यापन", "📁 कागदपत्रे व पडताळणी") },
               { id: "trust", label: getLabel("🛡️ Trust Score & Escrow Certificate", "🛡️ विश्वास स्कोर व एस्क्रो प्रमाणपत्र", "🛡️ पत निर्देशांक व एस्क्रो प्रमाणपत्र") },
             ].map((tab) => (
               <button
@@ -361,6 +458,7 @@ export function DynamicPage() {
                   color: buyerActiveTab === tab.id ? "#15803d" : "#64748b",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {tab.label}
@@ -497,13 +595,47 @@ export function DynamicPage() {
                       required
                     />
                   </label>
-                  <label>
-                    {getLabel("GSTIN (15 Digits)", "जीएसटी नंबर (15 अंक)", "जीएसटी क्रमांक (१५ अंकी)")}
+                  <label style={{ gridColumn: "span 2" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                      <span>{getLabel("GSTIN (15 Digits)", "जीएसटी नंबर (15 अंक)", "जीएसटी क्रमांक (१५ अंकी)")}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!buyerForm.gstNumber || buyerForm.gstNumber.length < 10) {
+                            alert("Please enter a valid 15-character GSTIN first.");
+                            return;
+                          }
+                          setGstVerifyStatus("verifying");
+                          setTimeout(() => setGstVerifyStatus("valid"), 600);
+                        }}
+                        style={{
+                          padding: "3px 10px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          background: "#f0fdf4",
+                          border: "1px solid #86efac",
+                          color: "#166534",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {gstVerifyStatus === "verifying" ? "⏳ Validating..." : "⚡ Validate with GSTN"}
+                      </button>
+                    </div>
                     <input
                       placeholder="e.g. 23AAACB9281D1Z5"
                       value={buyerForm.gstNumber}
-                      onChange={(e) => setBuyerForm({ ...buyerForm, gstNumber: e.target.value.toUpperCase() })}
+                      onChange={(e) => {
+                        setBuyerForm({ ...buyerForm, gstNumber: e.target.value.toUpperCase() });
+                        setGstVerifyStatus(null);
+                      }}
                     />
+                    {gstVerifyStatus === "valid" && (
+                      <div style={{ marginTop: "6px", fontSize: "12px", color: "#166534", background: "#f0fdf4", padding: "6px 10px", borderRadius: "6px", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <CheckCircle2 size={14} color="#16a34a" />
+                        <span><b>GSTN Authenticated:</b> Regular Taxpayer Active · Tax Jurisdiction: {buyerForm.district || "Indore"} Central Ward</span>
+                      </div>
+                    )}
                   </label>
                   <label>
                     {getLabel("Permanent Account Number (PAN)", "पैन नंबर (10 अंक)", "पॅन क्रमांक (१० अंकी)")}
@@ -560,7 +692,7 @@ export function DynamicPage() {
             </div>
           )}
 
-          {/* TAB 2: Procurement Preferences & Commodities */}
+          {/* TAB 2: Procurement Preferences & Commodities & Demands Shortcut */}
           {buyerActiveTab === "procurement" && (
             <div className="two-col animate-fadeIn" style={{ alignItems: "flex-start" }}>
               <div className="panel">
@@ -612,6 +744,24 @@ export function DynamicPage() {
                     <li>Foreign Matter / Dockage: &lt; 1.5% maximum</li>
                   </ul>
                 </div>
+
+                {/* Quick Demand Launcher Card */}
+                <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "10px", padding: "14px", marginTop: "16px" }}>
+                  <h4 style={{ margin: "0 0 6px 0", color: "#14532d", fontSize: "14px" }}>
+                    🌾 Live Procurement Demands for Your Account
+                  </h4>
+                  <p style={{ margin: "0 0 10px 0", fontSize: "12px", color: "#166534" }}>
+                    Active procurement orders posted to farmers and FPOs across your sourcing region.
+                  </p>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <Link className="primary" to={`/${r}/demands`} style={{ fontSize: "12px", padding: "6px 12px", textDecoration: "none" }}>
+                      + Publish New Demand
+                    </Link>
+                    <Link className="secondary" to={`/${r}/matches`} style={{ fontSize: "12px", padding: "6px 12px", textDecoration: "none" }}>
+                      ⚡ View AI Crop Matches
+                    </Link>
+                  </div>
+                </div>
               </div>
 
               <form
@@ -655,7 +805,132 @@ export function DynamicPage() {
             </div>
           )}
 
-          {/* TAB 3: Trust Score & Escrow Certificate */}
+          {/* TAB 3: Document Vault & Verification */}
+          {buyerActiveTab === "compliance" && (
+            <div className="two-col animate-fadeIn" style={{ alignItems: "flex-start" }}>
+              <div className="panel" style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "17px" }}>
+                      {getLabel("Accredited Documents Vault", "सत्यापित दस्तावेज वॉल्ट", "प्रमाणित कागदपत्रे")}
+                    </h3>
+                    <small style={{ color: "var(--ink-secondary)" }}>
+                      Legally certified credentials stored in secure DigiLocker / GSTN vault
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUploadingDoc(true);
+                      setTimeout(() => {
+                        setBuyerDocuments((prev) => [
+                          ...prev,
+                          {
+                            id: Date.now(),
+                            name: "Warehouse_Pollution_Certificate.pdf",
+                            type: "State Pollution Clearance",
+                            size: "940 KB",
+                            date: "19 Sep 2026",
+                            verified: true,
+                          },
+                        ]);
+                        setIsUploadingDoc(false);
+                      }, 700);
+                    }}
+                    disabled={isUploadingDoc}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 14px",
+                      background: "#16a34a",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <UploadCloud size={14} />
+                    <span>{isUploadingDoc ? "Uploading..." : "+ Upload Document"}</span>
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {buyerDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "12px 14px",
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <FileText size={20} color="#0284c7" />
+                        <div>
+                          <strong style={{ fontSize: "14px", color: "#1e293b", display: "block" }}>{doc.name}</strong>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>
+                            {doc.type} · {doc.size} · Uploaded {doc.date}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            padding: "3px 8px",
+                            borderRadius: "10px",
+                            background: "#dcfce7",
+                            color: "#166534",
+                          }}
+                        >
+                          ✓ Verified
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => alert(`Viewing verified certificate: ${doc.name}`)}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "11px",
+                            background: "#ffffff",
+                            border: "1px solid #cbd5e1",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel">
+                <h3>{getLabel("Institutional Verification Standards", "संस्थागत सत्यापन मानक", "संस्थागत पडताळणी निकष")}</h3>
+                <p style={{ color: "var(--ink-secondary)", fontSize: "13px", lineHeight: "1.6" }}>
+                  Verified institutional buyer status gives your enterprise direct access to FPO aggregated wholesale pools (50–500 MT) without mandi intermediary commissions.
+                </p>
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", marginTop: "12px" }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#15803d", marginBottom: "4px" }}>
+                    ✓ Escrow Clearing License Active
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>
+                    Automated payment release within 2 hours of weighbridge receipt confirmation.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: Trust Score & Escrow Certificate */}
           {buyerActiveTab === "trust" && (
             <div className="two-col animate-fadeIn" style={{ alignItems: "flex-start" }}>
               <div
@@ -855,6 +1130,61 @@ export function DynamicPage() {
                   </div>
                 </div>
 
+                {/* Member Farmer e-KYC Health Bar */}
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>
+                      Member Farmers e-KYC Verification
+                    </span>
+                    <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700 }}>87% Verified</span>
+                  </div>
+                  <div style={{ background: "#e2e8f0", borderRadius: "6px", height: "6px", overflow: "hidden", marginBottom: "8px" }}>
+                    <div style={{ width: "87%", height: "100%", background: "#16a34a" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#64748b" }}>
+                    <span>248 e-KYC Authenticated</span>
+                    <span>37 Pending Verification</span>
+                  </div>
+                  <Link
+                    to={`/${r}/farmers`}
+                    style={{
+                      display: "block",
+                      marginTop: "10px",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "#15803d",
+                      textDecoration: "none",
+                    }}
+                  >
+                    Review Member e-KYC Roster →
+                  </Link>
+                </div>
+
+                {/* Board of Directors & Governance Panel */}
+                <div style={{ borderTop: "1px solid var(--line-light)", paddingTop: "14px" }}>
+                  <h3 style={{ margin: "0 0 10px 0", fontSize: "15px" }}>
+                    {getLabel("Executive Board & Governance", "कार्यकारी मंडल व प्रशासन", "संचालक मंडळ व प्रशासन")}
+                  </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                      <span><b>{user?.name}</b> (CMD)</span>
+                      <span style={{ color: "#15803d", fontWeight: 600 }}>Active Representative</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                      <span><b>Smt. Anuradha Joshi</b></span>
+                      <span style={{ color: "#64748b" }}>Chief Executive Officer</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                      <span><b>Rameshwar Patidar</b></span>
+                      <span style={{ color: "#64748b" }}>Director (Grain Procurement)</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                      <span><b>Devendra Singh</b></span>
+                      <span style={{ color: "#64748b" }}>Director (Quality & Assay)</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div style={{ borderTop: "1px solid var(--line-light)", paddingTop: "14px" }}>
                   <h3 style={{ margin: "0 0 12px 0", fontSize: "16px" }}>
                     {getLabel("Organization Governance Details", "संगठन कानूनी व प्रशासनिक विवरण", "संस्था नोंदणी व प्रशासन")}
@@ -1018,52 +1348,187 @@ export function DynamicPage() {
           {/* TAB 2: Aggregate Function & Produce Pooling Desk */}
           {fpoActiveTab === "aggregation" && (
             <div className="two-col animate-fadeIn" style={{ alignItems: "flex-start" }}>
-              {/* Left Column: Aggregation Operational Architecture */}
-              <div className="panel">
+              {/* Left Column: Interactive Produce Aggregation Pooling Calculator */}
+              <div className="panel" style={{ flex: 1.1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                   <div style={{ background: "#dcfce7", color: "#166534", padding: "8px", borderRadius: "8px" }}>
-                    <Layers size={22} />
+                    <Calculator size={22} />
                   </div>
                   <div>
                     <h3 style={{ margin: 0, fontSize: "17px" }}>
-                      {getLabel("How the FPO Aggregation Function Works", "एफपीओ एकत्रीकरण कार्यप्रणाली", "एफपीओ शेतमाल एकत्रीकरण कार्यपद्धती")}
+                      {getLabel("Produce Aggregation Pooling Calculator", "उपज एकत्रीकरण सामूहिक लाभ कैलकुलेटर", "शेतमाल एकत्रीकरण नफा कॅल्क्युलेटर")}
                     </h3>
                     <small style={{ color: "var(--ink-secondary)" }}>
-                      Collective Pooling & Direct Institutional Selling
+                      Simulate pooled farmer gains vs individual spot mandi selling
                     </small>
                   </div>
                 </div>
 
-                <p style={{ fontSize: "14px", color: "var(--ink-secondary)", lineHeight: "1.6" }}>
-                  The <b>Aggregation Function</b> empowers your FPO to combine small, fragmented harvest lots from multiple smallholder farmers into single, high-volume commercial lots (e.g. 50–200 MT). This allows your farmers to bypass local middlemen and secure direct bulk trade contracts with institutional mills, exporters, and processors at premium APMC rates.
-                </p>
+                {/* Calculator Inputs */}
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 600 }}>
+                      Select Commodity:
+                      <select
+                        value={aggCrop}
+                        onChange={(e) => {
+                          const crop = e.target.value;
+                          setAggCrop(crop);
+                          if (crop === "Soyabean") { setAggBaseMandiPrice(4850); setAggBulkOfferPrice(4980); }
+                          else if (crop === "Wheat") { setAggBaseMandiPrice(2425); setAggBulkOfferPrice(2520); }
+                          else if (crop === "Gram (Chana)") { setAggBaseMandiPrice(5400); setAggBulkOfferPrice(5580); }
+                          else if (crop === "Mustard") { setAggBaseMandiPrice(5650); setAggBulkOfferPrice(5820); }
+                        }}
+                        style={{ width: "100%", marginTop: "4px", padding: "6px 8px" }}
+                      >
+                        <option value="Soyabean">Soyabean (सोयाबीन)</option>
+                        <option value="Wheat">Wheat (गेहूं)</option>
+                        <option value="Gram (Chana)">Gram / Chana (चना)</option>
+                        <option value="Mustard">Mustard (सरसों)</option>
+                      </select>
+                    </label>
 
-                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px", marginTop: "14px" }}>
-                  <strong style={{ color: "#334155", fontSize: "13px", display: "block", marginBottom: "8px" }}>
-                    ⚙️ Active Aggregation Infrastructure:
-                  </strong>
-                  <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "13px", color: "#475569", lineHeight: "1.6" }}>
-                    <li><b>Mechanical Pre-Cleaning & Grading:</b> Removes organic chaff & foreign matter to ensure Grade A standard.</li>
-                    <li><b>Electronic Weighbridge:</b> Certified computerized weighing directly at aggregation yard.</li>
-                    <li><b>Krishi Vigyan Kendra Calibrated Moisture Testing:</b> Instant digital lab certificates for lots.</li>
-                    <li><b>Blended Fair Pricing:</b> Pro-rata payout direct to each member farmer's bank account upon escrow release.</li>
-                  </ul>
+                    <label style={{ fontSize: "12px", fontWeight: 600 }}>
+                      Farmers in Pool: <b>{aggFarmersCount} Pro-rata Farmers</b>
+                      <input
+                        type="range"
+                        min="5"
+                        max="100"
+                        step="5"
+                        value={aggFarmersCount}
+                        onChange={(e) => setAggFarmersCount(+e.target.value)}
+                        style={{ width: "100%", marginTop: "8px" }}
+                      />
+                    </label>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 600 }}>
+                      Avg Harvest / Farmer (Qtl):
+                      <input
+                        type="number"
+                        min="5"
+                        max="200"
+                        value={aggYieldPerFarmer}
+                        onChange={(e) => setAggYieldPerFarmer(+e.target.value)}
+                        style={{ width: "100%", marginTop: "4px", padding: "6px 8px" }}
+                      />
+                    </label>
+
+                    <label style={{ fontSize: "12px", fontWeight: 600 }}>
+                      Institutional Bulk Offer (₹/Qtl):
+                      <input
+                        type="number"
+                        value={aggBulkOfferPrice}
+                        onChange={(e) => setAggBulkOfferPrice(+e.target.value)}
+                        style={{ width: "100%", marginTop: "4px", padding: "6px 8px" }}
+                      />
+                    </label>
+                  </div>
                 </div>
 
-                <div style={{ marginTop: "18px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  <Link className="primary" to={`/${r}/aggregation`} style={{ textDecoration: "none", fontSize: "13px", padding: "10px 16px" }}>
-                    ➕ {getLabel("Create New Aggregation Lot", "नया संयुक्त लॉट बनाएं", "नवीन एकत्रित शेतमाल नोंदवा")}
-                  </Link>
-                  <Link className="secondary" to={`/${r}/farmers`} style={{ textDecoration: "none", fontSize: "13px", padding: "10px 16px" }}>
-                    👥 {getLabel("Manage Member Farmers", "सदस्य किसान प्रबंधित करें", "शेतकरी सभासद व्यवस्थापन")}
-                  </Link>
-                  <Link className="secondary" to={`/${r}/lots`} style={{ textDecoration: "none", fontSize: "13px", padding: "10px 16px" }}>
-                    ▦ {getLabel("View Marketplace Feed", "बाजार फीड देखें", "बाजार शेतमाल पहा")}
-                  </Link>
+                {/* Calculator Live Output Results */}
+                {(() => {
+                  const totalQtl = aggFarmersCount * aggYieldPerFarmer;
+                  const totalMt = (totalQtl / 10).toFixed(1);
+                  const freightSaving = totalQtl * 50;
+                  const premiumPerQtl = Math.max(0, aggBulkOfferPrice - aggBaseMandiPrice);
+                  const premiumTotal = totalQtl * premiumPerQtl;
+                  const totalGain = freightSaving + premiumTotal;
+                  const perFarmerGain = Math.round(totalGain / (aggFarmersCount || 1));
+
+                  return (
+                    <div
+                      style={{
+                        background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+                        border: "1px solid #86efac",
+                        borderRadius: "10px",
+                        padding: "16px",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                        <div>
+                          <span style={{ fontSize: "11px", fontWeight: 800, color: "#166534", textTransform: "uppercase" }}>
+                            AGGREGATED LOT VOLUME
+                          </span>
+                          <h2 style={{ margin: "2px 0", fontSize: "22px", color: "#14532d" }}>
+                            {totalMt} Metric Tonnes ({totalQtl.toLocaleString()} Quintals)
+                          </h2>
+                        </div>
+                        <span style={{ background: "#16a34a", color: "#ffffff", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: 700 }}>
+                          Commercial Lot Ready
+                        </span>
+                      </div>
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px", fontSize: "13px" }}>
+                        <div style={{ background: "#ffffff", padding: "10px", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                          <span style={{ color: "#64748b", display: "block", fontSize: "11px" }}>Bulk Freight & Handling Saved:</span>
+                          <strong style={{ fontSize: "15px", color: "#15803d" }}>₹{freightSaving.toLocaleString()}</strong>
+                        </div>
+                        <div style={{ background: "#ffffff", padding: "10px", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                          <span style={{ color: "#64748b", display: "block", fontSize: "11px" }}>Institutional Price Premium:</span>
+                          <strong style={{ fontSize: "15px", color: "#15803d" }}>+₹{premiumTotal.toLocaleString()}</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ borderTop: "1px solid #bbf7d0", paddingTop: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <span style={{ fontSize: "12px", color: "#166534", display: "block" }}>Total Farmer Collective Net Gain:</span>
+                          <strong style={{ fontSize: "20px", color: "#14532d" }}>₹{totalGain.toLocaleString()}</strong>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <span style={{ fontSize: "11px", color: "#166534", display: "block" }}>Extra Gain / Farmer:</span>
+                          <strong style={{ fontSize: "15px", color: "#15803d" }}>+₹{perFarmerGain.toLocaleString()} / farmer</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: "14px" }}>
+                        <Link
+                          className="primary"
+                          to={`/${r}/aggregation`}
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                            textDecoration: "none",
+                            padding: "10px",
+                            fontWeight: 700,
+                            fontSize: "13px",
+                          }}
+                        >
+                          🚀 Launch {totalMt} MT Aggregated Lot to Marketplace →
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Operational Readiness Checklist */}
+                <div style={{ marginTop: "18px" }}>
+                  <h4 style={{ margin: "0 0 10px 0", fontSize: "14px" }}>
+                    ⚙️ Aggregation Yard Operational Readiness:
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534" }}>
+                      <CheckCircle2 size={16} color="#16a34a" />
+                      <span><b>Electronic Weighbridge:</b> 60 MT capacity on-site (Weight & Measures certified)</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534" }}>
+                      <CheckCircle2 size={16} color="#16a34a" />
+                      <span><b>Mechanical Grain Cleaner & Destoner:</b> 5 MT/hr pre-cleaning ready</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534" }}>
+                      <CheckCircle2 size={16} color="#16a34a" />
+                      <span><b>Digital Moisture Assay Lab:</b> Calibrated strictly with Krishi Vigyan Kendra standards</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534" }}>
+                      <CheckCircle2 size={16} color="#16a34a" />
+                      <span><b>Storage Silo / Covered Space:</b> 1,500 MT capacity with fumigation security</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Right Column: Update Aggregation Capacity & Specifications */}
+              {/* Right Column: Configure Aggregation Specifications Form */}
               <form
                 className="form-card"
                 onSubmit={(e) => {
@@ -1288,6 +1753,85 @@ export function DynamicPage() {
             </div>
           </div>
 
+          {/* Digital Kisan Identity Card */}
+          <div
+            className="digital-kisan-card panel"
+            style={{
+              marginBottom: "24px",
+              background: "linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)",
+              borderRadius: "16px",
+              padding: "22px 26px",
+              color: "#ffffff",
+              boxShadow: "0 10px 25px -5px rgba(6, 78, 59, 0.3)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", position: "relative", zIndex: 1 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "1.2px", background: "rgba(255,255,255,0.2)", padding: "3px 10px", borderRadius: "12px" }}>
+                    GOVT OF INDIA & KRISHILINK KISAN IDENTITY
+                  </span>
+                  {isEkycVerified && (
+                    <span style={{ fontSize: "11px", fontWeight: 800, background: "#86efac", color: "#064e3b", padding: "3px 10px", borderRadius: "12px" }}>
+                      ✓ e-KYC VERIFIED
+                    </span>
+                  )}
+                </div>
+                <h2 style={{ margin: "4px 0 2px 0", fontSize: "24px", fontWeight: 800 }}>
+                  {user?.name || "Farmer"}
+                </h2>
+                <span style={{ fontSize: "13px", opacity: 0.85 }}>
+                  Registration ID: <code style={{ color: "#a7f3d0", background: "rgba(0,0,0,0.2)", padding: "2px 6px", borderRadius: "4px" }}>{user?.ekycIdNumber ? `KL-FARM-${user.ekycIdNumber.slice(-5)}` : "KL-FARM-92841-IN"}</code>
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowFarmerCardModal(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    background: "#ffffff",
+                    color: "#064e3b",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  <Printer size={15} />
+                  <span>{getLabel("Print / Save Digital Card", "कार्ड प्रिंट / सेव करें", "डिजिटल कार्ड प्रिंट करा")}</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "14px", marginTop: "20px", position: "relative", zIndex: 1, borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: "16px" }}>
+              <div>
+                <span style={{ fontSize: "11px", opacity: 0.75, display: "block" }}>Landholding Size</span>
+                <strong style={{ fontSize: "16px", color: "#ecfdf5" }}>{user?.landSize ? `${user.landSize} Acres` : "5.0 Acres"}</strong>
+              </div>
+              <div>
+                <span style={{ fontSize: "11px", opacity: 0.75, display: "block" }}>Primary Commodity</span>
+                <strong style={{ fontSize: "16px", color: "#ecfdf5" }}>{user?.primaryCrop || "Wheat (Grade A)"}</strong>
+              </div>
+              <div>
+                <span style={{ fontSize: "11px", opacity: 0.75, display: "block" }}>Village & Tehsil</span>
+                <strong style={{ fontSize: "16px", color: "#ecfdf5" }}>{user?.location || "Sanwer"}, {user?.district || "Indore"}</strong>
+              </div>
+              <div>
+                <span style={{ fontSize: "11px", opacity: 0.75, display: "block" }}>Soil Health Rating</span>
+                <strong style={{ fontSize: "16px", color: "#86efac" }}>Grade A Optimal</strong>
+              </div>
+            </div>
+          </div>
+
           {/* 3 Metric Cards */}
           <div className="grid" style={{ marginBottom: "24px" }}>
             <Card
@@ -1344,6 +1888,43 @@ export function DynamicPage() {
                   <div>
                     <span style={{ color: "var(--ink-secondary)" }}>Location: </span>
                     <span>📍 {user?.location || "Indore"}, {user?.district} {user?.state}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Land Parcel & Khasra Survey Card */}
+              <div style={{ borderTop: "1px solid var(--line-light)", paddingTop: "14px" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#1e293b" }}>
+                  📜 {getLabel("Land Records & Soil Card", "भू-अभिलेख व मृदा स्वास्थ्य कार्ड", "जमीन महसूल व मृदा आरोग्य पत्रिका")}
+                </h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                    <span style={{ color: "var(--ink-secondary)" }}>Khasra / Survey No:</span>
+                    <b>KH-142/3 (Sanwer)</b>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                    <span style={{ color: "var(--ink-secondary)" }}>Soil Classification:</span>
+                    <span style={{ color: "#15803d", fontWeight: 600 }}>Medium Black (Grade A)</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 8px", background: "#f8fafc", borderRadius: "6px" }}>
+                    <span style={{ color: "var(--ink-secondary)" }}>Irrigation Source:</span>
+                    <span>Solar Tubewell & Drip</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direct Escrow & PM-KISAN Bank Account Card */}
+              <div style={{ borderTop: "1px solid var(--line-light)", paddingTop: "14px" }}>
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#1e293b" }}>
+                  💳 {getLabel("Direct Escrow Payout Bank Account", "प्रत्यक्ष एस्क्रो भुगतान बैंक खाता", "थेट एस्क्रो बँक खाते")}
+                </h4>
+                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "10px 12px", fontSize: "13px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ color: "#166534" }}>NPCI Aadhaar Seeded:</span>
+                    <strong style={{ color: "#15803d" }}>✓ Active</strong>
+                  </div>
+                  <div style={{ color: "#166534", fontSize: "12px" }}>
+                    State Bank of India · A/c ending <b>●●●● 4829</b> · Instant escrow payout on delivery approval
                   </div>
                 </div>
               </div>
@@ -1681,6 +2262,115 @@ export function DynamicPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+          {/* Official Digital Kisan Card Certificate Modal */}
+          {showFarmerCardModal && (
+            <div className="modal-overlay animate-fadeIn" style={{ zIndex: 1200 }}>
+              <div
+                className="modal-content"
+                style={{
+                  maxWidth: "600px",
+                  padding: "24px",
+                  borderRadius: "16px",
+                  background: "#ffffff",
+                  boxShadow: "0 25px 30px -5px rgba(0, 0, 0, 0.25)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Printer size={20} color="#15803d" />
+                    <h3 style={{ margin: 0, fontSize: "17px" }}>
+                      {getLabel("Official Digital Kisan Smart Card", "आधिकारिक डिजिटल किसान स्मार्ट कार्ड", "अधिकृत डिजिटल किसान स्मार्ट कार्ड")}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFarmerCardModal(false)}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b" }}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Card Container for Printing */}
+                <div
+                  id="printable-kisan-card"
+                  style={{
+                    border: "2px solid #16a34a",
+                    borderRadius: "14px",
+                    overflow: "hidden",
+                    background: "#ffffff",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                >
+                  {/* Card Header */}
+                  <div style={{ background: "linear-gradient(90deg, #14532d 0%, #166534 100%)", color: "#ffffff", padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <span style={{ fontSize: "10px", fontWeight: 800, letterSpacing: "1px", color: "#86efac", display: "block" }}>
+                        MINISTRY OF AGRICULTURE & FARMERS WELFARE
+                      </span>
+                      <strong style={{ fontSize: "15px" }}>KRISHILINK DIGITAL KISAN IDENTIFICATION</strong>
+                    </div>
+                    <ShieldCheck size={28} color="#86efac" />
+                  </div>
+
+                  {/* Card Body */}
+                  <div style={{ padding: "18px", display: "flex", gap: "16px", alignItems: "center" }}>
+                    <div style={{ width: "90px", height: "105px", background: "#f1f5f9", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: "36px" }}>🧑‍🌾</span>
+                      <small style={{ fontSize: "9px", color: "#64748b", fontWeight: 700, marginTop: "4px" }}>PHOTO ID</small>
+                    </div>
+
+                    <div style={{ flex: 1, fontSize: "13px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div><span style={{ color: "#64748b" }}>Name: </span><b>{user?.name}</b></div>
+                      <div><span style={{ color: "#64748b" }}>Kisan UID: </span><code>{user?.ekycIdNumber ? `KL-FARM-${user.ekycIdNumber.slice(-5)}` : "KL-FARM-92841-IN"}</code></div>
+                      <div><span style={{ color: "#64748b" }}>Landholding: </span><b>{user?.landSize ? `${user.landSize} Acres` : "5.0 Acres"}</b></div>
+                      <div><span style={{ color: "#64748b" }}>Village / Tehsil: </span><b>{user?.location || "Sanwer"}, {user?.district || "Indore"}</b></div>
+                      <div><span style={{ color: "#64748b" }}>e-KYC Status: </span><span style={{ color: "#15803d", fontWeight: 700 }}>✓ UIDAI Authenticated</span></div>
+                    </div>
+
+                    {/* QR Code Simulation */}
+                    <div style={{ width: "80px", height: "80px", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "4px", background: "#ffffff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                      <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#14532d" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="3" height="3" />
+                        <rect x="18" y="18" width="3" height="3" />
+                      </svg>
+                      <small style={{ fontSize: "8px", color: "#64748b", marginTop: "2px" }}>SCAN TO VERIFY</small>
+                    </div>
+                  </div>
+
+                  {/* Card Footer */}
+                  <div style={{ background: "#f0fdf4", borderTop: "1px solid #bbf7d0", padding: "8px 18px", fontSize: "11px", color: "#166534", display: "flex", justifyContent: "space-between" }}>
+                    <span>Valid across Digital Mandis & FPOs</span>
+                    <span>National e-KYC Registry</span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "18px" }}>
+                  <button type="button" onClick={() => setShowFarmerCardModal(false)}>
+                    {getLabel("Close", "बंद करें", "बंद करा")}
+                  </button>
+                  <button
+                    className="primary"
+                    type="button"
+                    onClick={() => window.print()}
+                    style={{
+                      background: "#16a34a",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                    }}
+                  >
+                    <Printer size={15} />
+                    <span>{getLabel("Print Certificate", "प्रमाणपत्र प्रिंट करें", "प्रमाणपत्र प्रिंट करा")}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
