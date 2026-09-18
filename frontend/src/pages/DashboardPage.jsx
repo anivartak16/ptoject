@@ -8,6 +8,9 @@ import { MandiRateChart } from "../components/charts/MandiRateChart.jsx";
 import MandiMap from "../components/map/MandiMap.jsx";
 import { InspectionPage } from "./InspectionPage.jsx";
 import { OperationalPage } from "./OperationalPage.jsx";
+import { PriceOpportunityAlert } from "../components/common/PriceOpportunityAlert.jsx";
+import { NetRealisationCalculator } from "../components/common/NetRealisationCalculator.jsx";
+import { MarketDataSourcesWidget } from "../components/common/MarketDataSourcesWidget.jsx";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -613,6 +616,11 @@ export function DashboardPage() {
         </>
       )}
 
+      {/* Price Opportunity Alert (Sell vs Hold) */}
+      <div style={{ marginBottom: "16px" }}>
+        <PriceOpportunityAlert commodity={selectedCrop} />
+      </div>
+
       {/* Market Prediction Spotlight Banner */}
       <div className="panel prediction-spotlight-card">
         <div className="prediction-spotlight-content">
@@ -682,6 +690,15 @@ export function DashboardPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Interactive Net Realisation Calculator */}
+          <div style={{ marginBottom: "20px" }}>
+            <NetRealisationCalculator
+              cropName={selectedCrop}
+              initialPrice={d?.currentPrice || 26}
+              initialQuantity={2000}
+            />
           </div>
 
           {/* Two Column: Live Mandi Chart + Personalized Nearby Markets List */}
@@ -887,6 +904,11 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Multi-Source Data Transparency Widget */}
+      <div style={{ marginTop: "24px" }}>
+        <MarketDataSourcesWidget commodity={selectedCrop} />
+      </div>
     </section>
   );
 }

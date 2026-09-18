@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sprout, LayoutDashboard, Shield } from "lucide-react";
+import { ArrowRight, Sprout, LayoutDashboard, Shield, Menu, X, Globe } from "lucide-react";
 import { useAuth, getDashboardPath } from "../../context/AuthContext.jsx";
 import { useLanguage } from "../../context/LanguageContext.jsx";
 
@@ -9,9 +9,11 @@ export function LandingNavbar({ language: propLang, setLanguage: propSetLang }) 
   const langContext = useLanguage();
   const language = propLang || langContext?.language || "en";
   const setLanguage = propSetLang || langContext?.setLanguage;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (e, id) => {
     e.preventDefault();
+    setMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -26,9 +28,17 @@ export function LandingNavbar({ language: propLang, setLanguage: propSetLang }) 
 
   return (
     <header className="landing-header">
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="landing-mobile-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       <nav className="landing-nav">
         {/* Brand */}
-        <Link to="/" className="landing-brand">
+        <Link to="/" className="landing-brand" onClick={() => setMobileMenuOpen(false)}>
           <span className="brand-icon">
             <Sprout size={22} />
           </span>
@@ -41,8 +51,8 @@ export function LandingNavbar({ language: propLang, setLanguage: propSetLang }) 
           </div>
         </Link>
 
-        {/* Navigation Links */}
-        <div className="landing-nav-links">
+        {/* Desktop Navigation Links */}
+        <div className="landing-nav-links desktop-only">
           <a
             href="#market-prices"
             onClick={(e) => scrollToSection(e, "market-prices")}
@@ -75,8 +85,8 @@ export function LandingNavbar({ language: propLang, setLanguage: propSetLang }) 
           </a>
         </div>
 
-        {/* Actions (Language Toggle & Auth) */}
-        <div className="landing-nav-actions">
+        {/* Desktop Actions (Language Toggle & Auth) */}
+        <div className="landing-nav-actions desktop-only">
           <div className="language-switch">
             <button
               type="button"
@@ -126,10 +136,118 @@ export function LandingNavbar({ language: propLang, setLanguage: propSetLang }) 
             </>
           )}
         </div>
+
+        {/* Mobile Right Controls: Compact Lang + Hamburger */}
+        <div className="landing-mobile-controls">
+          <div className="language-switch compact">
+            <button
+              type="button"
+              className={language === "en" ? "active" : ""}
+              onClick={() => setLanguage("en")}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={language === "hi" ? "active" : ""}
+              onClick={() => setLanguage("hi")}
+            >
+              HI
+            </button>
+            <button
+              type="button"
+              className={language === "mr" ? "active" : ""}
+              onClick={() => setLanguage("mr")}
+            >
+              MR
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="landing-hamburger-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </nav>
+
+      {/* Mobile Slide-down Drawer */}
+      <div className={`landing-mobile-drawer ${mobileMenuOpen ? "open" : ""}`}>
+        <div className="drawer-links">
+          <a
+            href="#market-prices"
+            onClick={(e) => scrollToSection(e, "market-prices")}
+          >
+            📊 {getLabel("Mandi Rates", "मंडी भाव", "बाजार भाव")}
+          </a>
+          <a
+            href="#how-it-works"
+            onClick={(e) => scrollToSection(e, "how-it-works")}
+          >
+            ⚙️ {getLabel("How It Works", "कार्यप्रणाली", "कार्यपद्धती")}
+          </a>
+          <a
+            href="#buyer-demands"
+            onClick={(e) => scrollToSection(e, "buyer-demands")}
+          >
+            🏪 {getLabel("Buyer Demands", "खरीदार मांग", "खरेदीदार मागणी")}
+          </a>
+          <a
+            href="#mandi-network"
+            onClick={(e) => scrollToSection(e, "mandi-network")}
+          >
+            🌾 {getLabel("Mandi Network", "मंडी नेटवर्क", "बाजार समिती नेटवर्क")}
+          </a>
+          <a
+            href="#stakeholders"
+            onClick={(e) => scrollToSection(e, "stakeholders")}
+          >
+            👥 {getLabel("Stakeholders", "भागीदार", "भागीदार घटक")}
+          </a>
+          <Link
+            to="/admin/login"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            🛡️ {getLabel("Admin Portal", "एडमिन पोर्टल", "प्रशासक पोर्टल")}
+          </Link>
+        </div>
+
+        <div className="drawer-actions">
+          {user ? (
+            <Link
+              to={getDashboardPath(user.role)}
+              className="drawer-cta primary"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <LayoutDashboard size={16} />
+              <span>{getLabel("Open My Dashboard", "मेरा डैशबोर्ड खोलें", "माझे डॅशबोर्ड उघडा")}</span>
+            </Link>
+          ) : (
+            <div className="drawer-auth-buttons">
+              <Link
+                to="/login"
+                className="drawer-login secondary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {getLabel("Sign In", "लॉगिन करें", "लॉगिन करा")}
+              </Link>
+              <Link
+                to="/register/farmer"
+                className="drawer-cta primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>{getLabel("Get Started", "शुरू करें", "सुरुवात करा")}</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
     </header>
   );
 }
 
 export default LandingNavbar;
-

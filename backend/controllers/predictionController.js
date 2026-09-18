@@ -5,6 +5,7 @@ import {
   COMMODITY_PROFILES,
   getCommodityProfile,
 } from "../utils/predictionModel.js";
+import { getPriceOpportunityAlert } from "../services/intelligence.js";
 import { ok, fail } from "../utils/response.js";
 
 /**
@@ -263,4 +264,16 @@ export async function getPredictionsOverview(req, res) {
     return fail(res, 500, "Failed to load market prediction overview");
   }
 }
+
+export async function getOpportunityAlertHandler(req, res) {
+  try {
+    const crop = req.query.crop || req.query.commodity || "Wheat";
+    const alert = await getPriceOpportunityAlert(crop);
+    return ok(res, alert);
+  } catch (error) {
+    console.error("Opportunity alert error:", error);
+    return fail(res, 500, "Failed to calculate opportunity alert");
+  }
+}
+
 

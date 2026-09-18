@@ -10,7 +10,11 @@ export async function getDemands(req, res, next) {
         : { status: "ACTIVE" };
 
     const demands = await Demand.find(filter)
-      .populate("buyer")
+      .populate({
+        path: "buyer",
+        select:
+          "name email phone organizationName location district state verification verificationBadge gstNumber panNumber buyerType tradeRating",
+      })
       .sort({ createdAt: -1 });
 
     return ok(res, demands);
@@ -35,7 +39,13 @@ export async function createDemand(req, res, next) {
       buyer: req.user._id,
     });
 
-    return ok(res, demand, "Demand created successfully");
+    const populatedDemand = await Demand.findById(demand._id).populate({
+      path: "buyer",
+      select:
+        "name email phone organizationName location district state verification verificationBadge gstNumber panNumber buyerType tradeRating",
+    });
+
+    return ok(res, populatedDemand, "Demand created successfully");
   } catch (error) {
     next(error);
   }
@@ -43,17 +53,16 @@ export async function createDemand(req, res, next) {
 
 export async function getMatchesForDemand(req, res, next) {
   try {
-    const demand = await Demand.findById(req.params.demandId);
+    const demand = await Demand.findById(req.params.demandId).populate({
+      path: "buyer",
+      select:
+        "name email phone organizationName location district state verification verificationBadge gstNumber panNumber buyerType tradeRating",
+    });
     if (!demand) return fail(res, 404, "Demand not found", "NOT_FOUND");
-    if (
-      String(demand.buyer) !== String(req.user._id) &&
-      req.user.role !== "ADMIN"
-    ) {
-      return fail(res, 403, "Not your demand", "FORBIDDEN");
-    }
 
-    const matches = await matchesFor(demand);
-    return ok(res, matches, "Explainable matches");
+    // All authenticated roles (BUYER, FPO, FARMER, ADMIN) can view ranked matches
+    const matches = await matchesFor(demand, req.user);
+    return ok(res, { demand, matches }, "Explainable matches");
   } catch (error) {
     next(error);
   }

@@ -419,69 +419,161 @@ export function sellAdvice(insight, demandCount = 0) {
   };
 }
 
+// Official Government Minimum Support Prices (MSP) 2024-25 (₹ per Quintal)
+export const GOVT_MSP_BENCHMARKS = {
+  wheat: { mspQtl: 2275, mspKg: 22.75, season: "Rabi" },
+  paddy: { mspQtl: 2300, mspKg: 23.0, season: "Kharif" },
+  rice: { mspQtl: 2300, mspKg: 23.0, season: "Kharif" },
+  soybean: { mspQtl: 4892, mspKg: 48.92, season: "Kharif" },
+  soyabean: { mspQtl: 4892, mspKg: 48.92, season: "Kharif" },
+  maize: { mspQtl: 2225, mspKg: 22.25, season: "Kharif" },
+  corn: { mspQtl: 2225, mspKg: 22.25, season: "Kharif" },
+  gram: { mspQtl: 5440, mspKg: 54.4, season: "Rabi" },
+  chana: { mspQtl: 5440, mspKg: 54.4, season: "Rabi" },
+  mustard: { mspQtl: 5650, mspKg: 56.5, season: "Rabi" },
+  cotton: { mspQtl: 7121, mspKg: 71.21, season: "Kharif" },
+  onion: { mspQtl: 1800, mspKg: 18.0, season: "Year-Round" },
+  potato: { mspQtl: 1400, mspKg: 14.0, season: "Rabi" },
+};
+
 /**
- * Explainable matching engine between buyer demands and farmer/FPO lots.
+ * Generates Price Opportunity Alert (Sell vs Hold)
  */
-export async function matchesFor(demand) {
+export async function getPriceOpportunityAlert(commodity = "Wheat") {
+  const insight = await priceInsight(commodity);
+  const mspKey = (commodity || "").toLowerCase().trim();
+  const mspInfo = GOVT_MSP_BENCHMARKS[mspKey] || { mspKg: 22, mspQtl: 2200 };
+
+  const currentRate = insight?.currentPrice || mspInfo.mspKg + 3;
+  const avg30 = insight?.average30Days || mspInfo.mspKg;
+  const changePct = insight?.changePercentage ?? Math.round(((currentRate - avg30) / (avg30 || 1)) * 100);
+
+  let recommendation = "MONITOR";
+  let badgeColor = "blue";
+  let title = "Market Price in Equilibrium";
+  let reasoning = `Current rate is ₹${currentRate}/kg against ₹${avg30}/kg 30-day benchmark.`;
+
+  if (changePct >= 5 || currentRate > mspInfo.mspKg * 1.15) {
+    recommendation = "SELL_NOW";
+    badgeColor = "green";
+    title = `🟢 SELL OPPORTUNITY: ${commodity} at Seasonal Peak (+${changePct}%)`;
+    reasoning = `Mandi prices have surged +${changePct}% above the 30-day baseline and ₹${(currentRate - mspInfo.mspKg).toFixed(1)}/kg above official MSP (₹${mspInfo.mspKg}/kg). High buyer liquidity present.`;
+  } else if (changePct <= -4 || currentRate < avg30) {
+    recommendation = "HOLD_IN_STORAGE";
+    badgeColor = "amber";
+    title = `🟡 HOLD RECOMMENDED: ${commodity} Under Market Dip (${changePct}%)`;
+    reasoning = `Current prices are ${Math.abs(changePct)}% below 30-day averages due to temporary arrival surges. Holding for 2-3 weeks in warehouse storage is advised to capture anticipated price rebound.`;
+  }
+
+  return {
+    commodity,
+    recommendation,
+    badgeColor,
+    title,
+    reasoning,
+    currentRate,
+    benchmarkRate: avg30,
+    changePercentage: changePct,
+    mspKg: mspInfo.mspKg,
+    mspQtl: mspInfo.mspQtl,
+    updatedAt: new Date(),
+  };
+}
+
+/**
+ * Enhanced explainable matching engine between buyer demands and farmer/FPO lots.
+ */
+export async function matchesFor(demand, currentUser = null) {
   if (demand.deadline && new Date(demand.deadline) <= new Date()) return [];
 
+  const queryRegex = getCommodityRegex(demand.commodity);
   const lots = await Lot.find({
-    commodity: demand.commodity,
+    commodity: queryRegex,
     status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] },
   }).populate("quality owner");
 
   return lots
     .filter((l) => !l.availableUntil || new Date(l.availableUntil) > new Date())
     .map((l) => {
-      const quantityScore =
-        Math.min((l.remainingQuantity || 0) / (demand.requiredQuantity || 1), 1) * 25;
-      const grade =
-        (l.quality?.grade || "").toLowerCase() ===
-        (demand.requiredQuality || "").toLowerCase();
-      const qualityScore = grade ? 25 : 12;
-      const priceScore =
-        l.expectedPrice <= demand.maxPrice
-          ? 25
-          : Math.max(
-              0,
-              25 -
-                ((l.expectedPrice - demand.maxPrice) /
-                  Math.max(demand.maxPrice, 1)) *
-                  25,
-            );
-      const locationMatch =
-        !demand.preferredLocation ||
-        l.location?.toLowerCase() === demand.preferredLocation.toLowerCase();
-      const locationScore = locationMatch ? 15 : 5;
-      const freshnessScore = l.availableUntil ? 10 : 6;
+      // 1. Quantity fit (25 pts): supports full or partial fulfillment
+      const reqQty = demand.requiredQuantity || 1;
+      const lotQty = l.remainingQuantity || 0;
+      const quantityRatio = Math.min(lotQty / reqQty, 1);
+      const quantityScore = Math.round(quantityRatio * 25);
+
+      // 2. Quality grade fit (25 pts)
+      const lotGrade = (l.quality?.grade || "Grade B").toLowerCase();
+      const demGrade = (demand.requiredQuality || "Grade A").toLowerCase();
+      let qualityScore = 15;
+      if (lotGrade === demGrade) {
+        qualityScore = 25;
+      } else if (lotGrade.includes("a") && demGrade.includes("b")) {
+        qualityScore = 25; // Superior grade supplied
+      } else if (l.quality?.moisture && demand.maxMoisture && l.quality.moisture <= demand.maxMoisture) {
+        qualityScore = 22;
+      }
+
+      // 3. Price fit (25 pts)
+      let priceScore = 0;
+      if (l.expectedPrice <= demand.maxPrice) {
+        // Lot price within or below buyer's max budget
+        priceScore = 25;
+      } else {
+        const diff = l.expectedPrice - demand.maxPrice;
+        priceScore = Math.max(0, Math.round(25 - (diff / Math.max(demand.maxPrice, 1)) * 30));
+      }
+
+      // 4. Location fit (15 pts)
+      const lotLoc = (l.location || "").toLowerCase().trim();
+      const prefLoc = (demand.preferredLocation || demand.deliveryLocation || "").toLowerCase().trim();
+      let locationScore = 8;
+      if (!prefLoc) {
+        locationScore = 12;
+      } else if (lotLoc === prefLoc || lotLoc.includes(prefLoc) || prefLoc.includes(lotLoc)) {
+        locationScore = 15;
+      }
+
+      // 5. Freshness & availability (10 pts)
+      const freshnessScore = l.availableUntil ? 10 : 7;
+
       const matchScore = Math.round(
-        Math.max(
-          0,
-          Math.min(
-            100,
-            quantityScore + qualityScore + priceScore + locationScore + freshnessScore,
-          ),
-        ),
+        Math.max(0, Math.min(100, quantityScore + qualityScore + priceScore + locationScore + freshnessScore))
       );
+
+      const isUserLot =
+        currentUser &&
+        (String(l.owner?._id) === String(currentUser._id) ||
+          (currentUser.members && currentUser.members.map(String).includes(String(l.owner?._id))));
+
       const reasons = [
-        `${Math.round(quantityScore)}/25 quantity fit`,
-        `${Math.round(qualityScore)}/25 quality fit`,
-        `${Math.round(priceScore)}/25 price fit`,
-        `${Math.round(locationScore)}/15 location fit`,
-        `${Math.round(freshnessScore)}/10 availability fit`,
+        `${quantityScore}/25 quantity match (${lotQty} kg available)`,
+        `${qualityScore}/25 quality grade compatibility (${l.quality?.grade || "FAQ"} vs ${demand.requiredQuality || "Grade A"})`,
+        `${priceScore}/25 price budget fit (₹${l.expectedPrice}/kg vs budget ₹${demand.maxPrice}/kg)`,
+        `${locationScore}/15 location proximity (${l.location || "Local"} -> ${demand.preferredLocation || "Destination"})`,
+        `${freshnessScore}/10 batch freshness`,
       ];
+
+      // Net Realisation computation for the lot
+      const estimatedTransport = 2; // ₹2/kg estimated
+      const mandiFee = +(l.expectedPrice * 0.015).toFixed(2);
+      const netRealisation = Math.max(1, +(l.expectedPrice - estimatedTransport - mandiFee).toFixed(2));
+
       return {
         lot: l,
         matchScore,
+        isUserLot: Boolean(isUserLot),
+        isFpoLot: l.ownerType === "FPO" || Boolean(l.sourceLots?.length),
+        netRealisation,
         reasons,
         breakdown: {
-          quantity: Math.round(quantityScore),
-          quality: Math.round(qualityScore),
-          price: Math.round(priceScore),
-          location: Math.round(locationScore),
-          availability: Math.round(freshnessScore),
+          quantity: quantityScore,
+          quality: qualityScore,
+          price: priceScore,
+          location: locationScore,
+          availability: freshnessScore,
         },
       };
     })
     .sort((a, b) => b.matchScore - a.matchScore);
 }
+

@@ -29,6 +29,9 @@ export async function register(req, res, next) {
       primaryCrop,
       registrationNumber,
       memberCount,
+      gstNumber,
+      panNumber,
+      mandiLicenseNumber,
     } = req.body;
 
     if (
@@ -117,6 +120,11 @@ export async function register(req, res, next) {
       primaryCrop,
       registrationNumber,
       memberCount: memberCount ? Number(memberCount) : undefined,
+      gstNumber: gstNumber?.trim(),
+      panNumber: panNumber?.trim(),
+      mandiLicenseNumber: mandiLicenseNumber?.trim(),
+      verification: role === "BUYER" && gstNumber ? "VERIFIED" : "PENDING",
+      verificationBadge: role === "BUYER" && gstNumber ? "VERIFIED_BUYER" : "STANDARD",
       geo: {
         type: "Point",
         coordinates: resolvedCoords,
@@ -156,6 +164,12 @@ function sanitizeUser(user) {
     primaryCrop: user.primaryCrop,
     registrationNumber: user.registrationNumber,
     memberCount: user.memberCount,
+    verification: user.verification || "PENDING",
+    gstNumber: user.gstNumber || "",
+    panNumber: user.panNumber || "",
+    mandiLicenseNumber: user.mandiLicenseNumber || "",
+    verificationBadge: user.verificationBadge || (user.verification === "VERIFIED" ? "VERIFIED_BUYER" : "STANDARD"),
+    tradeRating: user.tradeRating ?? 4.5,
     geo: user.geo,
   };
 }
@@ -217,6 +231,9 @@ export async function updateProfile(req, res, next) {
       "primaryCrop",
       "farmName",
       "landSize",
+      "gstNumber",
+      "panNumber",
+      "mandiLicenseNumber",
     ];
 
     allowed.forEach((field) => {

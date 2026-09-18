@@ -7,6 +7,8 @@ import {
   removeFpoMember,
   getFpoLots,
   aggregateLots,
+  getFpoMatches,
+  connectFpoWithBuyer,
 } from "../controllers/fpoController.js";
 
 const router = Router();
@@ -17,5 +19,7 @@ router.post("/members", requireAuth, requireRole("FPO"), addFpoMember);
 router.delete("/members/:farmerId", requireAuth, requireRole("FPO"), removeFpoMember);
 router.get("/lots", requireAuth, requireRole("FPO"), getFpoLots);
 router.post("/aggregate", requireAuth, requireRole("FPO"), aggregateLots);
+router.get("/matches", requireAuth, requireRole("FPO"), getFpoMatches);
+router.post("/connect", requireAuth, requireRole("FPO"), connectFpoWithBuyer);
 
 export default router;

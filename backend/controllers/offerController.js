@@ -2,21 +2,111 @@ import { Offer, Lot, Notification } from "../models/index.js";
 import { acceptOffer as processAcceptOffer } from "../services/transaction.js";
 import { ok, fail } from "../utils/response.js";
 
+function assessOfferRisk(offer) {
+  const buyer = offer.buyer || {};
+  const lot = offer.lot || {};
+  const isVerifiedBuyer =
+    buyer.verification === "VERIFIED" || Boolean(buyer.gstNumber);
+  const expectedPrice = lot.expectedPrice || offer.pricePerUnit;
+  const priceRatio = offer.pricePerUnit / (expectedPrice || 1);
+
+  const warnings = [];
+  let riskLevel = "LOW";
+  let riskScore = 15;
+
+  if (priceRatio >= 1.4) {
+    riskScore += 45;
+    warnings.push(
+      `Price is ${Math.round(
+        (priceRatio - 1) * 100
+      )}% above expected farmer rate. Unusually high prices can indicate fake buyer lures to hijack produce without paying.`
+    );
+  } else if (priceRatio <= 0.6) {
+    riskScore += 25;
+    warnings.push(
+      `Price is ${Math.round(
+        (1 - priceRatio) * 100
+      )}% below market standard rate.`
+    );
+  }
+
+  if (!isVerifiedBuyer) {
+    riskScore += 30;
+    warnings.push(
+      "Buyer has not completed GST/Mandi license verification. Escrow deposit mandatory."
+    );
+  }
+
+  if (riskScore >= 60) {
+    riskLevel = "HIGH";
+  } else if (riskScore >= 35) {
+    riskLevel = "MEDIUM";
+  } else {
+    riskLevel = "LOW";
+  }
+
+  return {
+    riskLevel,
+    riskScore,
+    isSuspicious: riskLevel === "HIGH",
+    warnings,
+    isVerifiedBuyer,
+    recommendation:
+      riskLevel === "HIGH"
+        ? "🚨 CAUTION: High Risk / Suspicious Offer! Do not dispatch produce without full Escrow locking."
+        : riskLevel === "MEDIUM"
+        ? "⚠️ Notice: Check payment lock in Escrow before dispatch."
+        : "🛡️ Verified safe offer with Escrow assurance.",
+  };
+}
+
+function calculateNetRealisation(pricePerUnit, quantity, distanceKm = 25) {
+  const gross = (pricePerUnit || 0) * (quantity || 0);
+  const mandiFee = Math.round(gross * 0.015);
+  const estimatedTransport = Math.round(distanceKm * 0.08 * (quantity || 0));
+  const handling = Math.round((quantity || 0) * 0.2);
+  const netEarnings = Math.max(
+    0,
+    gross - mandiFee - estimatedTransport - handling
+  );
+  const netPerKg = +(netEarnings / (quantity || 1)).toFixed(2);
+
+  return {
+    grossAmount: gross,
+    mandiFee,
+    estimatedTransport,
+    handling,
+    netEarnings,
+    netPerKg,
+  };
+}
+
 export async function getOffers(req, res, next) {
   try {
     const offers = await Offer.find()
       .populate({ path: "lot", populate: ["owner", "quality"] })
-      .populate("buyer")
+      .populate({
+        path: "buyer",
+        select:
+          "name email phone organizationName location district state verification verificationBadge gstNumber panNumber buyerType tradeRating",
+      })
       .sort({ createdAt: -1 });
 
     const visible = offers.filter(
       (o) =>
         req.user.role === "ADMIN" ||
         String(o.buyer?._id) === String(req.user._id) ||
-        String(o.lot?.owner?._id) === String(req.user._id),
+        String(o.lot?.owner?._id) === String(req.user._id)
     );
 
-    return ok(res, visible);
+    const enriched = visible.map((o) => {
+      const obj = o.toObject();
+      obj.riskAssessment = assessOfferRisk(o);
+      obj.netRealisation = calculateNetRealisation(o.pricePerUnit, o.quantity);
+      return obj;
+    });
+
+    return ok(res, enriched);
   } catch (error) {
     next(error);
   }

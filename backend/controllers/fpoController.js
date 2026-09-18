@@ -1,4 +1,4 @@
-import { User, Lot } from "../models/index.js";
+import { User, Lot, Demand, Notification, Offer } from "../models/index.js";
 import { ok, fail } from "../utils/response.js";
 
 export async function getFpoFarmers(req, res, next) {
@@ -133,6 +133,166 @@ export async function aggregateLots(req, res, next) {
     );
 
     return ok(res, lot, "FPO aggregated lot created");
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getFpoMatches(req, res, next) {
+  try {
+    const fpo = await User.findById(req.user._id).select("members location");
+    const memberIds = fpo?.members || [];
+
+    // 1. Get all available FPO lots and member lots
+    const lots = await Lot.find({
+      owner: { $in: [req.user._id, ...memberIds] },
+      status: { $in: ["AVAILABLE", "PARTIALLY_SOLD"] },
+    }).populate("quality owner");
+
+    // 2. Get active buyer demands with populated buyer credentials
+    const demands = await Demand.find({ status: "ACTIVE" })
+      .populate({
+        path: "buyer",
+        select:
+          "name email phone organizationName location district state verification verificationBadge gstNumber panNumber buyerType tradeRating",
+      })
+      .sort({ createdAt: -1 });
+
+    // 3. For each active demand, calculate matching score against FPO lots
+    const matches = [];
+
+    for (const demand of demands) {
+      const demandCommodity = (demand.commodity || "").toLowerCase().trim();
+
+      // Find candidate lots matching commodity (or alias)
+      const matchingLots = lots.filter((l) => {
+        const lotCommodity = (l.commodity || "").toLowerCase().trim();
+        return (
+          lotCommodity === demandCommodity ||
+          lotCommodity.includes(demandCommodity) ||
+          demandCommodity.includes(lotCommodity)
+        );
+      });
+
+      for (const lot of matchingLots) {
+        const quantityRatio = Math.min(
+          (lot.remainingQuantity || 0) / (demand.requiredQuantity || 1),
+          1
+        );
+        const quantityScore = Math.round(quantityRatio * 25);
+
+        const gradeMatch =
+          !demand.requiredQuality ||
+          (lot.quality?.grade || "").toLowerCase() ===
+            (demand.requiredQuality || "").toLowerCase();
+        const qualityScore = gradeMatch ? 25 : 12;
+
+        const priceScore =
+          lot.expectedPrice <= demand.maxPrice
+            ? 25
+            : Math.max(
+                0,
+                Math.round(
+                  25 -
+                    ((lot.expectedPrice - demand.maxPrice) /
+                      Math.max(demand.maxPrice, 1)) *
+                      25
+                )
+              );
+
+        const locationMatch =
+          !demand.preferredLocation ||
+          (lot.location || "")
+            .toLowerCase()
+            .includes((demand.preferredLocation || "").toLowerCase()) ||
+          (demand.preferredLocation || "")
+            .toLowerCase()
+            .includes((lot.location || "").toLowerCase());
+        const locationScore = locationMatch ? 15 : 8;
+
+        const freshnessScore = 10;
+        const totalScore = Math.min(
+          100,
+          quantityScore + qualityScore + priceScore + locationScore + freshnessScore
+        );
+
+        matches.push({
+          demand,
+          lot,
+          matchScore: totalScore,
+          isFpoAggregate: String(lot.owner?._id) === String(req.user._id),
+          breakdown: {
+            quantity: quantityScore,
+            quality: qualityScore,
+            price: priceScore,
+            location: locationScore,
+            availability: freshnessScore,
+          },
+          reasons: [
+            `${quantityScore}/25 volume fit (${lot.remainingQuantity} kg / ${demand.requiredQuantity} kg)`,
+            `${qualityScore}/25 quality fit (${lot.quality?.grade || "FAQ"} vs ${demand.requiredQuality || "Grade A"})`,
+            `${priceScore}/25 price alignment (₹${lot.expectedPrice}/kg vs max ₹${demand.maxPrice}/kg)`,
+            `${locationScore}/15 location fit (${lot.location || "Local"} -> ${demand.preferredLocation || "Pan-India"})`,
+          ],
+        });
+      }
+    }
+
+    matches.sort((a, b) => b.matchScore - a.matchScore);
+
+    return ok(res, {
+      fpoLotsCount: lots.length,
+      activeDemandsCount: demands.length,
+      matches,
+      demands,
+      fpoLots: lots,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function connectFpoWithBuyer(req, res, next) {
+  try {
+    const { demandId, lotId, proposedPrice, proposedQuantity, message } =
+      req.body;
+    const demand = await Demand.findById(demandId).populate("buyer");
+    if (!demand) return fail(res, 404, "Buyer demand not found");
+
+    let lot = null;
+    if (lotId) {
+      lot = await Lot.findById(lotId);
+    }
+
+    const price = Number(proposedPrice) || demand.maxPrice;
+    const qty = Number(proposedQuantity) || demand.requiredQuantity;
+
+    // Create formal offer / supply proposal for the buyer
+    const offer = await Offer.create({
+      lot: lot ? lot._id : undefined,
+      buyer: demand.buyer._id,
+      quantity: qty,
+      pricePerUnit: price,
+      totalAmount: qty * price,
+      message:
+        message ||
+        `FPO Supply Proposal from ${
+          req.user.organizationName || req.user.name
+        } for your ${demand.commodity} demand.`,
+      status: "PENDING",
+      validUntil: new Date(Date.now() + 7 * 86400000),
+    });
+
+    // Notify buyer immediately
+    await Notification.create({
+      user: demand.buyer._id,
+      message: `Direct FPO Supply Proposal: ${
+        req.user.organizationName || req.user.name
+      } offered ${qty} kg ${demand.commodity} at ₹${price}/kg.`,
+      type: "NEW_OFFER",
+    });
+
+    return ok(res, offer, "Supply proposal sent to buyer successfully");
   } catch (error) {
     next(error);
   }

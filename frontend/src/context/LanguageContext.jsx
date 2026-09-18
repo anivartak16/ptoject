@@ -486,6 +486,151 @@ const translations = {
     hi: "कोई रिकॉर्ड नहीं मिला।",
     mr: "माहिती उपलब्ध नाही.",
   },
+
+  // Verification & Buyer Status
+  verifiedBuyer: {
+    en: "Verified Buyer",
+    hi: "सत्यापित खरीदार",
+    mr: "प्रमाणित खरेदीदार",
+  },
+  unverifiedBuyer: {
+    en: "Verification Pending",
+    hi: "सत्यापन लंबित",
+    mr: "पडताळणी प्रलंबित",
+  },
+  buyerTrustDetails: {
+    en: "GST & Mandi Licensed Buyer",
+    hi: "जीएसटी व मंडी अनुज्ञप्ति प्राप्त",
+    mr: "जीएसटी व बाजार समिती परवानाधारक",
+  },
+  escrowProtected: {
+    en: "100% Escrow Protected",
+    hi: "100% एस्क्रो द्वारा सुरक्षित",
+    mr: "१००% एस्क्रो द्वारे सुरक्षित",
+  },
+
+  // Net Realisation
+  netRealisation: {
+    en: "Net Realisation",
+    hi: "शुद्ध मुनाफा (Net Realisation)",
+    mr: "निव्वळ प्राप्ती (Net Realisation)",
+  },
+  netRealisationSubtitle: {
+    en: "Actual take-home returns after transport, APMC mandi fees and handling deductions",
+    hi: "भाड़ा, मंडी टैक्स व हैंडलिंग काटकर किसान को मिलने वाली वास्तविक रकम",
+    mr: "वाहतूक खर्च, बाजार समिती कर व हमाली वजा करून मिळणारी प्रत्यक्ष रक्कम",
+  },
+  grossPrice: {
+    en: "Gross Selling Price",
+    hi: "सकल बिक्री भाव (Gross Price)",
+    mr: "एकूण विक्री दर",
+  },
+  transportDeduction: {
+    en: "Transport / Freight Cost",
+    hi: "परिवहन / भाड़ा खर्च",
+    mr: "वाहतूक / मालवाहतूक खर्च",
+  },
+  mandiFeeDeduction: {
+    en: "Mandi Cess & APMC Fee (1.5%)",
+    hi: "मंडी शुल्क व उपकर (1.5%)",
+    mr: "बाजार समिती उपकर (१.५%)",
+  },
+  handlingStorage: {
+    en: "Handling & Storage",
+    hi: "हैंडलिंग व भंडारण खर्च",
+    mr: "हमाली व गोदाम साठवणूक",
+  },
+  takeHomeIncome: {
+    en: "Farmer Net Take-Home Earnings",
+    hi: "किसान की शुद्ध वास्तविक कमाई",
+    mr: "शेतकऱ्याची प्रत्यक्ष निव्वळ कमाई",
+  },
+
+  // Price Opportunity Alert (Sell vs Hold)
+  priceOpportunityAlert: {
+    en: "Price Opportunity Alert",
+    hi: "मूल्य अवसर अलर्ट (Sell/Hold)",
+    mr: "दर संधी इशारा (Sell/Hold)",
+  },
+  sellNow: {
+    en: "SELL NOW - Peak Price Window",
+    hi: "अभी बेचें (Peak Price Window)",
+    mr: "आत्ताच विका - उच्च दर संधी",
+  },
+  holdInStorage: {
+    en: "HOLD - Price Dip Expected to Rebound",
+    hi: "भंडारण में रखें (Hold) - भाव सुधरने की संभावना",
+    mr: "साठवणूक करा (Hold) - दर सुधारणेची शक्यता",
+  },
+  monitorMarket: {
+    en: "MONITOR - Stable Equilibrium",
+    hi: "निगरानी रखें - भाव स्थिर",
+    mr: "निरीक्षण करा - दर स्थिर",
+  },
+
+  // Fake Offer Detection
+  fakeOfferAlert: {
+    en: "Fake Offer Detection",
+    hi: "फेक ऑफर डिटेक्शन",
+    mr: "संशयास्पद खरेदी ऑफर तपासणी",
+  },
+  suspiciousOfferWarning: {
+    en: "Suspicious Offer Warning",
+    hi: "संदिग्ध ऑफर चेतावनी",
+    mr: "संशयास्पद ऑफर धोक्याचा इशारा",
+  },
+  unrealisticPriceWarning: {
+    en: "Abnormal price detected! Unverified buyers offering >35% above market rate may be fraudulent.",
+    hi: "असामान्य रूप से अधिक भाव! अपंजीकृत खरीदार द्वारा बाजार भाव से 35% अधिक बोली संदिग्ध हो सकती है।",
+    mr: "असामान्यपणे उच्च दर! पडताळणी नसलेल्या खरेदीदाराकडून बाजारापेक्षा ३५% अधिक दर संशयास्पद असू शकतो.",
+  },
+
+  // Buyer Demands & Communication
+  demandDetails: {
+    en: "Buyer Demand Specifications",
+    hi: "खरीदार मांग का विवरण",
+    mr: "खरेदीदार मागणी सविस्तर तपशील",
+  },
+  requiredCrop: {
+    en: "Crop & Variety",
+    hi: "फसल जींस व किस्म",
+    mr: "पीक व वाण",
+  },
+  requiredQty: {
+    en: "Required Quantity",
+    hi: "आवश्यक मात्रा",
+    mr: "आवश्यक वजन",
+  },
+  maxBudgetPrice: {
+    en: "Max Buying Budget",
+    hi: "अधिकतम क्रय बजट",
+    mr: "कमाल खरेदी मर्यादा दर",
+  },
+  deliveryLocation: {
+    en: "Delivery Destination",
+    hi: "डिलीवरी स्थान / मंडी",
+    mr: "वितरण ठिकाण / बाजार",
+  },
+  connectWithBuyer: {
+    en: "Connect with Buyer",
+    hi: "खरीदार से संपर्क करें",
+    mr: "खरेदीदाराशी संपर्क साधा",
+  },
+  sendProposal: {
+    en: "Send Supply Proposal",
+    hi: "आपूर्ति प्रस्ताव भेजें",
+    mr: "पुरवठा प्रस्ताव पाठवा",
+  },
+  fpoSupplyMatching: {
+    en: "FPO Demand-Supply Matching",
+    hi: "एफपीओ मांग-आपूर्ति मिलान",
+    mr: "FPO मागणी व पुरवठा जुळवणी",
+  },
+  multiSourceDataTitle: {
+    en: "Multi-Source Market Intelligence",
+    hi: "बहु-स्रोत बाजार डेटा (AGMARKNET · e-NAM · MSP)",
+    mr: "विविध स्त्रोत बाजार माहिती (AGMARKNET · e-NAM · MSP)",
+  },
 };
 
 const LanguageContext = createContext({
