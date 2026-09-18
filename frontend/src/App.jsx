@@ -89,6 +89,14 @@ export function App() {
           }
         />
         <Route
+          path="/:r/profile"
+          element={
+            <Guard>
+              <DynamicPage />
+            </Guard>
+          }
+        />
+        <Route
           path="/:r/predictions"
           element={
             <Guard>

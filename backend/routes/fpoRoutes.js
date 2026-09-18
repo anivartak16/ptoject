@@ -5,6 +5,7 @@ import {
   getFpoMembers,
   addFpoMember,
   removeFpoMember,
+  verifyMemberFarmer,
   getFpoLots,
   aggregateLots,
   getFpoMatches,
@@ -17,6 +18,7 @@ router.get("/farmers", requireAuth, requireRole("FPO"), getFpoFarmers);
 router.get("/members", requireAuth, requireRole("FPO"), getFpoMembers);
 router.post("/members", requireAuth, requireRole("FPO"), addFpoMember);
 router.delete("/members/:farmerId", requireAuth, requireRole("FPO"), removeFpoMember);
+router.post("/members/:farmerId/verify-ekyc", requireAuth, requireRole("FPO"), verifyMemberFarmer);
 router.get("/lots", requireAuth, requireRole("FPO"), getFpoLots);
 router.post("/aggregate", requireAuth, requireRole("FPO"), aggregateLots);
 router.get("/matches", requireAuth, requireRole("FPO"), getFpoMatches);

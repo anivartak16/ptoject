@@ -4,6 +4,8 @@ import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
+import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
 import {
   Search,
   Filter,
@@ -289,16 +291,18 @@ export function TransactionsPage() {
                   <div>
                     <small>Seller (Farmer / FPO)</small>
                     <b>{tItem.seller?.name || "Farmer Partner"}</b>
-                    <small style={{ display: "block", color: "#64748b" }}>
+                    <small style={{ display: "block", color: "#64748b", marginBottom: "4px" }}>
                       {tItem.seller?.district || tItem.seller?.location || "Indore"}
                     </small>
+                    <FarmerVerificationBadge compact farmer={tItem.seller} verification={tItem.seller?.verification} />
                   </div>
                   <div>
                     <small>Buyer (Trader / Miller)</small>
                     <b>{tItem.buyer?.name || "Procurement Buyer"}</b>
-                    <small style={{ display: "block", color: "#64748b" }}>
+                    <small style={{ display: "block", color: "#64748b", marginBottom: "4px" }}>
                       {tItem.buyer?.district || tItem.buyer?.location || "Bhopal"}
                     </small>
+                    <BuyerVerificationBadge compact buyer={tItem.buyer} verification={tItem.buyer?.verification} />
                   </div>
                 </div>
 

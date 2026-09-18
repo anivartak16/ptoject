@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/client.js";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 
 export function FpoAggregationPage() {
   const [members, setMembers] = useState([]);
@@ -68,6 +69,16 @@ export function FpoAggregationPage() {
     }
   };
 
+  const verifyMember = async (id) => {
+    try {
+      await api.post("/fpo/members/" + id + "/verify-ekyc");
+      setMessage("Farmer e-KYC certified successfully by FPO field inspection.");
+      load();
+    } catch (e) {
+      setError(e.response?.data?.message || "Could not verify member e-KYC.");
+    }
+  };
+
   const toggleLot = (id) =>
     setSelected((current) =>
       current.includes(id)
@@ -100,7 +111,7 @@ export function FpoAggregationPage() {
       <p className="eyebrow">FPO COLLECTIVE SELLING</p>
       <h1>Build your farmer pool</h1>
       <p>
-        Add farmers, select their available produce, and publish one larger lot
+        Add farmers, verify member e-KYC, select their available produce, and publish one larger lot
         with stronger market volume.
       </p>
 
@@ -122,9 +133,12 @@ export function FpoAggregationPage() {
             onChange={(e) => findFarmers(e.target.value)}
           />
           {farmers.map((farmer) => (
-            <div className="member-row" key={farmer._id}>
-              <div>
-                <b>{farmer.name}</b>
+            <div className="member-row" key={farmer._id} style={{ alignItems: "center", gap: "8px" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                  <b>{farmer.name}</b>
+                  <FarmerVerificationBadge compact farmer={farmer} verification={farmer.verification} />
+                </div>
                 <small>
                   {farmer.location} · {farmer.primaryCrop || "Crop not set"}
                 </small>
@@ -142,16 +156,31 @@ export function FpoAggregationPage() {
             <p>No farmers added yet.</p>
           ) : (
             members.map((member) => (
-              <div className="member-row" key={member._id}>
-                <div>
-                  <b>{member.name}</b>
+              <div className="member-row" key={member._id} style={{ alignItems: "center", gap: "8px" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    <b>{member.name}</b>
+                    <FarmerVerificationBadge compact farmer={member} verification={member.verification} />
+                  </div>
                   <small>
-                    {member.location} · {member.email}
+                    {member.location} · {member.email} · {member.primaryCrop || "Produce"}
                   </small>
                 </div>
-                <button onClick={() => removeMember(member._id)}>
-                  Remove
-                </button>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {member.verification !== "VERIFIED" && member.ekycStatus !== "VERIFIED" && (
+                    <button
+                      className="secondary"
+                      style={{ fontSize: "11px", padding: "4px 8px", borderColor: "#16a34a", color: "#166534" }}
+                      onClick={() => verifyMember(member._id)}
+                      title="Verify farmer e-KYC on behalf of FPO"
+                    >
+                      Verify e-KYC
+                    </button>
+                  )}
+                  <button onClick={() => removeMember(member._id)}>
+                    Remove
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -185,10 +214,13 @@ export function FpoAggregationPage() {
                   <b>
                     {lot.commodity} · {lot.remainingQuantity} kg
                   </b>
-                  <small>
-                    {lot.owner?.name} · {lot.location} ·{" "}
-                    {lot.quality?.grade || "Quality pending"}
-                  </small>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                    <small>
+                      {lot.owner?.name} · {lot.location} ·{" "}
+                      {lot.quality?.grade || "Quality pending"}
+                    </small>
+                    <FarmerVerificationBadge compact farmer={lot.owner} verification={lot.owner?.verification} />
+                  </div>
                 </span>
                 <strong>₹{lot.expectedPrice}/kg</strong>
               </label>

@@ -30,6 +30,7 @@ export function Shell({ children }) {
       : workspaceRole === "BUYER"
         ? [
             [t("dashboard", "Dashboard"), "dashboard", "◫"],
+            [t("buyerProfile", "Buyer profile"), "profile", "🏢"],
             [t("marketPrediction", "Market Prediction"), "predictions", "📈"],
             [t("buyerDemands", "Buyer demands"), "demands", "⌁"],
             [t("browseLots", "Browse lots"), "lots", "▦"],
@@ -43,6 +44,7 @@ export function Shell({ children }) {
         : workspaceRole === "FPO"
           ? [
               [t("dashboard", "Dashboard"), "dashboard", "◫"],
+              [t("fpoProfile", "FPO Leader & Aggregation"), "profile", "🏛️"],
               [t("farmers", "Farmers"), "farmers", "◉"],
               [t("aggregatedLots", "Aggregated lots"), "lots", "▦"],
               [t("aggregation", "Aggregation"), "aggregation", "⊞"],
@@ -58,7 +60,7 @@ export function Shell({ children }) {
             ]
           : [
               [t("dashboard", "Dashboard"), "dashboard", "◫"],
-              [t("myProfile", "My profile"), "profile", "◉"],
+              [t("farmerProfile", "Farmer profile & e-KYC"), "profile", "🛡️"],
               [t("myFarm", "My farm"), "farm", "⌂"],
               [t("myLots", "My lots"), "lots", "▦"],
               [t("marketPrices", "Market prices"), "prices", "↗"],
@@ -112,10 +114,35 @@ export function Shell({ children }) {
           <span className="workspace-role">{workspaceRole}</span>
           <b>
             {workspaceRole === "FPO"
-              ? "FPO collective workspace"
+              ? (user?.organizationName || "FPO collective workspace")
+              : workspaceRole === "BUYER"
+              ? (user?.organizationName || user?.name || "Institutional Buyer")
               : user?.name}
           </b>
           <small>{user?.district ? `${user.district}, ` : ""}{user?.state || "National Network"}</small>
+          <Link
+            to={`/${r}/profile`}
+            className="sidebar-profile-action-btn"
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              fontSize: "12px",
+              padding: "6px 10px",
+              borderRadius: "6px",
+              background: "#ffffff",
+              color: "#166534",
+              fontWeight: 700,
+              textDecoration: "none",
+              border: "1px solid #bbf7d0",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+          >
+            <span>👤</span>
+            <span>{workspaceRole === "BUYER" ? "Buyer Profile" : workspaceRole === "FPO" ? "FPO Leader & Aggregation" : "Farmer Profile & e-KYC"} →</span>
+          </Link>
         </div>
 
         <p className="side-label">WORKSPACE</p>
@@ -153,14 +180,44 @@ export function Shell({ children }) {
             >
               <Menu size={22} />
             </button>
-            <div className="user-intro">
-              <small>Signed in as</small>
-              <b>{user?.name}</b>
-              <small className="user-workspace-tag"> · {workspaceRole}</small>
-            </div>
+            <Link
+              to={`/${r}/profile`}
+              title="Open My Profile"
+              style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+            >
+              <div className="user-intro" style={{ cursor: "pointer" }}>
+                <small>Signed in as 👤 <span style={{ textDecoration: "underline", color: "#166534" }}>View Profile</span></small>
+                <b>{user?.name}</b>
+                <small className="user-workspace-tag"> · {workspaceRole}</small>
+              </div>
+            </Link>
           </div>
 
           <div className="header-right">
+            {/* Direct Profile Button in Header */}
+            <Link
+              to={`/${r}/profile`}
+              className="header-direct-profile-btn"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 14px",
+                borderRadius: "8px",
+                background: "#f0fdf4",
+                border: "1px solid #86efac",
+                color: "#166534",
+                fontWeight: 700,
+                fontSize: "13px",
+                textDecoration: "none",
+                boxShadow: "0 1px 2px rgba(22, 101, 52, 0.08)",
+              }}
+              title="Open My Profile"
+            >
+              <span>👤</span>
+              <span>{workspaceRole === "BUYER" ? "Buyer Profile" : workspaceRole === "FPO" ? "FPO Leader" : "My Profile"}</span>
+            </Link>
+
             {/* Multilingual Switcher */}
             <div className="shell-lang-switcher">
               <Globe size={15} color="var(--muted)" />

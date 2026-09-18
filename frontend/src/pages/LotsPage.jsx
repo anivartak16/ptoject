@@ -3,6 +3,7 @@ import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 
 export function OfferModal({ lot }) {
   const { getLabel } = useLanguage();
@@ -247,14 +248,47 @@ export function LotsPage() {
         {rows.length ? (
           rows.map((l) => (
             <article className="lot" key={l._id}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <StatusBadge>{l.status}</StatusBadge>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <StatusBadge>{l.status}</StatusBadge>
+                  {user.role !== "BUYER" && (
+                    <FarmerVerificationBadge compact farmer={user} verification={user.verification} />
+                  )}
+                </div>
                 {l.quality?.grade && (
                   <span style={{ fontSize: "12px", fontWeight: 700, color: "#166534" }}>
                     {l.quality.grade}
                   </span>
                 )}
               </div>
+
+              {/* Farmer Info & e-KYC Verification Badge for Buyers */}
+              {user.role === "BUYER" && l.owner && (
+                <div
+                  style={{
+                    margin: "10px 0 6px 0",
+                    padding: "8px 10px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                  }}
+                >
+                  <div style={{ fontSize: "13px" }}>
+                    <small style={{ color: "#64748b", display: "block", fontSize: "11px" }}>
+                      {getLabel("Farmer Producer", "उत्पादक किसान", "उत्पादक शेतकरी")}
+                    </small>
+                    <b>{l.owner.name}</b>
+                    {l.owner.farmName && <span style={{ color: "#64748b" }}> · {l.owner.farmName}</span>}
+                  </div>
+                  <FarmerVerificationBadge compact farmer={l.owner} verification={l.owner.verification} />
+                </div>
+              )}
+
               <h3 style={{ marginTop: "8px" }}>
                 {l.commodity} · {(l.remainingQuantity || l.quantity).toLocaleString("en-IN")} KG
               </h3>

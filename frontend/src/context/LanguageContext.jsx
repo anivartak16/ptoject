@@ -52,6 +52,21 @@ const translations = {
     hi: "मेरा डैशबोर्ड",
     mr: "माझे डॅशबोर्ड",
   },
+  buyerProfile: {
+    en: "Buyer Profile",
+    hi: "खरीदार प्रोफाइल",
+    mr: "खरेदीदार प्रोफाइल",
+  },
+  fpoProfile: {
+    en: "FPO Leader & Aggregation",
+    hi: "एफपीओ प्रमुख व एकत्रीकरण",
+    mr: "एफपीओ प्रमुख व एकत्रीकरण",
+  },
+  farmerProfile: {
+    en: "Farmer Profile & e-KYC",
+    hi: "किसान प्रोफाइल व ई-केवाईसी",
+    mr: "शेतकरी प्रोफाइल व ई-केवायसी",
+  },
   signIn: {
     en: "Sign In",
     hi: "लॉगिन",

@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
 import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 import { NetRealisationCalculator } from "../components/common/NetRealisationCalculator.jsx";
 import {
   CheckCircle2,
@@ -137,6 +138,13 @@ export function OffersPage() {
                       verification={buyer.verification}
                       buyer={buyer}
                     />
+                    {o.lot?.owner && (
+                      <FarmerVerificationBadge
+                        compact
+                        farmer={o.lot.owner}
+                        verification={o.lot.owner.verification}
+                      />
+                    )}
                     <StatusBadge>{o.status}</StatusBadge>
                   </div>
                 </div>
@@ -192,6 +200,12 @@ export function OffersPage() {
                     <span>Buyer:</span>{" "}
                     <b>{buyer.organizationName || buyer.name || "Enterprise Buyer"}</b>
                   </div>
+                  {o.lot?.owner && (
+                    <div>
+                      <span>Farmer Seller:</span>{" "}
+                      <b>{o.lot.owner.name || "Farmer Partner"}</b>
+                    </div>
+                  )}
                 </div>
 
                 {o.message && (

@@ -33,10 +33,36 @@ export async function getFpoMembers(req, res, next) {
   try {
     const fpo = await User.findById(req.user._id).populate({
       path: "members",
-      select: "name email phone location farmName primaryCrop verification",
+      select:
+        "name email phone location farmName primaryCrop landSize district state verification verificationBadge ekycStatus ekycType ekycIdNumber ekycVerifiedAt ekycDetails",
     });
 
     return ok(res, fpo?.members || []);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyMemberFarmer(req, res, next) {
+  try {
+    const { farmerId } = req.params;
+    const farmer = await User.findOne({ _id: farmerId, role: "FARMER" });
+    if (!farmer) return fail(res, 404, "Farmer not found", "NOT_FOUND");
+
+    farmer.ekycStatus = "VERIFIED";
+    farmer.ekycType = req.body.ekycType || "FPO_FIELD_VERIFICATION";
+    farmer.ekycIdNumber = farmer.ekycIdNumber || `FPO-VER-${farmer._id.toString().slice(-4).toUpperCase()}`;
+    farmer.ekycVerifiedAt = new Date();
+    farmer.verification = "VERIFIED";
+    farmer.verificationBadge = "EKYC_VERIFIED_FARMER";
+    farmer.ekycDetails = {
+      fullName: farmer.name,
+      docType: req.body.ekycType || "FPO Field Inspection & Land Record",
+      referenceId: `FPO-INSP-${Date.now().toString(36).toUpperCase()}`,
+      verifiedDate: new Date(),
+    };
+    await farmer.save();
+    return ok(res, farmer, "Farmer e-KYC certified successfully by FPO");
   } catch (error) {
     next(error);
   }

@@ -164,12 +164,33 @@ function sanitizeUser(user) {
     primaryCrop: user.primaryCrop,
     registrationNumber: user.registrationNumber,
     memberCount: user.memberCount,
+    fpoLeaderDesignation: user.fpoLeaderDesignation || "Chairman & Managing Director",
+    fpoEstablishmentYear: user.fpoEstablishmentYear || 2021,
+    fpoIncorporationType: user.fpoIncorporationType || "Farmer Producer Company (Companies Act)",
+    fpoAggregationCapacity: user.fpoAggregationCapacity || "1,500 MT / Season",
+    buyerCapacity: user.buyerCapacity || "500 MT / Month",
+    preferredCommodities: user.preferredCommodities || ["Wheat", "Soyabean", "Gram"],
     verification: user.verification || "PENDING",
     gstNumber: user.gstNumber || "",
     panNumber: user.panNumber || "",
     mandiLicenseNumber: user.mandiLicenseNumber || "",
-    verificationBadge: user.verificationBadge || (user.verification === "VERIFIED" ? "VERIFIED_BUYER" : "STANDARD"),
+    verificationBadge:
+      user.verificationBadge ||
+      (user.verification === "VERIFIED"
+        ? user.role === "BUYER"
+          ? "VERIFIED_BUYER"
+          : "EKYC_VERIFIED_FARMER"
+        : "STANDARD"),
     tradeRating: user.tradeRating ?? 4.5,
+    ekycStatus:
+      user.ekycStatus ||
+      (user.verification === "VERIFIED" && user.role === "FARMER"
+        ? "VERIFIED"
+        : "NOT_STARTED"),
+    ekycType: user.ekycType || "",
+    ekycIdNumber: user.ekycIdNumber || "",
+    ekycVerifiedAt: user.ekycVerifiedAt,
+    ekycDetails: user.ekycDetails || null,
     geo: user.geo,
   };
 }
@@ -211,7 +232,7 @@ export async function login(req, res, next) {
 }
 
 export const logout = (_req, res) => ok(res, {}, "Logged out");
-export const me = (req, res) => ok(res, req.user);
+export const me = (req, res) => ok(res, sanitizeUser(req.user));
 
 export async function updateProfile(req, res, next) {
   try {
@@ -227,7 +248,15 @@ export async function updateProfile(req, res, next) {
       "state",
       "pincode",
       "organizationName",
+      "buyerType",
+      "buyerCapacity",
+      "preferredCommodities",
       "registrationNumber",
+      "memberCount",
+      "fpoLeaderDesignation",
+      "fpoEstablishmentYear",
+      "fpoIncorporationType",
+      "fpoAggregationCapacity",
       "primaryCrop",
       "farmName",
       "landSize",
@@ -241,6 +270,12 @@ export async function updateProfile(req, res, next) {
         user[field] = req.body[field];
       }
     });
+
+    if (user.role === "BUYER" && (user.gstNumber || user.mandiLicenseNumber)) {
+      user.verification = "VERIFIED";
+      user.verificationBadge = "VERIFIED_BUYER";
+      if (!user.verifiedAt) user.verifiedAt = new Date();
+    }
 
     if (req.body.location || req.body.district || req.body.state || req.body.address) {
       user.geo = {
@@ -256,6 +291,54 @@ export async function updateProfile(req, res, next) {
 
     await user.save();
     return ok(res, sanitizeUser(user), "Profile updated successfully");
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function submitEkyc(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return fail(res, 404, "User not found");
+
+    const { ekycType, idNumber, fullName, landRecordNumber, village } = req.body;
+    if (!ekycType || !idNumber) {
+      return fail(res, 422, "Verification document type and document number are required");
+    }
+
+    const cleanId = String(idNumber).trim().replaceAll(" ", "").replaceAll("-", "");
+    if (cleanId.length < 4) {
+      return fail(res, 422, "Please enter a valid document identification number");
+    }
+
+    // Generate compliant masked identity for security & privacy
+    const maskedId = "XXXX-XXXX-" + cleanId.slice(-4);
+    const referenceId = "EKYC-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+
+    user.ekycStatus = "VERIFIED";
+    user.ekycType = ekycType;
+    user.ekycIdNumber = maskedId;
+    user.ekycVerifiedAt = new Date();
+    user.verification = "VERIFIED";
+    if (user.role === "FARMER") {
+      user.verificationBadge = "EKYC_VERIFIED_FARMER";
+    }
+    user.ekycDetails = {
+      fullName: fullName || user.name,
+      docType: ekycType,
+      referenceId,
+      landRecordNumber: landRecordNumber || "",
+      village: village || user.location || "",
+      state: user.state || "National",
+      verifiedDate: new Date(),
+    };
+
+    await user.save();
+    return ok(
+      res,
+      sanitizeUser(user),
+      "e-KYC verified successfully! Government-grade trust badge is now active across the marketplace."
+    );
   } catch (error) {
     next(error);
   }

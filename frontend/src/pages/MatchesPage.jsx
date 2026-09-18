@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
 import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 import { ConnectModal } from "../components/common/ConnectModal.jsx";
 import {
   Sparkles,
@@ -328,10 +329,15 @@ export function MatchesPage() {
                           <small>Match</small>
                         </div>
                         <div className="match-detail-wrap">
-                          <div className="match-lot-title">
-                            <b>
-                              {m.lot?.commodity} · {m.lot?.remainingQuantity} kg available
-                            </b>
+                          <div className="match-lot-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                              <b>
+                                {m.lot?.commodity} · {m.lot?.remainingQuantity} kg available
+                              </b>
+                              {m.lot?.owner && (
+                                <FarmerVerificationBadge compact farmer={m.lot.owner} verification={m.lot.owner?.verification} />
+                              )}
+                            </div>
                             <span className="lot-price">
                               ₹{m.lot?.expectedPrice}/kg
                             </span>

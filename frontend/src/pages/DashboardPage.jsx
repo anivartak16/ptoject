@@ -401,6 +401,22 @@ export function DashboardPage() {
                 Browse Lots →
               </Link>
               <Link
+                to={`/${r}/profile`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#eff6ff",
+                  color: "#1d4ed8",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  border: "1px solid #93c5fd",
+                }}
+              >
+                🏢 Buyer Profile & Credentials
+              </Link>
+              <Link
                 to={`/${r}/payments`}
                 style={{
                   display: "inline-flex",
@@ -439,6 +455,22 @@ export function DashboardPage() {
                 Open aggregation
               </Link>
               <Link
+                to={`/${r}/profile`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  border: "1px solid #86efac",
+                }}
+              >
+                🏛️ FPO Leader & Aggregation Profile
+              </Link>
+              <Link
                 to={`/${r}/transactions`}
                 style={{
                   display: "inline-flex",
@@ -459,6 +491,22 @@ export function DashboardPage() {
             <>
               <Link className="primary" to={`/${r}/lots`}>
                 {t("addLot", "Manage / Add Lots")}
+              </Link>
+              <Link
+                to={`/${r}/profile`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "10px 16px",
+                  borderRadius: "8px",
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  border: "1px solid #86efac",
+                }}
+              >
+                🛡️ e-KYC & Farm Profile
               </Link>
               <Link
                 to={`/${r}/payments`}
