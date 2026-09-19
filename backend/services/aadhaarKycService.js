@@ -239,6 +239,8 @@ export class AadhaarKycService {
           {
             "@entity": "in.co.sandbox.kyc.aadhaar.okyc.otp.request",
             aadhaar_number: cleanAadhaar,
+            consent: "y",
+            reason: "For Aadhaar e-KYC verification",
           },
           {
             headers: {
@@ -483,7 +485,7 @@ export class AadhaarKycService {
         const response = await axios.post(
           "https://api.sandbox.co.in/kyc/aadhaar/okyc/otp/verify",
           {
-            "@entity": "in.co.sandbox.kyc.aadhaar.okyc.otp.verify.request",
+            "@entity": "in.co.sandbox.kyc.aadhaar.okyc.request",
             reference_id: session.providerClientId,
             otp: cleanOtp,
           },
