@@ -6,18 +6,53 @@ import {User,Market,MarketPrice,Quality,Lot,Demand,Warehouse,LogisticsProvider,O
 const ago=days=>new Date(Date.now()-days*86400000);
 const password=await bcrypt.hash('Demo@12345',12);
 const demoUsers=[
-  ['Admin','admin@krishilink.com','ADMIN','Bhopal'],
-  ['Admin','admin@agrilink.com','ADMIN','Bhopal'],
-  ['Ramesh Patel','farmer@krishilink.com','FARMER','Indore'],
-  ['Ramesh Patel','farmer@agrilink.com','FARMER','Indore'],
-  ['ABC Foods','buyer@krishilink.com','BUYER','Indore'],
-  ['ABC Foods','buyer@agrilink.com','BUYER','Indore'],
-  ['Narmada FPO','fpo@krishilink.com','FPO','Ujjain'],
-  ['Narmada FPO','fpo@agrilink.com','FPO','Ujjain']
+  ['Admin','admin@krishilink.com','ADMIN','Bhopal','VERIFIED',true],
+  ['Admin','admin@agrilink.com','ADMIN','Bhopal','VERIFIED',true],
+  ['Ramesh Patel','farmer@krishilink.com','FARMER','Indore','VERIFIED',true],
+  ['Ramesh Patel','farmer@agrilink.com','FARMER','Indore','VERIFIED',true],
+  ['Sita Verma','farmer2@krishilink.com','FARMER','Dewas','PENDING',false],
+  ['ABC Foods','buyer@krishilink.com','BUYER','Indore','VERIFIED',true],
+  ['ABC Foods','buyer@agrilink.com','BUYER','Indore','VERIFIED',true],
+  ['Malwa Traders','buyer2@krishilink.com','BUYER','Bhopal','UNVERIFIED',false],
+  ['Narmada FPO','fpo@krishilink.com','FPO','Ujjain','VERIFIED',true],
+  ['Narmada FPO','fpo@agrilink.com','FPO','Ujjain','VERIFIED',true]
 ];
 await mongoose.connect(process.env.MONGO_URI);
 const users={};
-for(const [name,email,role,location] of demoUsers)users[role]=await User.findOneAndUpdate({email},{$set:{name,email,role,location,verification:'VERIFIED',active:true},$setOnInsert:{password}},{new:true,upsert:true});
+for(const [name,email,role,location,verification,kycVerified] of demoUsers) {
+  const isFarmer = role === 'FARMER';
+  const isBuyer = role === 'BUYER';
+  const u = await User.findOneAndUpdate(
+    { email },
+    {
+      $set: {
+        name,
+        email,
+        role,
+        location,
+        verification: verification || 'VERIFIED',
+        kycVerified: Boolean(kycVerified),
+        aadhaarLast4: kycVerified ? 'XXXX-XXXX-8921' : undefined,
+        crops: isFarmer ? ['Wheat', 'Soybean'] : undefined,
+        availableQuantity: isFarmer ? 2500 : undefined,
+        cropQuality: isFarmer ? 'Grade A' : undefined,
+        fpoAssociation: isFarmer ? 'Narmada FPO' : undefined,
+        organizationName: isBuyer ? name : undefined,
+        buyerType: isBuyer ? 'TRADER' : undefined,
+        requiredCrops: isBuyer ? ['Wheat', 'Soybean'] : undefined,
+        requiredQuantity: isBuyer ? 5000 : undefined,
+        qualityRequirements: isBuyer ? 'Grade A / Moisture < 12%' : undefined,
+        businessVerified: Boolean(kycVerified),
+        active: true,
+      },
+      $setOnInsert: { password }
+    },
+    { new: true, upsert: true }
+  );
+  if (!users[role] || role === 'FARMER' && email === 'farmer@krishilink.com' || role === 'BUYER' && email === 'buyer@krishilink.com') {
+    users[role] = u;
+  }
+}
 const mandiCoordinates={Indore:[75.8577,22.7196],Dewas:[76.0534,22.9676],Ujjain:[75.7885,23.1765],Bhopal:[77.4126,23.2599],Mandsaur:[75.0693,24.0734],Neemuch:[74.872,24.4764]};const marketFactors={Indore:[7.5,4.4,318],Dewas:[8,4.2,207],Ujjain:[8,4.5,426],Bhopal:[9,4.1,189],Mandsaur:[8.5,4.6,512],Neemuch:[9,4.7,638]};
 if(await Market.countDocuments()===0)await Market.insertMany(Object.entries(mandiCoordinates).map(([location,coordinates])=>({name:`${location} Mandi`,location,district:location,state:'Madhya Pradesh',commodities:['Wheat','Soybean','Onion'],geo:{type:'Point',coordinates},transportCostPerKm:marketFactors[location][0],reviewAverage:marketFactors[location][1],reviewCount:marketFactors[location][2]})));
 for(const [location,factors] of Object.entries(marketFactors))await Market.updateOne({location},{$set:{transportCostPerKm:factors[0],reviewAverage:factors[1],reviewCount:factors[2]}});

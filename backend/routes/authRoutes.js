@@ -1,12 +1,11 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import {
   login,
   logout,
   me,
   register,
   updateProfile,
-  submitEkyc,
 } from "../controllers/authController.js";
 
 const router = Router();
@@ -15,7 +14,6 @@ router.post("/login", login);
 router.post("/logout", requireAuth, logout);
 router.get("/me", requireAuth, me);
 router.put("/profile", requireAuth, updateProfile);
-router.post("/ekyc", requireAuth, submitEkyc);
 
 export default router;
 

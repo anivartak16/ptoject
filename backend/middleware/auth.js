@@ -29,3 +29,19 @@ export const requireRole = (...roles) => (req, res, next) => {
   }
   next();
 };
+
+export async function optionalAuth(req, _res, next) {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (token) {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(payload.id).select("-password");
+      if (user && user.active) {
+        req.user = user;
+      }
+    }
+  } catch (_err) {
+    // Ignore invalid token for optional auth
+  }
+  next();
+}

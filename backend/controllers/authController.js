@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User } from "../models/index.js";
+import { User, Transaction, Lot, Demand } from "../models/index.js";
 import { ok, fail } from "../utils/response.js";
 import { resolveCoordinates } from "../utils/geoCoordinates.js";
 
@@ -29,9 +29,6 @@ export async function register(req, res, next) {
       primaryCrop,
       registrationNumber,
       memberCount,
-      gstNumber,
-      panNumber,
-      mandiLicenseNumber,
     } = req.body;
 
     if (
@@ -102,6 +99,8 @@ export async function register(req, res, next) {
       address,
     });
 
+    const isKycDone = Boolean(kycVerified);
+
     const user = await User.create({
       name,
       email,
@@ -118,13 +117,15 @@ export async function register(req, res, next) {
       farmName,
       landSize: landSize ? Number(landSize) : undefined,
       primaryCrop,
+      crops: crops?.length ? crops : primaryCrop ? [primaryCrop] : [],
+      availableQuantity: availableQuantity ? Number(availableQuantity) : undefined,
+      cropQuality: cropQuality || "Grade A",
+      fpoAssociation,
+      requiredCrops: requiredCrops?.length ? requiredCrops : [],
+      requiredQuantity: requiredQuantity ? Number(requiredQuantity) : undefined,
+      qualityRequirements,
       registrationNumber,
       memberCount: memberCount ? Number(memberCount) : undefined,
-      gstNumber: gstNumber?.trim(),
-      panNumber: panNumber?.trim(),
-      mandiLicenseNumber: mandiLicenseNumber?.trim(),
-      verification: role === "BUYER" && gstNumber ? "VERIFIED" : "PENDING",
-      verificationBadge: role === "BUYER" && gstNumber ? "VERIFIED_BUYER" : "STANDARD",
       geo: {
         type: "Point",
         coordinates: resolvedCoords,
@@ -162,6 +163,13 @@ function sanitizeUser(user) {
     farmName: user.farmName,
     landSize: user.landSize,
     primaryCrop: user.primaryCrop,
+    crops: user.crops?.length ? user.crops : user.primaryCrop ? [user.primaryCrop] : [],
+    availableQuantity: user.availableQuantity,
+    cropQuality: user.cropQuality || "Grade A",
+    fpoAssociation: user.fpoAssociation,
+    requiredCrops: user.requiredCrops || [],
+    requiredQuantity: user.requiredQuantity,
+    qualityRequirements: user.qualityRequirements || "Grade A / Moisture < 12%",
     registrationNumber: user.registrationNumber,
     memberCount: user.memberCount,
     fpoLeaderDesignation: user.fpoLeaderDesignation || "Chairman & Managing Director",
@@ -192,6 +200,13 @@ function sanitizeUser(user) {
     ekycVerifiedAt: user.ekycVerifiedAt,
     ekycDetails: user.ekycDetails || null,
     geo: user.geo,
+    verification: user.verification || "UNVERIFIED",
+    kycVerified: Boolean(user.kycVerified),
+    kycVerifiedAt: user.kycVerifiedAt,
+    aadhaarLast4: user.aadhaarLast4,
+    profilePhoto: user.profilePhoto,
+    businessVerified: Boolean(user.businessVerified),
+    active: user.active !== false,
   };
 }
 
@@ -248,9 +263,6 @@ export async function updateProfile(req, res, next) {
       "state",
       "pincode",
       "organizationName",
-      "buyerType",
-      "buyerCapacity",
-      "preferredCommodities",
       "registrationNumber",
       "memberCount",
       "fpoLeaderDesignation",
@@ -260,9 +272,6 @@ export async function updateProfile(req, res, next) {
       "primaryCrop",
       "farmName",
       "landSize",
-      "gstNumber",
-      "panNumber",
-      "mandiLicenseNumber",
     ];
 
     allowed.forEach((field) => {
@@ -291,54 +300,6 @@ export async function updateProfile(req, res, next) {
 
     await user.save();
     return ok(res, sanitizeUser(user), "Profile updated successfully");
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function submitEkyc(req, res, next) {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return fail(res, 404, "User not found");
-
-    const { ekycType, idNumber, fullName, landRecordNumber, village } = req.body;
-    if (!ekycType || !idNumber) {
-      return fail(res, 422, "Verification document type and document number are required");
-    }
-
-    const cleanId = String(idNumber).trim().replaceAll(" ", "").replaceAll("-", "");
-    if (cleanId.length < 4) {
-      return fail(res, 422, "Please enter a valid document identification number");
-    }
-
-    // Generate compliant masked identity for security & privacy
-    const maskedId = "XXXX-XXXX-" + cleanId.slice(-4);
-    const referenceId = "EKYC-" + Math.random().toString(36).substring(2, 9).toUpperCase();
-
-    user.ekycStatus = "VERIFIED";
-    user.ekycType = ekycType;
-    user.ekycIdNumber = maskedId;
-    user.ekycVerifiedAt = new Date();
-    user.verification = "VERIFIED";
-    if (user.role === "FARMER") {
-      user.verificationBadge = "EKYC_VERIFIED_FARMER";
-    }
-    user.ekycDetails = {
-      fullName: fullName || user.name,
-      docType: ekycType,
-      referenceId,
-      landRecordNumber: landRecordNumber || "",
-      village: village || user.location || "",
-      state: user.state || "National",
-      verifiedDate: new Date(),
-    };
-
-    await user.save();
-    return ok(
-      res,
-      sanitizeUser(user),
-      "e-KYC verified successfully! Government-grade trust badge is now active across the marketplace."
-    );
   } catch (error) {
     next(error);
   }
