@@ -40,6 +40,7 @@ export async function updateUserStatus(req, res, next) {
 
 export async function getSummary(_req, res, next) {
   try {
+    // Fetch dashboard summary data in parallel
     const [farmers, buyers, lots, demands, transactions] = await Promise.all([
       User.countDocuments({ role: "FARMER" }),
       User.countDocuments({ role: "BUYER" }),
