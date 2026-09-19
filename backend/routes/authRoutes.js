@@ -6,6 +6,9 @@ import {
   me,
   register,
   updateProfile,
+  getProfile,
+  sendKycOtp,
+  verifyKycOtp,
 } from "../controllers/authController.js";
 
 const router = Router();
@@ -14,6 +17,9 @@ router.post("/login", login);
 router.post("/logout", requireAuth, logout);
 router.get("/me", requireAuth, me);
 router.put("/profile", requireAuth, updateProfile);
+router.get("/profile/:id", optionalAuth, getProfile);
+router.post("/kyc/send-otp", optionalAuth, sendKycOtp);
+router.post("/kyc/verify-otp", optionalAuth, verifyKycOtp);
 
 export default router;
 

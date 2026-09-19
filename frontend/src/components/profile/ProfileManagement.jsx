@@ -2,24 +2,28 @@ import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 import { VerificationBadge } from "../common/VerificationBadge.jsx";
 import { KycModal } from "./KycModal.jsx";
+import { TrustProfileModal } from "./TrustProfileModal.jsx";
 
 /**
  * ProfileManagement:
  * Complete management view for Farmer and Buyer profiles.
  * Features:
- * - Dynamic Farmer and Buyer views with all required fields
- * - KYC Verification status and "Verify Now" modal integration
- * - Trust checklist display
- * - Editable profile information
- * - Responsive UI matching KrishiLink theme
+ * - Complete Farmer Profile (Name, Photo, Location, Crops, Quantity, Quality/Grade, FPO, Previous Transactions, KYC Status, Verified Badge)
+ * - Complete Buyer Profile (Name, Business Type, Location, Required Crops, Required Quantity, Quality Requirements, Previous Transactions, KYC Status, Business Verification, Verified Badge)
+ * - 3 Visual Verification Statuses (Verified ✓, Verification Pending ⏳, Unverified ⚠️)
+ * - Trust & Transparency checklist and Public Trust Profile Modal preview
+ * - Prototype Aadhaar + OTP KYC flow integration
  */
 export function ProfileManagement() {
   const { r } = useParams();
   const { user, setUser } = useAuth();
+  const { getLabel } = useLanguage();
 
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [isTrustPreviewOpen, setIsTrustPreviewOpen] = useState(false);
   const [profileMsg, setProfileMsg] = useState("");
   const [profileErr, setProfileErr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,8 +66,8 @@ export function ProfileManagement() {
         .get(`/auth/profile/${user._id}`)
         .then((res) => {
           const data = res.data.data;
-          setTxCount(data.transactionCount || 0);
           if (data) {
+            setTxCount(data.transactionCount || 0);
             setForm((prev) => ({
               ...prev,
               name: data.name || prev.name,
@@ -96,8 +100,24 @@ export function ProfileManagement() {
   const isFarmer = user?.role === "FARMER";
   const isBuyer = user?.role === "BUYER";
   const isFpo = user?.role === "FPO";
-  const isVerified = user?.verification === "VERIFIED" || user?.kycVerified;
-  const isPending = user?.verification === "PENDING";
+
+  const normStatus = String(user?.verification || "UNVERIFIED").toUpperCase();
+  const isVerified = normStatus === "VERIFIED" || user?.kycVerified;
+  const isPending = normStatus === "PENDING" || normStatus === "PENDING_VERIFICATION";
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileErr("Image size should be less than 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, profilePhoto: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -132,38 +152,73 @@ export function ProfileManagement() {
     }
   };
 
-  const avatarPlaceholder = isBuyer ? "🏢" : "🌾";
+  const defaultAvatarEmoji = isBuyer ? "🏢" : "🧑‍🌾";
+  const avatarPresets = isBuyer
+    ? ["🏢", "🏬", "👔", "🤝", "🏪", "💼"]
+    : ["🧑‍🌾", "🌾", "🚜", "🌽", "🌱", "👨‍🌾"];
 
   return (
     <section className="profile-management-view">
       <div className="profile-header-banner">
         <div>
-          <p className="eyebrow">MARKETPLACE PROFILE & TRUST MANAGEMENT</p>
-          <h1>{isBuyer ? "Buyer Organization Profile" : "Farmer Profile & Identity"}</h1>
+          <p className="eyebrow">
+            {getLabel(
+              "MARKETPLACE PROFILE & TRUST MANAGEMENT",
+              "कृषि बाजार प्रोफाइल एवं विश्वास प्रबंधन",
+              "बाजारपेठ प्रोफाइल आणि विश्वास व्यवस्थापन"
+            )}
+          </p>
+          <h1>
+            {isBuyer
+              ? getLabel("Buyer Organization Profile", "खरीदार संगठन प्रोफाइल", "खरेदीदार संस्था प्रोफाइल")
+              : isFpo
+              ? getLabel("FPO Representative Profile", "एफपीओ प्रतिनिधि प्रोफाइल", "एफपीओ प्रतिनिधी प्रोफाइल")
+              : getLabel("Farmer Profile & Identity", "किसान प्रोफाइल एवं पहचान", "शेतकरी प्रोफाइल आणि ओळख")}
+          </h1>
           <p className="profile-subheading">
             {isBuyer
-              ? "Verified buyer credentials build trust with farmers and FPOs, accelerating grain procurement."
-              : "Complete your KYC and farm details to earn the verified badge and sell directly to verified buyers."}
+              ? getLabel(
+                  "Verified buyer credentials build trust with farmers and FPOs, accelerating grain procurement.",
+                  "सत्यापित खरीदार साख किसानों और एफपीओ के साथ विश्वास बनाती है और खरीद तेज करती है।",
+                  "प्रमाणित खरेदीदार माहितीमुळे शेतकरी आणि एफपीओमध्ये विश्वास वाढतो."
+                )
+              : getLabel(
+                  "Complete your KYC and farm details to earn the verified badge and sell directly to verified buyers.",
+                  "सत्यापित बैज पाने और सीधे सत्यापित खरीदारों को बेचने के लिए अपना केवाईसी और खेत विवरण पूरा करें।",
+                  "प्रमाणित बॅज मिळवण्यासाठी आणि थेट खरेदीदारांना विक्री करण्यासाठी केवायसी पूर्ण करा."
+                )}
           </p>
         </div>
 
         <div className="profile-header-status-card">
-          <span className="status-caption">KYC VERIFICATION STATUS</span>
+          <span className="status-caption">
+            {getLabel("KYC VERIFICATION STATUS", "केवाईसी सत्यापन स्थिति", "केवायसी पडताळणी स्थिती")}
+          </span>
           <VerificationBadge
             status={user?.verification}
             kycVerified={user?.kycVerified}
             showKyc={true}
             size="lg"
           />
-          {!isVerified && (
+          <div style={{ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" }}>
+            {!isVerified && (
+              <button
+                type="button"
+                className="primary verify-now-btn"
+                onClick={() => setIsKycModalOpen(true)}
+              >
+                🛡️ {getLabel("Verify KYC Now", "अभी केवाईसी सत्यापित करें", "आता केवायसी पूर्ण करा")}
+              </button>
+            )}
             <button
               type="button"
-              className="primary verify-now-btn"
-              onClick={() => setIsKycModalOpen(true)}
+              className="secondary"
+              style={{ fontSize: "12px", padding: "6px 12px" }}
+              onClick={() => setIsTrustPreviewOpen(true)}
             >
-              🛡️ Verify KYC Now
+              👁️ {getLabel("View Public Trust Profile", "सार्वजनिक ट्रस्ट प्रोफाइल देखें", "सार्वजनिक प्रोफाइल पहा")}
             </button>
-          )}
+          </div>
         </div>
       </div>
 
@@ -177,14 +232,20 @@ export function ProfileManagement() {
           <div className="panel profile-card-main">
             <div className="profile-card-top">
               <div className="profile-avatar-box">
-                {form.profilePhoto ? (
+                {form.profilePhoto && form.profilePhoto.startsWith("data:image") ? (
+                  <img
+                    src={form.profilePhoto}
+                    alt={user?.name}
+                    className="avatar-photo"
+                  />
+                ) : form.profilePhoto && form.profilePhoto.startsWith("http") ? (
                   <img
                     src={form.profilePhoto}
                     alt={user?.name}
                     className="avatar-photo"
                   />
                 ) : (
-                  <span className="avatar-icon">{avatarPlaceholder}</span>
+                  <span className="avatar-icon">{form.profilePhoto || defaultAvatarEmoji}</span>
                 )}
                 {isVerified && <span className="verified-check-pill" title="KYC Verified">✓</span>}
               </div>
@@ -219,7 +280,7 @@ export function ProfileManagement() {
               </div>
             </div>
 
-            {/* Verification Status Banner */}
+            {/* 3 Clear Verification Status Banners */}
             <div className={`verification-status-box ${isVerified ? "is-verified" : isPending ? "is-pending" : "is-unverified"}`}>
               <div className="status-box-header">
                 <span className="box-icon">
@@ -228,17 +289,17 @@ export function ProfileManagement() {
                 <div>
                   <strong>
                     {isVerified
-                      ? "KYC Verified Profile"
+                      ? "Verified ✓"
                       : isPending
-                      ? "Verification Pending Review"
-                      : "Unverified Profile"}
+                      ? "Verification Pending ⏳"
+                      : "Unverified ⚠️"}
                   </strong>
                   <p>
                     {isVerified
-                      ? "Your Aadhaar identity has been verified. Verified buyers and farmers prioritize your transactions."
+                      ? "Identity and KYC verification completed. Your verified badge is visible to all counterparties across KrishiLink."
                       : isPending
                       ? "Your verification details are currently under processing. Complete OTP verification to finalize."
-                      : "Unverified accounts have lower trust visibility in marketplace matching and negotiations."}
+                      : "Your profile is not verified yet. Complete KYC now to build trust and unlock priority trading."}
                   </p>
                 </div>
               </div>
@@ -250,14 +311,20 @@ export function ProfileManagement() {
                   style={{ width: "100%", marginTop: "10px" }}
                   onClick={() => setIsKycModalOpen(true)}
                 >
-                  🚀 Complete KYC Verification Now
+                  🚀 {getLabel("Complete KYC Verification Now", "अभी केवाईसी सत्यापन पूरा करें", "आता केवायसी पूर्ण करा")}
                 </button>
               )}
             </div>
 
-            {/* Trust Checklist */}
+            {/* Trust & Verification Checklist */}
             <div className="trust-checklist-card">
-              <h4>Trust & Verification Checklist</h4>
+              <h4>
+                {getLabel(
+                  "Trust & Verification Checklist",
+                  "विश्वास एवं सत्यापन चेकलिस्ट",
+                  "विश्वास आणि पडताळणी यादी"
+                )}
+              </h4>
               <div className="checklist-items">
                 {isBuyer ? (
                   <>
@@ -356,8 +423,61 @@ export function ProfileManagement() {
           <form className="form-card profile-edit-card" onSubmit={handleSave}>
             <div className="form-card-heading">
               <div>
-                <h3>Update Profile Details</h3>
-                <p>Ensure your contact, crop and business details are accurate.</p>
+                <h3>
+                  {getLabel(
+                    "Update Profile Details",
+                    "प्रोफाइल विवरण अपडेट करें",
+                    "प्रोफाइल तपशील अपडेट करा"
+                  )}
+                </h3>
+                <p>Ensure your contact, crop, and business details are accurate.</p>
+              </div>
+            </div>
+
+            {/* Profile Photo & Avatar Selection */}
+            <h4>
+              {getLabel("Profile Photo & Avatar", "प्रोफाइल फोटो व अवतार", "प्रोफाइल फोटो आणि अवतार")}
+            </h4>
+            <div style={{ marginBottom: "18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  {avatarPresets.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setForm({ ...form, profilePhoto: emoji })}
+                      style={{
+                        fontSize: "20px",
+                        padding: "6px 10px",
+                        borderRadius: "8px",
+                        border: form.profilePhoto === emoji ? "2px solid var(--brand)" : "1px solid #cbd5e1",
+                        background: form.profilePhoto === emoji ? "var(--brand-soft)" : "#ffffff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <label
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    color: "var(--brand-deep)",
+                    fontWeight: 600,
+                  }}
+                >
+                  📁 Upload Photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    style={{ display: "none" }}
+                  />
+                </label>
               </div>
             </div>
 
@@ -562,6 +682,20 @@ export function ProfileManagement() {
         onSuccess={handleKycSuccess}
         initialPhone={form.phone}
         userName={form.name}
+      />
+
+      {/* PUBLIC TRUST PROFILE MODAL PREVIEW */}
+      <TrustProfileModal
+        isOpen={isTrustPreviewOpen}
+        onClose={() => setIsTrustPreviewOpen(false)}
+        userId={user?._id}
+        initialData={{
+          ...user,
+          ...form,
+          crops: typeof form.crops === "string" ? form.crops.split(",").map((c) => c.trim()).filter(Boolean) : form.crops,
+          requiredCrops: typeof form.requiredCrops === "string" ? form.requiredCrops.split(",").map((c) => c.trim()).filter(Boolean) : form.requiredCrops,
+          transactionCount: txCount,
+        }}
       />
     </section>
   );

@@ -149,7 +149,7 @@ export function TrustProfileModal({ isOpen, onClose, userId, initialData = null 
                     </div>
                     <div className={`checklist-item ${profile.fpoAssociation || profile.role === "FPO" ? "checked" : "unchecked"}`}>
                       <span className="check-icon">{profile.fpoAssociation || profile.role === "FPO" ? "✓" : "○"}</span>
-                      <span>FPO Association Verified</span>
+                      <span>FPO Verified (if applicable)</span>
                     </div>
                   </>
                 )}

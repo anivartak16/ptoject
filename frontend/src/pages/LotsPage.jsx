@@ -3,6 +3,8 @@ import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
+import { TrustProfileModal } from "../components/profile/TrustProfileModal.jsx";
 
 export function OfferModal({ lot }) {
   const { getLabel } = useLanguage();
@@ -278,14 +280,24 @@ export function LotsPage() {
                     gap: "6px",
                   }}
                 >
-                  <div style={{ fontSize: "13px" }}>
+                  <div
+                    style={{ fontSize: "13px", cursor: "pointer" }}
+                    onClick={() => setSelectedUserId(l.owner._id || l.owner.id || l.owner)}
+                    title={getLabel("View Verified Farmer Profile", "सत्यापित किसान प्रोफाइल देखें", "प्रमाणित शेतकरी प्रोफाइल पहा")}
+                  >
                     <small style={{ color: "#64748b", display: "block", fontSize: "11px" }}>
-                      {getLabel("Farmer Producer", "उत्पादक किसान", "उत्पादक शेतकरी")}
+                      {getLabel("Farmer Producer", "उत्पादक किसान", "उत्पादक शेतकरी")} ↗
                     </small>
-                    <b>{l.owner.name}</b>
+                    <b style={{ color: "var(--brand-deep)", textDecoration: "underline" }}>{l.owner.name}</b>
                     {l.owner.farmName && <span style={{ color: "#64748b" }}> · {l.owner.farmName}</span>}
                   </div>
-                  <FarmerVerificationBadge compact farmer={l.owner} verification={l.owner.verification} />
+                  <div
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setSelectedUserId(l.owner._id || l.owner.id || l.owner)}
+                    title={getLabel("View Verified Farmer Profile", "सत्यापित किसान प्रोफाइल देखें", "प्रमाणित शेतकरी प्रोफाइल पहा")}
+                  >
+                    <FarmerVerificationBadge compact farmer={l.owner} verification={l.owner.verification} />
+                  </div>
                 </div>
               )}
 

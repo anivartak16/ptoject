@@ -2,9 +2,15 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Sprout, LayoutDashboard, Shield, Menu, X, Globe } from "lucide-react";
 import { useAuth, getDashboardPath } from "../../context/AuthContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
 
-export function LandingNavbar({ language, setLanguage }) {
+export function LandingNavbar({ language: propLanguage, setLanguage: propSetLanguage }) {
   const { user } = useAuth();
+  const { language: ctxLanguage, setLanguage: ctxSetLanguage, t, getLabel: ctxGetLabel } = useLanguage();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const language = propLanguage || ctxLanguage || "en";
+  const setLanguage = propSetLanguage || ctxSetLanguage;
 
   const scrollToSection = (e, id) => {
     e.preventDefault();
@@ -16,6 +22,7 @@ export function LandingNavbar({ language, setLanguage }) {
   };
 
   const getLabel = (en, hi, mr) => {
+    if (ctxGetLabel) return ctxGetLabel(en, hi, mr);
     if (language === "mr") return mr || hi;
     if (language === "hi") return hi;
     return en;

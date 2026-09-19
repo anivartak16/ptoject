@@ -18,6 +18,7 @@ import { AdminLoginPage } from "./pages/AdminLoginPage.jsx";
 import { PredictionPage } from "./pages/PredictionPage.jsx";
 import { AdminMarketSyncPage } from "./pages/AdminMarketSyncPage.jsx";
 import { InspectionPage } from "./pages/InspectionPage.jsx";
+import { ProfileManagement } from "./components/profile/ProfileManagement.jsx";
 
 function RoleDashboardRedirect() {
   const { user } = useAuth();
@@ -92,7 +93,7 @@ export function App() {
           path="/:r/profile"
           element={
             <Guard>
-              <DynamicPage />
+              <ProfileManagement />
             </Guard>
           }
         />

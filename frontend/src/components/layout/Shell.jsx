@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
+import { Link, NavLink, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useLanguage } from "../../context/LanguageContext.jsx";
+import { Menu, Globe, LogOut } from "lucide-react";
 
 export function Shell({ children }) {
   const { user, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { r: routeRole } = useParams();
   const r = routeRole || user?.role?.toLowerCase().replaceAll("_", "-") || "farmer";
   const workspaceRole = r.toUpperCase().replaceAll("-", "_");

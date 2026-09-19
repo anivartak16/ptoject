@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import {
+  CheckCircle2,
+  UploadCloud,
+  FileText,
+  ShieldCheck,
+  Calculator,
+  Award,
+  Printer,
+  X
+} from "lucide-react";
 import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { Card } from "../components/common/Card.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
+import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
+import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 import { MatchesPage } from "./MatchesPage.jsx";
 import { FpoAggregationPage } from "./FpoAggregationPage.jsx";
 

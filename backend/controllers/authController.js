@@ -263,15 +263,29 @@ export async function updateProfile(req, res, next) {
       "state",
       "pincode",
       "organizationName",
+      "buyerType",
       "registrationNumber",
       "memberCount",
       "fpoLeaderDesignation",
       "fpoEstablishmentYear",
       "fpoIncorporationType",
       "fpoAggregationCapacity",
+      "buyerCapacity",
       "primaryCrop",
+      "crops",
+      "availableQuantity",
+      "cropQuality",
+      "fpoAssociation",
+      "requiredCrops",
+      "requiredQuantity",
+      "qualityRequirements",
+      "profilePhoto",
       "farmName",
       "landSize",
+      "businessVerified",
+      "gstNumber",
+      "panNumber",
+      "mandiLicenseNumber",
     ];
 
     allowed.forEach((field) => {
@@ -279,6 +293,18 @@ export async function updateProfile(req, res, next) {
         user[field] = req.body[field];
       }
     });
+
+    if (typeof req.body.crops === "string") {
+      user.crops = req.body.crops.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(req.body.crops)) {
+      user.crops = req.body.crops;
+    }
+
+    if (typeof req.body.requiredCrops === "string") {
+      user.requiredCrops = req.body.requiredCrops.split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (Array.isArray(req.body.requiredCrops)) {
+      user.requiredCrops = req.body.requiredCrops;
+    }
 
     if (user.role === "BUYER" && (user.gstNumber || user.mandiLicenseNumber)) {
       user.verification = "VERIFIED";
@@ -300,6 +326,109 @@ export async function updateProfile(req, res, next) {
 
     await user.save();
     return ok(res, sanitizeUser(user), "Profile updated successfully");
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getProfile(req, res, next) {
+  try {
+    const { id } = req.params;
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return fail(res, 404, "User not found");
+    }
+
+    // Count completed transactions
+    const txCount = await Transaction.countDocuments({
+      $or: [
+        { buyer: targetUser._id },
+        { farmer: targetUser._id },
+        { seller: targetUser._id },
+      ],
+      status: "COMPLETED",
+    });
+
+    const sanitized = sanitizeUser(targetUser);
+    sanitized.transactionCount = txCount;
+
+    return ok(res, sanitized, "User profile retrieved");
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function sendKycOtp(req, res, next) {
+  try {
+    const { aadhaarNumber, phone } = req.body;
+    const cleanAadhaar = String(aadhaarNumber || "").replace(/\D/g, "");
+
+    if (cleanAadhaar.length !== 12) {
+      return fail(res, 422, "A valid 12-digit Aadhaar number is required");
+    }
+
+    const last4 = cleanAadhaar.slice(-4);
+    const maskedAadhaar = `XXXX-XXXX-${last4}`;
+    const cleanPhone = String(phone || "").replace(/\D/g, "");
+    const maskedPhone =
+      cleanPhone.length >= 10
+        ? `+91 ${cleanPhone.slice(0, 2)}******${cleanPhone.slice(-2)}`
+        : "+91 98******10";
+
+    return ok(
+      res,
+      {
+        aadhaarLast4: maskedAadhaar,
+        maskedTarget: maskedPhone,
+        demoOtp: "123456",
+      },
+      "OTP sent successfully to mobile registered with Aadhaar"
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyKycOtp(req, res, next) {
+  try {
+    const { otp, aadhaarLast4, aadhaarNumber } = req.body;
+    const cleanOtp = String(otp || "").trim();
+
+    // Prototype demo accepts 123456 or any 6-digit OTP
+    if (!cleanOtp || (cleanOtp !== "123456" && cleanOtp.length !== 6)) {
+      return fail(res, 400, "Invalid OTP. Use demo OTP: 123456");
+    }
+
+    const last4 = aadhaarLast4
+      ? aadhaarLast4
+      : aadhaarNumber
+      ? `XXXX-XXXX-${String(aadhaarNumber).slice(-4)}`
+      : "XXXX-XXXX-8921";
+
+    let updatedUser = null;
+    if (req.user?._id) {
+      const user = await User.findById(req.user._id);
+      if (user) {
+        user.kycVerified = true;
+        user.kycVerifiedAt = new Date();
+        user.aadhaarLast4 = last4;
+        user.verification = "VERIFIED";
+        user.verificationBadge =
+          user.role === "BUYER" ? "VERIFIED_BUYER" : "EKYC_VERIFIED_FARMER";
+        await user.save();
+        updatedUser = sanitizeUser(user);
+      }
+    }
+
+    return ok(
+      res,
+      {
+        verified: true,
+        aadhaarLast4: last4,
+        user: updatedUser,
+      },
+      "KYC Verification Successful ✓"
+    );
   } catch (error) {
     next(error);
   }

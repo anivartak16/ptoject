@@ -1,36 +1,3 @@
-// import express from "express";
-// import { generateChatResponse } from "../services/chatServices.js";
-
-// const router = express.Router();
-
-// router.post("/", async (req, res) => {
-//   try {
-//     const { message } = req.body;
-
-//     if (!message || !message.trim()) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Message is required",
-//       });
-//     }
-
-//     const reply = await generateChatResponse(message);
-
-//     res.json({
-//       success: true,
-//       reply,
-//     });
-//   } catch (error) {
-//     console.error("Chat route error:", error);
-
-//     res.status(500).json({
-//       success: false,
-//       message: "Unable to generate AI response",
-//     });
-//   }
-// });
-
-// export default router;
 import express from "express";
 import { generateChatResponse } from "../services/chatServices.js";
 
@@ -38,22 +5,32 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, history = [], language = "en", isQuickAction = false } = req.body;
 
     // Validate message
-    if (typeof message !== "string" || !message.trim()) {
+    if (!message || (typeof message === "string" && !message.trim())) {
       return res.status(400).json({
         success: false,
         message: "Message is required",
       });
     }
 
-    // Generate AI response
-    const reply = await generateChatResponse(message.trim());
+    const cleanMsg = typeof message === "string" ? message.trim() : String(message);
+
+    // Generate response (handles both quick actions and natural AI conversation)
+    const reply = await generateChatResponse({
+      message: cleanMsg,
+      history: Array.isArray(history) ? history : [],
+      language: ["en", "hi", "mr"].includes(language) ? language : "en",
+      isQuickAction: Boolean(isQuickAction),
+    });
 
     return res.status(200).json({
       success: true,
-      reply,
+      data: {
+        reply,
+      },
+      reply, // Support both response.data.reply and response.data.data.reply
     });
   } catch (error) {
     console.error("Chat route error:", error);
@@ -67,4 +44,3 @@ router.post("/", async (req, res) => {
 });
 
 export default router;
-// One important thing

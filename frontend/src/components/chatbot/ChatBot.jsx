@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useLanguage } from "../../context/LanguageContext.jsx";
+import { X, Send } from "lucide-react";
 import api from "../../api/client.js";
 
 export function ChatBot() {
+  const { language, getLabel } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [input, setInput] = useState("");
@@ -79,9 +82,24 @@ export function ChatBot() {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: "Hello! 👋 I'm your KrishiLink Assistant. I can help you with crop prices, buyers, selling, market trends and more."
+      text: getInitialGreeting()
     }
   ]);
+
+  // Update initial greeting when language changes (if no conversation yet)
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length <= 1) {
+        return [{ role: "bot", text: getInitialGreeting() }];
+      }
+      return prev;
+    });
+  }, [language]);
+
+  // Auto-scroll on new messages or loading state
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const sendMessage = async (customMessage = "") => {
     const message = (customMessage || input).trim();
@@ -100,8 +118,16 @@ export function ChatBot() {
     setLoading(true);
 
     try {
+      const history = messages.slice(-10).map((m) => ({
+        role: m.role === "bot" ? "assistant" : "user",
+        content: m.text
+      }));
+
       const response = await api.post("/chat", {
-        message
+        message,
+        history,
+        language,
+        isQuickAction: false
       });
 
       const reply =
@@ -123,7 +149,12 @@ export function ChatBot() {
         ...prev,
         {
           role: "bot",
-          text: "Sorry, I couldn't process your request. Please try again."
+          text:
+            language === "mr"
+              ? "क्षमस्व, विनंतीवर प्रक्रिया करताना त्रुटी आली. कृपया पुन्हा प्रयत्न करा."
+              : language === "hi"
+              ? "क्षमा करें, आपके अनुरोध पर कार्रवाई करने में समस्या आई। कृपया पुनः प्रयास करें।"
+              : "Sorry, I couldn't process your request. Please try again."
         }
       ]);
     } finally {
@@ -131,11 +162,15 @@ export function ChatBot() {
     }
   };
 
+  const handleFreeTextMessage = () => {
+    sendMessage();
+  };
+
   const newChat = () => {
     setMessages([
       {
         role: "bot",
-        text: "Hello! 👋 I'm your KrishiLink Assistant. How can I help you today?"
+        text: getInitialGreeting()
       }
     ]);
     setInput("");
