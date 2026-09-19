@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import MandiPrice from "../models/mandiPriceSchema.js";
 
 let aiClient = null;
 let currentKey = null;
@@ -450,10 +451,148 @@ export function matchQuickActionKey(message) {
 }
 
 // ============================================================================
+// 2.5 LIVE MANDI PRICE QUERY FROM MONGODB
+// Automatically extracts commodity and mandi/market from user query and fetches
+// real-time AGMARKNET records from the database
+// ============================================================================
+export async function getLiveMandiPriceData(message) {
+  try {
+    const q = String(message || "").toLowerCase();
+
+    // Map common crop names in English, Hindi, and Marathi
+    const commodityMap = [
+      { regex: /wheat|गेहूं|गहू|गव्हा/i, name: "Wheat" },
+      { regex: /soybean|soyabean|सोयाबीन/i, name: "Soyabean" },
+      { regex: /gram|chana|चना|हरभरा/i, name: "Bengal Gram(Gram)(Whole)" },
+      { regex: /mustard|sarson|सरसों|मोहरी/i, name: "Mustard" },
+      { regex: /onion|pyaz|प्याज|कांदा/i, name: "Onion" },
+      { regex: /potato|aloo|आलू|बटाटा/i, name: "Potato" },
+      { regex: /tomato|tamatar|टमाटर|टोमॅटो/i, name: "Tomato" },
+      { regex: /corn|maize|makka|मक्का|मका/i, name: "Maize" },
+      { regex: /paddy|rice|chawal|चावल|भात|तांदूळ/i, name: "Paddy(Common)" },
+      { regex: /cotton|kapas|कपास|कापूस/i, name: "Cotton" },
+      { regex: /garlic|lahsun|लहसुन|लसूण/i, name: "Garlic" },
+      { regex: /tur|arhar|अरहर|तूर/i, name: "Red gram/Arhar/Tur(whole)" },
+      { regex: /moong|मूंग|मूग/i, name: "Green Gram(Moong)(Whole)" },
+    ];
+
+    let detectedCommodity = null;
+    for (const c of commodityMap) {
+      if (c.regex.test(q)) {
+        detectedCommodity = c.name;
+        break;
+      }
+    }
+
+    // Common mandis/districts (multilingual)
+    const mandiKeywords = [
+      { regex: /khurai|खुरई/i, name: "khurai" },
+      { regex: /indore|इंदौर|इंदूर/i, name: "indore" },
+      { regex: /dewas|देवास/i, name: "dewas" },
+      { regex: /ujjain|उज्जैन/i, name: "ujjain" },
+      { regex: /bhopal|भोपाल|भोपाळ/i, name: "bhopal" },
+      { regex: /sagar|सागर/i, name: "sagar" },
+      { regex: /vidisha|विदिशा/i, name: "vidisha" },
+      { regex: /bina|बीना/i, name: "bina" },
+      { regex: /katni|कटनी/i, name: "katni" },
+      { regex: /betul|बैतूल/i, name: "betul" },
+      { regex: /sehore|सीहोर/i, name: "sehore" },
+      { regex: /harda|हरदा/i, name: "harda" },
+      { regex: /hoshangabad|होशंगाबाद/i, name: "hoshangabad" },
+      { regex: /guna|गुना/i, name: "guna" },
+      { regex: /gwalior|ग्वालियर/i, name: "gwalior" },
+      { regex: /jabalpur|जबलपुर/i, name: "jabalpur" },
+      { regex: /rewa|रीवा/i, name: "rewa" },
+      { regex: /mandsaur|मंदसौर/i, name: "mandsaur" },
+      { regex: /neemuch|नीमच/i, name: "neemuch" },
+      { regex: /ratlam|रतलाम/i, name: "ratlam" },
+      { regex: /nagpur|नागपूर|नागपुर/i, name: "nagpur" },
+      { regex: /pune|पुणे/i, name: "pune" },
+      { regex: /nashik|नाशिक|नासिक/i, name: "nashik" },
+      { regex: /amravati|अमरावती/i, name: "amravati" },
+      { regex: /aurangabad|संभाजीनगर|औरंगाबाद/i, name: "aurangabad" },
+      { regex: /solapur|सोलापूर|सोलापुर/i, name: "solapur" },
+      { regex: /kolhapur|कोल्हापूर|कोल्हापुर/i, name: "kolhapur" },
+      { regex: /latur|लातूर|लातुर/i, name: "latur" },
+    ];
+
+    let detectedMandi = null;
+    for (const m of mandiKeywords) {
+      if (m.regex.test(q)) {
+        detectedMandi = m.name;
+        break;
+      }
+    }
+
+    if (!detectedMandi) {
+      const match = q.match(/in\s+([a-zA-Z]+)(?:\s+mandi)?/i);
+      if (
+        match &&
+        match[1] &&
+        !["the", "yesterday", "today", "modal", "current", "this", "my", "any"].includes(
+          match[1].toLowerCase()
+        )
+      ) {
+        detectedMandi = match[1].toLowerCase();
+      }
+    }
+
+    if (!detectedCommodity && !detectedMandi) {
+      return null;
+    }
+
+    let filter = {};
+    if (detectedCommodity) {
+      filter.commodity = new RegExp(detectedCommodity, "i");
+    }
+    if (detectedMandi) {
+      filter.$or = [
+        { market: new RegExp(detectedMandi, "i") },
+        { district: new RegExp(detectedMandi, "i") },
+      ];
+    }
+
+    let records = await MandiPrice.find(filter)
+      .sort({ arrivalDate: -1, createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    if (records && records.length > 0) {
+      return {
+        commodity: detectedCommodity || records[0].commodity,
+        mandi: detectedMandi || records[0].market,
+        records,
+      };
+    }
+
+    // Fallback: If specific mandi + commodity had no match, find records for the commodity
+    if (detectedCommodity) {
+      records = await MandiPrice.find({ commodity: new RegExp(detectedCommodity, "i") })
+        .sort({ arrivalDate: -1 })
+        .limit(4)
+        .lean();
+      if (records && records.length > 0) {
+        return {
+          commodity: detectedCommodity,
+          mandi: null,
+          requestedMandi: detectedMandi,
+          records,
+        };
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.warn("Could not query MandiPrice from DB:", err.message);
+    return null;
+  }
+}
+
+// ============================================================================
 // 3. DOMAIN-AWARE FALLBACK RESPONDER
 // Provides natural, accurate domain answers in user's language if Gemini is offline
 // ============================================================================
-export function getDomainFallback(message, langKey = "en", history = []) {
+export async function getDomainFallback(message, langKey = "en", history = [], preloadedPriceData = null) {
   const q = (message || "").toLowerCase().trim();
 
   // Greetings
@@ -494,11 +633,371 @@ export function getDomainFallback(message, langKey = "en", history = []) {
     );
   }
 
-  // Check quick action match first
+  // ==========================================
+  // 1. LIVE MANDI PRICES & CROP RATES (FROM MONGODB)
+  // Check live database data FIRST so specific crops/mandis return real AGMARKNET rates
+  // ==========================================
+  const liveData =
+    preloadedPriceData !== undefined && preloadedPriceData !== null
+      ? preloadedPriceData
+      : await getLiveMandiPriceData(q);
+
+  if (liveData && liveData.records && liveData.records.length > 0) {
+    const rec = liveData.records[0];
+    const arrivalStr = rec.arrivalDate
+      ? new Date(rec.arrivalDate).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : "Recent";
+
+    if (langKey === "mr") {
+      return (
+        `📊 **${rec.market} - ${rec.commodity} बाजार भाव**\n\n` +
+        `• **सरासरी (मॉडेल) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+        `• **किमान – कमाल दर**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+        `• **जिल्हा / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश / महाराष्ट्र"}\n` +
+        `• **आवक तारीख**: ${arrivalStr} (AGMARKNET अधिकृत)\n\n` +
+        `💡 *टीप: ५२०+ बाजार समित्यांचे थेट दर, दर कल आणि वाहतूक खर्च वजा जाता मिळणारा निव्वळ नफा (Net Realisation) तपासण्यासाठी मेनूमधील **Mandi Prices** विभागाला भेट द्या.*`
+      );
+    }
+
+    if (langKey === "hi") {
+      return (
+        `📊 **${rec.market} - ${rec.commodity} के ताज़ा मंडी भाव**\n\n` +
+        `• **मॉडल (औसत) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+        `• **न्यूनतम – अधिकतम भाव**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+        `• **जिला / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश"}\n` +
+        `• **आवक दिनांक**: ${arrivalStr} (AGMARKNET सत्यापित)\n\n` +
+        `💡 *सलाह: 520+ मंडियों के लाइव भाव, 30-दिवसीय मूल्य रुझान और शुद्ध मुनाफा (Net Realisation) देखने के लिए नेविगेशन में **Mandi Prices** पर जाएं।*`
+      );
+    }
+
+    return (
+      `📊 **${rec.market} Mandi Rates for ${rec.commodity}**\n\n` +
+      `• **Modal (Avg) Price**: ₹${rec.modalPrice.toLocaleString("en-IN")} / quintal\n` +
+      `• **Price Range**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / quintal\n` +
+      `• **District / State**: ${rec.district || ""}, ${rec.state || "Madhya Pradesh"}\n` +
+      `• **Arrival Date**: ${arrivalStr} (AGMARKNET Verified)\n\n` +
+      `💡 *Tip: Go to the **Mandi Prices** section on your dashboard to view real-time arrivals across 520+ mandis, 30-day price trends, and calculate Net Realisation after transport costs.*`
+    );
+  }
+
+  // Check quick action match only when no specific DB records match the query
   const matchedKey = matchQuickActionKey(q);
   if (matchedKey) {
     const dict = predefinedResponses[langKey] || predefinedResponses.en;
     if (dict[matchedKey]) return dict[matchedKey];
+  }
+
+  // ==========================================
+  // 1.1 GENERAL MANDI PRICE / COMMODITY QUERIES (WHEN NOT IN DB)
+  // ==========================================
+  if (
+    q.includes("price") ||
+    q.includes("bhav") ||
+    q.includes("rate") ||
+    q.includes("mandi") ||
+    q.includes("भाव") ||
+    q.includes("दर") ||
+    q.includes("रुपये") ||
+    q.includes("किंमत")
+  ) {
+    // Generic mandi price guidance
+    if (langKey === "mr") {
+      return (
+        "📊 **ताजे बाजार भाव आणि दर कल तपासण्यासाठी:**\n\n" +
+        "१. डॅशबोर्डवरील **Mandi Prices (बाजार भाव)** विभागाला भेट द्या.\n" +
+        "२. आपले पीक (उदा. गहू, सोयाबीन, हरभरा, कांदा) आणि जवळची बाजार समिती (उदा. इंदूर, खुरई, देवास, भोपाळ) निवडा.\n" +
+        "३. तेथे किमान, कमाल आणि सरासरी दरांसह तेजी-मंदीचे कल (UP/DOWN/STABLE) दिसतील.\n\n" +
+        "💡 *शेतमाल कुठे विकायचा हे ठरवण्यापूर्वी वाहतूक खर्च वजा जाता मिळणारा निव्वळ नफा (Net Realisation) नक्की तपासा.*"
+      );
+    }
+
+    if (langKey === "hi") {
+      return (
+        "📊 **ताज़ा मंडी भाव और 30-दिवसीय रुझान देखने के लिए:**\n\n" +
+        "1. डैशबोर्ड पर **Mandi Prices (मंडी भाव)** सेक्शन पर जाएं।\n" +
+        "2. अपनी फसल (उदा. गेहूं, सोयाबीन, चना, प्याज) और निकटतम मंडी (उदा. खुरई, इंदौर, देवास, भोपाल) चुनें।\n" +
+        "3. आप न्यूनतम, अधिकतम और मॉडल भाव के साथ मूल्य रुझान (UP/DOWN/STABLE) देख सकते हैं।\n\n" +
+        "💡 *फसल बेचने से पहले परिवहन लागत घटाकर मिलने वाला शुद्ध मुनाफा (Net Realisation) अवश्य जांचें।*"
+      );
+    }
+
+    return (
+      "📊 **To check current mandi prices and 30-day trends:**\n\n" +
+      "1. Go to the **Mandi Prices** section on the dashboard.\n" +
+      "2. Select your crop (e.g., Wheat, Soybean, Gram, Onion, Potato) and nearest mandi (e.g., Khurai, Indore, Dewas, Ujjain, Bhopal).\n" +
+      "3. You can see minimum, maximum, and modal prices along with trend indicators (UP/DOWN/STABLE).\n\n" +
+      "💡 *Always check the net realized price after considering transport costs before choosing where to sell.*"
+    );
+  }
+
+  // ==========================================
+  // 2. SELLING PRODUCE / LOTS
+  // ==========================================
+  if (
+    q.includes("sell") ||
+    q.includes("lot") ||
+    q.includes("produce") ||
+    q.includes("list") ||
+    q.includes("फसल कैसे बेचें") ||
+    q.includes("शेतमाल कसा विकावा") ||
+    q.includes("बेच") ||
+    q.includes("विक")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "🛒 **KrishiLink वर शेतमाल विकण्याची सोपी पद्धत:**\n\n" +
+        "१. शेतकरी किंवा FPO खात्याने **Login** करा.\n" +
+        "२. मेनूमधील **My Lots** वर जाऊन **Create New Lot** वर क्लिक करा.\n" +
+        "३. पिकाचे नाव, वजन (क्विंटल/किलो), काढणी तारीख आणि अपेक्षित दर प्रविष्ट करा.\n" +
+        "४. ग्रेड A प्रमाणपत्र मिळवण्यासाठी जवळच्या **कृषी विज्ञान केंद्रात (KVK)** नमुना चाचणीसाठी जमा करा.\n" +
+        "५. अधिकृत खरेदीदारांकडून थेट ऑफर्स मिळवा आणि १००% बँक एस्क्रो संरक्षणासह विक्री करा."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "🛒 **KrishiLink पर अपनी फसल बेचने के 5 आसान चरण:**\n\n" +
+        "1. अपने किसान या एफपीओ खाते से **Login** करें।\n" +
+        "2. मेनू में **My Lots** पर जाएं और **Create New Lot** पर क्लिक करें।\n" +
+        "3. फसल का नाम, मात्रा (क्विंटल/किलो), कटाई की तारीख और अपेक्षित भाव दर्ज करें।\n" +
+        "4. ग्रेड 'A' सत्यापित बैज पाने के लिए नजदीकी **कृषि विज्ञान केंद्र (KVK)** में गुणवत्ता परीक्षण हेतु सैंपल दें।\n" +
+        "5. सत्यापित व्यापारियों से सीधे ऑफर्स प्राप्त करें और 100% एस्क्रो सुरक्षा के साथ सौदा पूरा करें।"
+      );
+    }
+    return (
+      "🛒 **To sell your agricultural produce on KrishiLink:**\n\n" +
+      "1. Login to your **Farmer** or **FPO** dashboard.\n" +
+      "2. Click **My Lots** → **Create New Lot**.\n" +
+      "3. Enter the crop name, quantity (in kg/quintals), harvest date, and expected price (₹).\n" +
+      "4. Submit a sample to your local **Krishi Vigyan Kendra (KVK)** for quality grading to earn a Grade A verified badge.\n" +
+      "5. Receive direct offers from institutional buyers and accept with 100% escrow-backed payment protection."
+    );
+  }
+
+  // ==========================================
+  // 3. FIND BUYERS / PROCUREMENT DEMANDS
+  // ==========================================
+  if (
+    q.includes("buyer") ||
+    q.includes("buy") ||
+    q.includes("demand") ||
+    q.includes("order") ||
+    q.includes("purchase") ||
+    q.includes("खरीदार") ||
+    q.includes("खरेदीदार") ||
+    q.includes("व्यापारी")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "🏪 **अधिकृत खरेदीदार आणि मागणी शोधणे:**\n\n" +
+        "• मेनूमधील **Buyer Demands** वर जाऊन मोठ्या खरेदीदारांच्या सक्रिय ऑर्डर्स तपासा.\n" +
+        "• पीक, कमाल अंतर आणि किमान खरेदी दरानुसार ऑर्डर्स फिल्टर करा.\n" +
+        "• **Buyer Matching** वापरून आपल्या शेतमालासाठी सर्वात योग्य खरेदीदार आपोआप जुळवा.\n" +
+        "• सर्व सौदे १००% बँक एस्क्रो संरक्षणाखाली सुरक्षितपणे पार पडतात."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "🏪 **सत्यापित खरीदार और मांग (Demands) खोजना:**\n\n" +
+        "• मेनू में **Buyer Demands** पर जाएं और राइस मिलर्स, दाल मिलों और निर्यातकों के सक्रिय क्रय आदेश देखें।\n" +
+        "• फसल, अधिकतम दूरी और न्यूनतम खरीद मूल्य के अनुसार फिल्टर करें।\n" +
+        "• **Buyer Matching** इंजन का उपयोग करके अपनी फसल के अनुकूल सर्वोत्तम खरीदार स्वतः खोजें।\n" +
+        "• सभी भुगतान बैंक एस्क्रो में सुरक्षित रहते हैं और डिलीवरी सत्यापन के बाद ही जारी होते हैं।"
+      );
+    }
+    return (
+      "🏪 **Finding Verified Buyers & Procurement Demands:**\n\n" +
+      "1. Go to **Buyer Demands** in your navigation to view active purchase orders from verified millers, processors, and exporters.\n" +
+      "2. Filter demands by commodity, maximum distance, and minimum offer price.\n" +
+      "3. Use **Buyer Matching** to see buyers whose procurement specs match your harvest lots.\n" +
+      "4. All trades are backed by 100% bank escrow protection with zero payment default risk."
+    );
+  }
+
+  // ==========================================
+  // 4. QUALITY TESTING & INSPECTION
+  // ==========================================
+  if (
+    q.includes("quality") ||
+    q.includes("grade") ||
+    q.includes("moisture") ||
+    q.includes("defect") ||
+    q.includes("inspection") ||
+    q.includes("kendra") ||
+    q.includes("गुणवत्ता") ||
+    q.includes("तपासणी") ||
+    q.includes("नमी")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "🔬 **कृषी विज्ञान केंद्र (KVK) गुणवत्ता तपासणी:**\n\n" +
+        "• स्थानिक कृषी केंद्र दाण्यातील ओलावा (Moisture < १२%), शुद्धता आणि दोष तपासतात.\n" +
+        "• गुणवत्तेनुसार ग्रेड A किंवा B डिजिटल प्रमाणपत्र दिले जाते.\n" +
+        "• **Verified ✓** बॅज मिळाल्यामुळे खरेदीदारांचा विश्वास वाढतो आणि शेतमालाला चांगला भाव मिळतो."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "🔬 **कृषि विज्ञान केंद्र (KVK) गुणवत्ता परीक्षण:**\n\n" +
+        "• स्थानीय कृषि विज्ञान केंद्र दानों में नमी (< 12%), शुद्धता और अपद्रव्य की जांच करते हैं।\n" +
+        "• परीक्षण उपरांत ग्रेड 'A' या 'B' डिजिटल प्रमाणपत्र जारी किया जाता है।\n" +
+        "• प्रमाणित गुणवत्ता वाले लॉट्स को **Verified ✓** बैज मिलता है, जिससे खरीदार बेहतर दाम पर तुरंत सौदा करते हैं।"
+      );
+    }
+    return (
+      "🔬 **Quality Verification & Grading on KrishiLink:**\n\n" +
+      "• Local district Krishi Kendras physically test grain moisture (<12%), foreign matter, and defect percentages.\n" +
+      "• Lots receive official Grade A or Grade B digital quality certificates.\n" +
+      "• Verified quality lots display a green **Verified ✓** badge, giving buyers higher confidence and securing premium rates for farmers."
+    );
+  }
+
+  // ==========================================
+  // 5. LOGISTICS & TRANSPORT
+  // ==========================================
+  if (
+    q.includes("transport") ||
+    q.includes("logistics") ||
+    q.includes("vehicle") ||
+    q.includes("truck") ||
+    q.includes("परिवहन") ||
+    q.includes("वाहतूक") ||
+    q.includes("भाड़ा") ||
+    q.includes("गाड़ी")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "🚚 **वाहतूक आणि वाहन बुकिंग:**\n\n" +
+        "• शेतमालाच्या वाहतुकीसाठी मेनूमधील **Logistics** विभागाला भेट द्या.\n" +
+        "• वाहनाची क्षमता निवडा: १-टन पिकअप, ५-टन मिनी ट्रक, किंवा १६-टन हेवी ट्रक.\n" +
+        "• पारदर्शक प्रति-किमी भाडे दर आणि थेट GPS ट्रॅकिंग उपलब्ध आहे."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "🚚 **परिवहन और वाहन बुकिंग (Logistics):**\n\n" +
+        "• कृषि उपज के परिवहन के लिए मेनू में **Logistics** सेक्शन पर जाएं।\n" +
+        "• आवश्यकतानुसार वाहन चुनें: 1-टन पिकअप, 5-टन मिनी ट्रक, या 16-टन भारी ट्रक।\n" +
+        "• पारदर्शी प्रति-किमी दरें और रियल-टाइम जीपीएस ट्रैकिंग की सुविधा उपलब्ध है।"
+      );
+    }
+    return (
+      "🚚 **Logistics & Transportation Booking:**\n\n" +
+      "• Book GPS-tracked agricultural transport directly from the **Logistics** section.\n" +
+      "• Choose vehicle capacity based on harvest volume: 1-ton pickup, 5-ton mini truck, or 16-ton heavy carrier.\n" +
+      "• Transparent per-km rates with real-time pickup and delivery milestone tracking."
+    );
+  }
+
+  // ==========================================
+  // 6. STORAGE & WAREHOUSES
+  // ==========================================
+  if (
+    q.includes("storage") ||
+    q.includes("warehouse") ||
+    q.includes("cold storage") ||
+    q.includes("गोदाम") ||
+    q.includes("भंडारण") ||
+    q.includes("शीतगृह")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "🏬 **गोदाम आणि शीतगृह साठवणूक (Warehouse & Cold Storage):**\n\n" +
+        "• मेनूमधील **Storage** विभागात जाऊन जवळची प्रमाणित गोदामे शोधा.\n" +
+        "• कोरडे गोदाम (Dry Warehouse) किंवा शीतगृह (Cold Storage) दैनिक प्रति-क्विंटल दराने बुक करा.\n" +
+        "• योग्य साठवणुकीमुळे बाजारात चांगले दर येईपर्यंत शेतमाल सुरक्षित राहतो."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "🏬 **वेयरहाउस एवं कोल्ड स्टोरेज भंडारण:**\n\n" +
+        "• मेनू में **Storage** सेक्शन पर जाएं और नजदीकी प्रमाणित वेयरहाउस खोजें।\n" +
+        "• सुरक्षित भंडारण के लिए सूखा गोदाम या कोल्ड स्टोरेज दैनिक प्रति-यूनिट दर पर बुक करें।\n" +
+        "• फसल सुरक्षित रखकर बाजार में बेहतर भाव मिलने पर बेचें।"
+      );
+    }
+    return (
+      "🏬 **Warehouse & Cold Storage Discovery:**\n\n" +
+      "• Browse nearby WDRA-certified dry warehouses and cold storage facilities in the **Storage** section.\n" +
+      "• View verified capacity, daily rental rates (₹/qtl/day), and insurance coverage.\n" +
+      "• Store produce safely until market prices improve."
+    );
+  }
+
+  // ==========================================
+  // 7. GOVERNMENT SCHEMES
+  // ==========================================
+  if (
+    q.includes("scheme") ||
+    q.includes("pm-kisan") ||
+    q.includes("yojana") ||
+    q.includes("subsidy") ||
+    q.includes("fasal bima") ||
+    q.includes("pmfby") ||
+    q.includes("सरकारी योजना") ||
+    q.includes("शासकीय योजना") ||
+    q.includes("विमा")
+  ) {
+    if (langKey === "mr") {
+      return (
+        "📋 **शेतकऱ्यांसाठी प्रमुख शासकीय कृषी योजना:**\n\n" +
+        "• **PM-KISAN**: दरवर्षी ₹६,००० थेट बँक खात्यात (₹२,००० चे ३ हप्ते).\n" +
+        "• **PM फसल विमा योजना (PMFBY)**: नैसर्गिक आपत्तीमुळे होणाऱ्या नुकसानापासून पिकांचे विमा संरक्षण.\n" +
+        "• **किसान क्रेडिट कार्ड (KCC)**: बियाणे, खते आणि अवजारांसाठी सवलतीच्या दरात कृषी कर्ज.\n" +
+        "• **e-NAM**: देशभरातील बाजार समित्यांशी जोडणी आणि इलेक्ट्रॉनिक व्यापार.\n\n" +
+        "नोंदणीसाठी जवळच्या कृषी केंद्राशी संपर्क साधा किंवा pmkisan.gov.in पोर्टलला भेट द्या."
+      );
+    }
+    if (langKey === "hi") {
+      return (
+        "📋 **भारतीय किसानों के लिए प्रमुख सरकारी योजनाएं:**\n\n" +
+        "• **PM-KISAN**: ₹6,000 प्रति वर्ष सीधी आर्थिक सहायता (₹2,000 की 3 समान किस्तों में)।\n" +
+        "• **प्रधानमंत्री फसल बीमा योजना (PMFBY)**: प्राकृतिक आपदाओं से फसल नुकसान पर न्यूनतम प्रीमियम में बीमा सुरक्षा।\n" +
+        "• **किसान क्रेडिट कार्ड (KCC)**: खाद, बीज और कृषि उपकरणों हेतु कम ब्याज दर पर संस्थागत ऋण।\n" +
+        "• **e-NAM**: देश भर की मंडियों से सीधा इलेक्ट्रॉनिक व्यापार।\n\n" +
+        "नामांकन और सहायता के लिए अपने स्थानीय कृषि विज्ञान केंद्र या pmkisan.gov.in पोर्टल पर जाएं।"
+      );
+    }
+    return (
+      "📋 **Key Government Schemes for Indian Farmers:**\n\n" +
+      "• **PM-KISAN**: ₹6,000/year direct income support in three equal installments of ₹2,000.\n" +
+      "• **PM Fasal Bima Yojana (PMFBY)**: Low-cost crop insurance protecting against weather risk and natural disasters.\n" +
+      "• **Kisan Credit Card (KCC)**: Subsidized institutional credit for seeds, fertilizers, and equipment.\n" +
+      "• **e-NAM**: National Agriculture Market linking APMC mandis for nationwide digital trading.\n\n" +
+      "Visit your local Krishi Kendra or pmkisan.gov.in for enrollment details."
+    );
+  }
+
+  // ==========================================
+  // 8. NET REALISATION
+  // ==========================================
+  if (
+    q.includes("net realis") ||
+    q.includes("net realiz") ||
+    q.includes("profit") ||
+    q.includes("मुनाफा") ||
+    q.includes("नफा")
+  ) {
+    const dict = predefinedResponses[langKey] || predefinedResponses.en;
+    return dict.net_realisation;
+  }
+
+  // ==========================================
+  // 9. FAKE OFFERS / ESCROW SECURITY
+  // ==========================================
+  if (
+    q.includes("fake") ||
+    q.includes("fraud") ||
+    q.includes("scam") ||
+    q.includes("सुरक्षा") ||
+    q.includes("धोखा") ||
+    q.includes("फर्जी")
+  ) {
+    const dict = predefinedResponses[langKey] || predefinedResponses.en;
+    return dict.fake_offers;
   }
 
   // MSP questions
@@ -575,14 +1074,14 @@ export function getDomainFallback(message, langKey = "en", history = []) {
       return dict.sell_or_hold;
     }
 
-    if (lastText.includes("wheat") || lastText.includes("गेहूं") || lastText.includes("गहू")) {
+    if (lastText.includes("wheat") || lastText.includes("गेहूं") || lastText.includes("गहू") || lastText.includes("गव्हा")) {
       if (langKey === "mr") {
-        return "गव्हाच्या बाबतीत, सध्या इंदूर बाजारात ₹२,४५० ते ₹२,६८० दर आहेत. पुढील ३० दिवसांत दर वाढण्याचा अंदाज असल्याने गोदामात साठवणूक करणे फायदेशीर ठरू शकते.";
+        return "गव्हाच्या बाबतीत, सध्या इंदूर व खुरई बाजारात ₹२,४५० ते ₹२,६८० दर आहेत. पुढील ३० दिवसांत दर वाढण्याचा अंदाज असल्याने गोदामात साठवणूक करणे फायदेशीर ठरू शकते.";
       }
       if (langKey === "hi") {
-        return "गेहूं के संबंध में, वर्तमान में इंदौर मंडी में ₹2,450 से ₹2,680 के भाव हैं। आगामी 30 दिनों में मांग मजबूत रहने का अनुमान है, इसलिए वेयरहाउस में रोकना लाभकारी हो सकता है।";
+        return "गेहूं के संबंध में, वर्तमान में इंदौर व खुरई मंडी में ₹2,450 से ₹2,680 के भाव हैं। आगामी 30 दिनों में मांग मजबूत रहने का अनुमान है, इसलिए वेयरहाउस में रोकना लाभकारी हो सकता है।";
       }
-      return "Regarding wheat, current mandi prices range between ₹2,450 – ₹2,680/qtl. With steady demand from flour millers, holding for 30–45 days in certified storage is projected to yield better returns.";
+      return "Regarding wheat, current mandi prices range between ₹2,450 – ₹2,680/qtl in regional mandis. With steady demand from flour millers, holding for 30–45 days in certified storage is projected to yield better returns.";
     }
   }
 
@@ -640,14 +1139,39 @@ export async function generateChatResponse(input, options = {}) {
     return "Please tell me what you need help with.";
   }
 
+  // Pre-query live mandi price data from MongoDB to inject into Gemini prompt & fallback
+  const livePriceData = await getLiveMandiPriceData(cleanMsg);
+
   // --------------------------------------------------------------------------
   // STEP 1: QUICK ACTION / PREDEFINED SERVICE CHECK
-  // If flagged as quick action or matches a known quick action prompt:
-  // Return the existing predefined response immediately.
+  // If flagged as quick action button click, return predefined response immediately.
+  // For free-text queries, only return generic predefined if no specific DB records match.
   // --------------------------------------------------------------------------
   const quickKey = matchQuickActionKey(cleanMsg);
-  if ((isQuickAction && quickKey && dict[quickKey]) || (quickKey && dict[quickKey])) {
+  if (isQuickAction && quickKey && dict[quickKey]) {
     return dict[quickKey];
+  }
+  if (quickKey && dict[quickKey] && (!livePriceData || !livePriceData.records || !livePriceData.records.length)) {
+    return dict[quickKey];
+  }
+  let livePricePromptSnippet = "";
+  if (livePriceData && livePriceData.records && livePriceData.records.length > 0) {
+    const r = livePriceData.records[0];
+    const arrivalDateStr = r.arrivalDate
+      ? new Date(r.arrivalDate).toLocaleDateString("en-IN")
+      : "Recent";
+    livePricePromptSnippet = `
+==================================================
+AUTHENTIC LIVE KRISHILINK DATABASE MANDI RECORD:
+Market / Mandi: ${r.market}
+Commodity: ${r.commodity}
+Modal (Avg) Price: ₹${r.modalPrice} / quintal
+Price Range: ₹${r.minPrice} – ₹${r.maxPrice} / quintal
+District: ${r.district || "N/A"}, State: ${r.state || "N/A"}
+Arrival Date: ${arrivalDateStr}
+RULE: YOU MUST CITE THESE EXACT NUMBERS IF THE USER IS ASKING FOR THIS CROP/MANDI PRICE.
+==================================================
+`;
   }
 
   // --------------------------------------------------------------------------
@@ -674,7 +1198,7 @@ You MUST write your entire response strictly in ${currentLangName}.
 The user might ask their question in English, Hindi, Marathi, Hinglish (e.g. "Buyer kaise find karu?"), or mixed words.
 Regardless of the input wording, your final response MUST be written exclusively in ${currentLangName}.
 ==================================================
-
+${livePricePromptSnippet}
 Platform Knowledge & Context:
 - Platform: KrishiLink connects Indian farmers, FPOs, and institutional buyers directly with transparent mandi prices, digital quality testing, and bank escrow payments.
 - MSP (Minimum Support Price): Government floor price for 23 crops. Compare local prices against MSP on KrishiLink.
@@ -753,7 +1277,7 @@ Rules:
   // STEP 3: ROBUST DOMAIN FALLBACK (If AI API is unreachable)
   // Provides natural, accurate answers instead of a blank screen or 500 error
   // --------------------------------------------------------------------------
-  return getDomainFallback(cleanMsg, langKey, history);
+  return await getDomainFallback(cleanMsg, langKey, history, livePriceData);
 }
 
 export async function testGeminiConnection() {
