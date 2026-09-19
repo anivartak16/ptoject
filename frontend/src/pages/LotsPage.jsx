@@ -3,7 +3,6 @@ import api from "../api/client.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
-import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 
 export function OfferModal({ lot }) {
   const { getLabel } = useLanguage();
@@ -55,6 +54,7 @@ export function LotsPage() {
   const [show, setShow] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [f, setF] = useState({
     commodity: "Wheat",
     quantity: 1000,
@@ -295,7 +295,7 @@ export function LotsPage() {
               <p>
                 <b>{getLabel("Expected", "अपेक्षित", "अपेक्षित")}: ₹{l.expectedPrice}/kg</b> (₹{(l.expectedPrice * 100).toLocaleString("en-IN")}/qtl)
               </p>
-              <p>📍 {l.location || getLabel("Location not provided", "स्थान उपलब्ध नहीं", "ठिकाण नमूद नाही")}</p>
+              <p>📍 {l.location || "Location not provided"}</p>
 
               {/* Status and Verification Box for Sellers */}
               {user.role !== "BUYER" && (
@@ -394,6 +394,12 @@ export function LotsPage() {
           </div>
         )}
       </div>
+
+      <TrustProfileModal
+        isOpen={Boolean(selectedUserId)}
+        onClose={() => setSelectedUserId(null)}
+        userId={selectedUserId}
+      />
     </section>
   );
 }

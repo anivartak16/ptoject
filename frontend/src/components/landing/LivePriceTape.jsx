@@ -48,16 +48,22 @@ export function LivePriceTape({ language = "en" }) {
     <section className="market-board" id="market-tape">
       <div className="board-heading">
         <div>
-          <p className="eyebrow">NATIONAL MANDI PRICE TAPE</p>
+          <p className="eyebrow">
+            {language === "mr" ? "राष्ट्रीय बाजार समिती थेट भाव सूची" : language === "hi" ? "राष्ट्रीय मंडी भाव टेप" : "NATIONAL MANDI PRICE TAPE"}
+          </p>
           <h2>
-            {language === "en"
-              ? "Live Benchmarks Across Major Indian Agricultural Hubs"
-              : "प्रमुख भारतीय मंडियों के लाइव भाव व आवक"}
+            {language === "mr"
+              ? "भारतातील प्रमुख कृषी केंद्रांमधील थेट भाव व आवक"
+              : language === "hi"
+              ? "प्रमुख भारतीय मंडियों के लाइव भाव व आवक"
+              : "Live Benchmarks Across Major Indian Agricultural Hubs"}
           </h2>
           <p className="board-sub">
-            {language === "en"
-              ? "Real-time modal arrivals and rate changes reported directly from state APMCs."
-              : "राज्य कृषि उपज मंडियों से सीधे रिपोर्ट किए गए वास्तविक मॉडल भाव व आवक आंकड़े।"}
+            {language === "mr"
+              ? "राज्य कृषी उत्पन्न बाजार समित्यांकडून थेट प्राप्त झालेले अधिकृत सरासरी दर आणि आवक आकडेवारी."
+              : language === "hi"
+              ? "राज्य कृषि उपज मंडियों से सीधे रिपोर्ट किए गए वास्तविक मॉडल भाव व आवक आंकड़े।"
+              : "Real-time modal arrivals and rate changes reported directly from state APMCs."}
           </p>
         </div>
 
@@ -66,7 +72,9 @@ export function LivePriceTape({ language = "en" }) {
           onClick={scrollToTable}
           className="board-action-btn"
         >
-          <span>{language === "en" ? "Explore Full Price Matrix" : "विस्तृत भाव तालिका देखें"}</span>
+          <span>
+            {language === "mr" ? "संपूर्ण भाव तक्ता पहा" : language === "hi" ? "विस्तृत भाव तालिका देखें" : "Explore Full Price Matrix"}
+          </span>
           <ArrowDown size={15} />
         </button>
       </div>
@@ -89,7 +97,7 @@ export function LivePriceTape({ language = "en" }) {
 
             <div className="tape-meta">
               <span className="up">▲ {item.change}</span>
-              <small>{item.volume} arrivals</small>
+              <small>{item.volume} {language === "mr" ? "आवक" : language === "hi" ? "आवक" : "arrivals"}</small>
             </div>
           </article>
         ))}

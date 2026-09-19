@@ -2792,6 +2792,7 @@ main {
 }
 
 /* =========================================================
+<<<<<<< HEAD
    ANIMATIONS & MICRO-INTERACTIONS
    ========================================================= */
 @keyframes fadeIn {
@@ -3571,11 +3572,395 @@ main {
   display: flex;
   gap: 12px;
   align-items: center;
+=======
+   KYC & PROFILE VERIFICATION SYSTEM STYLES
+   ========================================================= */
+
+/* --- Verification Badges --- */
+.verification-badge-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition: all 0.15s ease;
+}
+
+.verification-badge.badge-sm {
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.verification-badge.badge-lg {
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+/* Verified ✓ (Green) */
+.verification-badge.verified {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.12);
+}
+
+/* Verification Pending ⏳ (Amber) */
+.verification-badge.pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.12);
+}
+
+/* Unverified ⚠️ (Rose/Red) */
+.verification-badge.unverified {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
+}
+
+.kyc-verified-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+}
+
+/* --- Registration Form KYC Section --- */
+.registration-kyc-card {
+  background: #ffffff;
+  border: 1.5px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin: 18px 0;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.06);
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 40%);
+}
+
+.kyc-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.kyc-tag-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #166534;
+  background: #dcfce7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.kyc-completed-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kyc-completed-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kyc-completed-status .check-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #16a34a;
+  color: #ffffff;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.kyc-pending-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+}
+
+.verify-now-action-btn {
+  font-size: 13px;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+
+/* --- KYC Modal --- */
+.kyc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.kyc-modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  animation: modalPopIn 0.2s ease-out;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.kyc-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafaf9;
+}
+
+.kyc-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kyc-header-title h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.kyc-header-title small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kyc-badge-icon {
+  font-size: 26px;
+}
+
+.kyc-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.kyc-close-btn:hover {
+  background: #f1f5f9;
+  color: var(--ink);
+}
+
+/* KYC Stepper */
+.kyc-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--line-subtle);
+}
+
+.step-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.step-node .step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.step-node.active {
+  color: var(--brand);
+}
+
+.step-node.active .step-num {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.step-node.done .step-num {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.step-divider {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 10px;
+}
+
+.kyc-form-body {
+  padding: 24px;
+}
+
+.kyc-info-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.kyc-info-box p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.kyc-input-group {
+  margin-bottom: 16px;
+}
+
+.aadhaar-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.aadhaar-input-wrapper .id-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.aadhaar-input-wrapper input {
+  padding-left: 40px;
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.otp-input-wrapper input {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  font-family: monospace;
+}
+
+.input-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kyc-demo-notice {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #92400e;
+  margin-top: 14px;
+  line-height: 1.4;
+}
+
+.kyc-otp-target-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+
+.kyc-otp-target-card p {
+  margin: 4px 0 0;
+  color: #166534;
+}
+
+.demo-otp-pill {
+  display: inline-block;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.kyc-resend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12px;
+>>>>>>> 20a6e21 (updates)
 }
 
 .text-btn {
   background: none;
   border: none;
+<<<<<<< HEAD
   color: var(--ink-secondary);
   font-size: 13px;
   font-weight: 600;
@@ -5253,11 +5638,130 @@ main {
   padding: 6px 12px;
   background: #ecfdf5;
   color: #166534;
+=======
+  color: var(--brand);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-btn.resend {
+  font-weight: 700;
+}
+
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.resend-timer {
+  color: var(--muted);
+}
+
+.kyc-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 16px;
+  font-size: 13px;
+  margin: 12px 24px 0;
+  border-radius: 6px;
+}
+
+.kyc-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+/* KYC Success View */
+.kyc-success-view {
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.kyc-success-animation {
+  width: 64px;
+  height: 64px;
+  background: #dcfce7;
+  border: 2px solid #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  animation: successPulse 0.4s ease-out;
+}
+
+.kyc-success-animation .success-icon {
+  font-size: 32px;
+  color: #16a34a;
+  font-weight: 800;
+}
+
+@keyframes successPulse {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.kyc-success-view h2 {
+  color: #166534;
+  margin-bottom: 6px;
+}
+
+.kyc-success-view .success-sub {
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 380px;
+  margin: 0 auto 20px;
+}
+
+.kyc-success-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.success-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.success-row:last-child {
+  border-bottom: none;
+}
+
+.verified-chip {
+  background: #16a34a;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-preview {
+  background: #dcfce7;
+  color: #166534;
+  padding: 2px 8px;
+>>>>>>> 20a6e21 (updates)
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
 }
 
+<<<<<<< HEAD
 /* Transactions Toolbar */
 .transactions-toolbar {
   display: flex;
@@ -5836,3 +6340,472 @@ main {
     width: 100%;
   }
 }
+=======
+/* --- Trust Profile Modal --- */
+.trust-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.trust-modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 600px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.trust-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafaf9;
+}
+
+.trust-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trust-title-row h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.trust-title-row small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.trust-shield-icon {
+  font-size: 24px;
+}
+
+.trust-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.trust-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.trust-identity-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+
+.trust-avatar-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+  border: 2px solid var(--line);
+}
+
+.trust-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.trust-name-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trust-name-badges h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.trust-meta {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.trust-aadhaar-note {
+  display: inline-block;
+  font-size: 11px;
+  color: #166534;
+  background: #f0fdf4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #bbf7d0;
+}
+
+.trust-checklist-section {
+  margin-bottom: 20px;
+}
+
+.trust-checklist-section h5 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.trust-checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.checklist-item.checked {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.checklist-item.unchecked {
+  background: #f8fafc;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+
+.checklist-item .check-icon {
+  font-weight: 800;
+}
+
+.trust-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.spec-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.spec-card small {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+
+.spec-card b {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.trust-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+/* --- Profile Management View --- */
+.profile-management-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+
+.profile-subheading {
+  color: var(--ink-secondary);
+  font-size: 14px;
+  max-width: 650px;
+  margin: 6px 0 0;
+}
+
+.profile-header-status-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.status-caption {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  letter-spacing: 0.8px;
+}
+
+.verify-now-btn {
+  font-size: 13px;
+  padding: 8px 14px;
+}
+
+.profile-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.profile-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-card-main {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.profile-card-top {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.profile-avatar-box {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  flex-shrink: 0;
+  border: 2px solid var(--line);
+}
+
+.profile-avatar-box .avatar-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.verified-check-pill {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  background: #16a34a;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  border: 2px solid #ffffff;
+}
+
+.profile-name-area {
+  flex: 1;
+}
+
+.profile-role-tag {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.aadhaar-badge-pill {
+  display: inline-block;
+  font-size: 11px;
+  color: #166534;
+  background: #f0fdf4;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #bbf7d0;
+  margin-top: 4px;
+}
+
+/* Status Banners */
+.verification-status-box {
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 20px;
+}
+
+.verification-status-box.is-verified {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+
+.verification-status-box.is-pending {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+}
+
+.verification-status-box.is-unverified {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.status-box-header {
+  display: flex;
+  gap: 12px;
+}
+
+.status-box-header .box-icon {
+  font-size: 20px;
+}
+
+.status-box-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Trust Checklist Card */
+.trust-checklist-card {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-bottom: 20px;
+}
+
+.trust-checklist-card h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.check-bullet {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.check-row.done .check-bullet {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.check-row b {
+  display: block;
+}
+
+.check-row small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Highlights Grid */
+.profile-highlights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.highlight-cell {
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.highlight-cell small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.highlight-cell b {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .profile-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .trust-checklist-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+>>>>>>> 20a6e21 (updates)

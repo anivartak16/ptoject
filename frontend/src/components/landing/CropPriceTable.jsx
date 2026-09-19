@@ -124,41 +124,47 @@ export function CropPriceTable({ language = "en" }) {
     <section className="agri-market-board" id="market-prices">
       <div className="agri-market-heading">
         <div>
-          <p className="eyebrow">PAN-INDIA COMMODITY BENCHMARK</p>
+          <p className="eyebrow">
+            {language === "mr" ? "अखिल भारतीय शेतमाल दर सूची" : language === "hi" ? "अखिल भारतीय कमोडिटी बेंचमार्क" : "PAN-INDIA COMMODITY BENCHMARK"}
+          </p>
           <h2>
-            {language === "en"
-              ? "Real-Time Mandi Rates Across 18+ States"
-              : "18+ राज्यों की मंडियों के वास्तविक भाव"}
+            {language === "mr"
+              ? "१८+ राज्यांमधील बाजार समित्यांचे थेट भाव"
+              : language === "hi"
+              ? "18+ राज्यों की मंडियों के वास्तविक भाव"
+              : "Real-Time Mandi Rates Across 18+ States"}
           </h2>
           <p>
-            {language === "en"
-              ? "Select any commodity to view major producing state mandis, daily price movements, and active buyer bids."
-              : "किसी भी फसल पर क्लिक करें और प्रमुख उत्पादक राज्यों की मंडियों के भाव व सक्रिय खरीदार देखें।"}
+            {language === "mr"
+              ? "प्रमुख उत्पादक राज्यांमधील बाजार समिती भाव, दैनंदिन चढ-उतार आणि सक्रिय खरेदीदारांच्या बोल्या पाहण्यासाठी कोणत्याही पिकावर क्लिक करा."
+              : language === "hi"
+              ? "किसी भी फसल पर क्लिक करें और प्रमुख उत्पादक राज्यों की मंडियों के भाव व सक्रिय खरीदार देखें।"
+              : "Select any commodity to view major producing state mandis, daily price movements, and active buyer bids."}
           </p>
         </div>
 
         <div className="market-index-clean">
           <span className="live-dot" />
-          <span>NATIONAL APMC DATA FEED</span>
+          <span>{language === "mr" ? "राष्ट्रीय एपीएमसी थेट डेटा" : language === "hi" ? "राष्ट्रीय APMC डेटा फीड" : "NATIONAL APMC DATA FEED"}</span>
         </div>
       </div>
 
       {/* STAT SUMMARY BAR */}
       <div className="market-summary-clean">
         <div className="summary-clean-card">
-          <small>MAJOR COMMODITIES</small>
-          <strong>8 Key Crops</strong>
+          <small>{language === "mr" ? "प्रमुख शेतमाल" : language === "hi" ? "प्रमुख फसलें" : "MAJOR COMMODITIES"}</small>
+          <strong>8 {language === "mr" ? "प्रमुख पिके" : language === "hi" ? "प्रमुख फसलें" : "Key Crops"}</strong>
         </div>
         <div className="summary-clean-card">
-          <small>AVERAGE GAIN TODAY</small>
+          <small>{language === "mr" ? "आजची सरासरी वाढ" : language === "hi" ? "आज की औसत वृद्धि" : "AVERAGE GAIN TODAY"}</small>
           <strong className="text-green">+2.18%</strong>
         </div>
         <div className="summary-clean-card">
-          <small>HIGHEST DEMAND</small>
-          <strong>🌶️ Guntur Chilli</strong>
+          <small>{language === "mr" ? "सर्वाधिक मागणी" : language === "hi" ? "सर्वाधिक मांग" : "HIGHEST DEMAND"}</small>
+          <strong>🌶️ {language === "mr" ? "गुंटूर मिरची" : language === "hi" ? "गुंटूर मिर्च" : "Guntur Chilli"}</strong>
         </div>
         <div className="summary-clean-card">
-          <small>NATIONAL VOLUMES</small>
+          <small>{language === "mr" ? "राष्ट्रीय आवक" : language === "hi" ? "राष्ट्रीय व्यापार" : "NATIONAL VOLUMES"}</small>
           <strong>1,42,800 qtl</strong>
         </div>
       </div>
@@ -166,11 +172,11 @@ export function CropPriceTable({ language = "en" }) {
       {/* CROP MATRIX */}
       <div className="agri-price-table-clean">
         <div className="agri-clean-header">
-          <span>COMMODITY & PRODUCING STATES</span>
-          <span>PRICE / QTL</span>
-          <span>24H CHANGE</span>
-          <span>MARKET DEMAND</span>
-          <span>TOP REGIONAL MANDIS</span>
+          <span>{language === "mr" ? "शेतमाल आणि उत्पादक राज्ये" : language === "hi" ? "फसल और उत्पादक राज्य" : "COMMODITY & PRODUCING STATES"}</span>
+          <span>{language === "mr" ? "दर / क्विंटल" : language === "hi" ? "भाव / क्विंटल" : "PRICE / QTL"}</span>
+          <span>{language === "mr" ? "२४-तास बदल" : language === "hi" ? "24 घंटे परिवर्तन" : "24H CHANGE"}</span>
+          <span>{language === "mr" ? "बाजार मागणी" : language === "hi" ? "बाजार मांग" : "MARKET DEMAND"}</span>
+          <span>{language === "mr" ? "प्रमुख प्रादेशिक बाजार समित्या" : language === "hi" ? "प्रमुख क्षेत्रीय मंडियां" : "TOP REGIONAL MANDIS"}</span>
         </div>
 
         {panIndiaCrops.map((crop) => {
@@ -221,13 +227,13 @@ export function CropPriceTable({ language = "en" }) {
           <span className="detail-emoji">{activeCrop.emoji}</span>
           <div>
             <h4>{activeCrop.name}</h4>
-            <p>Major hubs: {activeCrop.mandis}</p>
+            <p>{language === "mr" ? "प्रमुख केंद्रे" : language === "hi" ? "प्रमुख केंद्र" : "Major hubs"}: {activeCrop.mandis}</p>
           </div>
         </div>
 
         <div className="detail-right">
           <div className="detail-bid-box">
-            <small>TOP INSTITUTIONAL BIDDER</small>
+            <small>{language === "mr" ? "सर्वोच्च संस्थागत बोलीदार" : language === "hi" ? "शीर्ष संस्थागत बोलीदाता" : "TOP INSTITUTIONAL BIDDER"}</small>
             <b>{activeCrop.bestBid}</b>
           </div>
 
@@ -236,7 +242,7 @@ export function CropPriceTable({ language = "en" }) {
             className="detail-action-btn"
             onClick={scrollToDemands}
           >
-            <span>View All Buyer Demands</span>
+            <span>{language === "mr" ? "सर्व खरेदीदार मागण्या पहा" : language === "hi" ? "सभी खरीदार मांगें देखें" : "View All Buyer Demands"}</span>
             <ArrowDown size={15} />
           </button>
         </div>

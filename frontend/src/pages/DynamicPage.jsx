@@ -7,42 +7,6 @@ import { Card } from "../components/common/Card.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
 import { MatchesPage } from "./MatchesPage.jsx";
 import { FpoAggregationPage } from "./FpoAggregationPage.jsx";
-import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
-import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
-import {
-  Building2,
-  ShieldCheck,
-  CheckCircle2,
-  Award,
-  FileText,
-  Check,
-  Truck,
-  Wallet,
-  ExternalLink,
-  RefreshCw,
-  AlertCircle,
-  Phone,
-  MapPin,
-  Sparkles,
-  Lock,
-  X,
-  Layers,
-  ArrowRight,
-  UserCheck,
-  Briefcase,
-  Users,
-  Scale,
-  BadgeCheck,
-  Calendar,
-  DollarSign,
-  Package,
-  Calculator,
-  Printer,
-  Download,
-  UploadCloud,
-  CheckCircle,
-  TrendingUp,
-} from "lucide-react";
 
 export function DynamicPage() {
   const { misc, r } = useParams();
@@ -2501,22 +2465,30 @@ export function DynamicPage() {
       );
     }
 
-    // Generic fallback profile
     return (
-      <section className="profile-page animate-fadeIn">
+      <section>
         <p className="eyebrow">ACCOUNT</p>
         <h1>My profile</h1>
         <div className="two-col">
           <div className="panel">
             <h3>{user?.name}</h3>
-            <p><b>Role:</b> {user?.role}</p>
-            <p><b>Email:</b> {user?.email}</p>
-            <p><b>Location:</b> {user?.location || "Not provided"}</p>
+            <p>
+              <b>Role:</b> {user?.role}
+            </p>
+            <p>
+              <b>Email:</b> {user?.email}
+            </p>
+            <p>
+              <b>Location:</b> {user?.location || "Not provided"}
+            </p>
             <StatusBadge>{user?.verification || "VERIFIED"}</StatusBadge>
           </div>
           <div className="panel">
             <h3>Trust status</h3>
-            <p>Your verified profile helps buyers and partners make confident decisions.</p>
+            <p>
+              Your verified profile helps buyers and partners make confident
+              decisions.
+            </p>
             <Link className="primary" to={"/" + r + "/notifications"}>
               View notifications
             </Link>

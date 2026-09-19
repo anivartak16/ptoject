@@ -60,27 +60,36 @@ export function LiveBidsSection({ language = "en" }) {
     <section className="bids-section-clean" id="buyer-demands">
       <div className="section-intro">
         <p className="eyebrow">
-          <span className="live-dot" /> LIVE VERIFIED BUYER DEMANDS
+          <span className="live-dot" />{" "}
+          {language === "mr"
+            ? "पडताळणीकृत खरेदीदारांची थेट मागणी"
+            : language === "hi"
+            ? "लाइव सत्यापित खरीदार मांगें"
+            : "LIVE VERIFIED BUYER DEMANDS"}
         </p>
         <h2>
-          {language === "en"
-            ? "Institutional Buyers Ready to Procure Directly"
-            : "संस्थागत खरीदारों की सक्रिय मांग"}
+          {language === "mr"
+            ? "थेट शेतमाल खरेदीसाठी सज्ज संस्थागत खरेदीदार"
+            : language === "hi"
+            ? "संस्थागत खरीदारों की सक्रिय मांग"
+            : "Institutional Buyers Ready to Procure Directly"}
         </h2>
         <p>
-          {language === "en"
-            ? "Leading Indian food processors, exporters, and millers place binding purchase demands with secured escrow deposits."
-            : "भारत की प्रमुख खाद्य कंपनियां, निर्यातक और मिलर्स सुरक्षित एस्क्रो जमा के साथ फसल की सीधी खरीद कर रहे हैं।"}
+          {language === "mr"
+            ? "भारतातील आघाडीच्या अन्न प्रक्रिया कंपन्या, निर्यातक आणि मिलर्स सुरक्षित एस्क्रो ठेवींसह शेतमालाची थेट खरेदी करत आहेत."
+            : language === "hi"
+            ? "भारत की प्रमुख खाद्य कंपनियां, निर्यातक और मिलर्स सुरक्षित एस्क्रो जमा के साथ फसल की सीधी खरीद कर रहे हैं।"
+            : "Leading Indian food processors, exporters, and millers place binding purchase demands with secured escrow deposits."}
         </p>
       </div>
 
       <div className="bids-table-clean">
         <div className="clean-bid-header">
-          <span>ENTERPRISE BUYER</span>
-          <span>COMMODITY & SPECS</span>
-          <span>OFFER PRICE</span>
-          <span>VOLUME</span>
-          <span>PROCUREMENT LOCATION</span>
+          <span>{language === "mr" ? "संस्थागत खरेदीदार" : language === "hi" ? "संस्थागत खरीदार" : "ENTERPRISE BUYER"}</span>
+          <span>{language === "mr" ? "शेतमाल आणि गुणवत्ता" : language === "hi" ? "फसल और विवरण" : "COMMODITY & SPECS"}</span>
+          <span>{language === "mr" ? "ऑफर दर" : language === "hi" ? "ऑफर दर" : "OFFER PRICE"}</span>
+          <span>{language === "mr" ? "प्रमाण" : language === "hi" ? "मात्रा" : "VOLUME"}</span>
+          <span>{language === "mr" ? "खरेदी ठिकाण" : language === "hi" ? "खरीद स्थान" : "PROCUREMENT LOCATION"}</span>
         </div>
 
         {panIndiaBuyerDemands.map((bid) => (
@@ -93,7 +102,7 @@ export function LiveBidsSection({ language = "en" }) {
                 <b>{bid.buyer}</b>
                 <small>
                   <BadgeCheck size={13} className="text-green" />
-                  Verified Corporate Buyer
+                  {language === "mr" ? "पडताळणीकृत कॉर्पोरेट खरेदीदार" : language === "hi" ? "सत्यापित कॉर्पोरेट खरीदार" : "Verified Corporate Buyer"}
                 </small>
               </div>
             </div>
@@ -127,26 +136,42 @@ export function LiveBidsSection({ language = "en" }) {
           <Sparkles size={20} className="text-green" />
           <div>
             <strong>
-              {language === "en"
-                ? "Are you a Farmer or FPO with harvested stock?"
-                : "क्या आप किसान या FPO हैं और अपनी फसल बेचना चाहते हैं?"}
+              {language === "mr"
+                ? "तुम्ही शेतकरी किंवा एफपीओ आहात आणि शेतमाल विकू इच्छिता?"
+                : language === "hi"
+                ? "क्या आप किसान या FPO हैं और अपनी फसल बेचना चाहते हैं?"
+                : "Are you a Farmer or FPO with harvested stock?"}
             </strong>
             <p>
-              {language === "en"
-                ? "Register your crop lot to match with these buyers and receive payment directly into your bank account."
-                : "अपनी फसल दर्ज करें, इन खरीदारों से सीधे जुड़ें और बैंक खाते में सुरक्षित भुगतान प्राप्त करें।"}
+              {language === "mr"
+                ? "तुमचा शेतमाल नोंदवा, या खरेदीदारांशी थेट जोडा आणि थेट बँक खात्यात सुरक्षित मोबदला मिळवा."
+                : language === "hi"
+                ? "अपनी फसल दर्ज करें, इन खरीदारों से सीधे जुड़ें और बैंक खाते में सुरक्षित भुगतान प्राप्त करें।"
+                : "Register your crop lot to match with these buyers and receive payment directly into your bank account."}
             </p>
           </div>
         </div>
 
         <div className="action-buttons-wrap">
           <Link className="clean-cta-btn" to="/register/farmer">
-            <span>{language === "en" ? "Register to Sell Produce" : "फसल बेचने के लिए पंजीकरण"}</span>
+            <span>
+              {language === "mr"
+                ? "शेतमाल विक्रीसाठी नोंदणी करा"
+                : language === "hi"
+                ? "फसल बेचने के लिए पंजीकरण"
+                : "Register to Sell Produce"}
+            </span>
             <ArrowRight size={16} />
           </Link>
 
           <Link className="clean-secondary-btn" to="/register/buyer">
-            <span>{language === "en" ? "Post Buyer Demand" : "खरीदार मांग दर्ज करें"}</span>
+            <span>
+              {language === "mr"
+                ? "खरेदीदार मागणी नोंदवा"
+                : language === "hi"
+                ? "खरीदार मांग दर्ज करें"
+                : "Post Buyer Demand"}
+            </span>
           </Link>
         </div>
       </div>

@@ -10,6 +10,8 @@ import { FpoAggregationPage } from "./FpoAggregationPage.jsx";
 import { InspectionPage } from "./InspectionPage.jsx";
 import { DisputesPage } from "./DisputesPage.jsx";
 import { AnalyticsPage } from "./AnalyticsPage.jsx";
+import { VerificationBadge } from "../components/common/VerificationBadge.jsx";
+import { TrustProfileModal } from "../components/profile/TrustProfileModal.jsx";
 
 export function OperationalPage({ title, type }) {
   const { user } = useAuth();
@@ -18,6 +20,7 @@ export function OperationalPage({ title, type }) {
   const [booking, setBooking] = useState(null);
   const [bookingMessage, setBookingMessage] = useState("");
   const [bookingHistory, setBookingHistory] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const endpoint =
     type === "prices"
@@ -432,19 +435,72 @@ export function OperationalPage({ title, type }) {
 
             {type === "demands" && (
               <>
-                <StatusBadge>{x.status}</StatusBadge>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <StatusBadge>{x.status}</StatusBadge>
+                  {x.buyer && (
+                    <VerificationBadge
+                      status={x.buyer.verification}
+                      kycVerified={x.buyer.kycVerified}
+                      showKyc={true}
+                      size="sm"
+                    />
+                  )}
+                </div>
                 <h3>
                   {x.commodity} · {x.requiredQuantity} kg
                 </h3>
                 <p>
                   Max ₹{x.maxPrice}/kg · {x.preferredLocation}
                 </p>
+
+                {x.buyer && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 10px",
+                      margin: "8px 0",
+                      background: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
+                      flexWrap: "wrap",
+                      gap: "6px",
+                    }}
+                  >
+                    <div>
+                      <small style={{ color: "var(--muted)", display: "block" }}>Buyer Organization</small>
+                      <b>{x.buyer.organizationName || x.buyer.name}</b>
+                    </div>
+                    <button
+                      type="button"
+                      style={{
+                        padding: "3px 8px",
+                        fontSize: "11px",
+                        background: "#ffffff",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                      onClick={() => setSelectedUserId(x.buyer._id || x.buyer.id)}
+                    >
+                      🛡️ View Buyer Profile ↗
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
         ))}
       </div>
       {note && <p>{note}</p>}
+
+      <TrustProfileModal
+        isOpen={Boolean(selectedUserId)}
+        onClose={() => setSelectedUserId(null)}
+        userId={selectedUserId}
+      />
     </section>
   );
 }

@@ -1,27 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import api from "../../api/client.js";
-import { useLanguage } from "../../context/LanguageContext.jsx";
-import {
-  MessageSquare,
-  X,
-  RotateCcw,
-  Send,
-  Sparkles,
-  TrendingUp,
-  Wallet,
-  ShieldCheck,
-  AlertTriangle,
-  ChevronDown,
-} from "lucide-react";
 
 export function ChatBot() {
-  const { language, t, getLabel } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Quick Services with exact original titles and prompts
   const quickServices = [
     {
       icon: "📊",
@@ -79,34 +66,34 @@ export function ChatBot() {
     },
   ];
 
+  const getInitialGreeting = () => {
+    if (language === "mr") {
+      return "नमस्कार! 👋 मी आपला KrishiLink सहाय्यक आहे. मी आपल्याला बाजार भाव, खरेदीदार, शेतमाल विक्री, बाजार कल आणि अधिक बाबींमध्ये मदत करू शकतो.";
+    }
+    if (language === "hi") {
+      return "नमस्ते! 👋 मैं आपका KrishiLink सहायक हूँ। मैं फसल भाव, खरीदार, बिक्री, बाजार रुझान और अन्य जानकारियों में आपकी मदद कर सकता हूँ।";
+    }
+    return "Hello! 👋 I'm your KrishiLink Assistant. I can help you with crop prices, buyers, selling, market trends and more.";
+  };
+
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text:
-        language === "hi"
-          ? "नमस्ते! 👋 मैं KrishiLink कृषि सहायक हूँ। मंडी भाव, नेट रियलाइजेशन (शुद्ध मुनाफा), खरीदार मैचिंग और फसल बिक्री में मैं आपकी सहायता कर सकता हूँ।"
-          : language === "mr"
-          ? "नमस्कार! 👋 मी तुमचा KrishiLink कृषी सहाय्यक आहे. बाजार भाव, थेट खरेदीदार, शेतमाल विक्री व शासकीय योजनांमध्ये मी मदत करू शकतो."
-          : "Hello! 👋 I'm your KrishiLink Assistant. I can help you with live mandi prices, net realization, buyer matching, fake offer protection, and selling advice.",
-    },
-  ]);
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      text: "Hello! 👋 I'm your KrishiLink Assistant. I can help you with crop prices, buyers, selling, market trends and more."
     }
-  }, [messages, loading]);
+  ]);
 
   const sendMessage = async (customMessage = "") => {
     const message = (customMessage || input).trim();
+
     if (!message || loading) return;
 
     setMessages((prev) => [
       ...prev,
       {
         role: "user",
-        text: message,
-      },
+        text: message
+      }
     ]);
 
     setInput("");
@@ -114,34 +101,30 @@ export function ChatBot() {
 
     try {
       const response = await api.post("/chat", {
-        message,
+        message
       });
 
       const reply =
         response.data?.data?.reply ||
         response.data?.reply ||
-        (language === "hi"
-          ? "क्षमा करें, इस विषय पर अभी जानकारी उपलब्ध नहीं है।"
-          : "Sorry, I couldn't find an answer for that.");
+        "Sorry, I couldn't find an answer for that.";
 
       setMessages((prev) => [
         ...prev,
         {
           role: "bot",
-          text: reply,
-        },
+          text: reply
+        }
       ]);
     } catch (error) {
       console.error("Chatbot error:", error);
+
       setMessages((prev) => [
         ...prev,
         {
           role: "bot",
-          text:
-            language === "hi"
-              ? "सर्वर से कनेक्ट करने में समस्या हुई। कृपया दोबारा प्रयास करें अथवा Dashboard पर मंडी भाव देखें।"
-              : "Sorry, I couldn't connect to the assistant server. Please check your connection or view prices on the Dashboard.",
-        },
+          text: "Sorry, I couldn't process your request. Please try again."
+        }
       ]);
     } finally {
       setLoading(false);
@@ -152,11 +135,8 @@ export function ChatBot() {
     setMessages([
       {
         role: "bot",
-        text:
-          language === "hi"
-            ? "नमस्ते! नई बातचीत शुरू हुई। आप किस फसल या सेवा के बारे में जानना चाहते हैं?"
-            : "Hello! New conversation started. What can I help you with today?",
-      },
+        text: "Hello! 👋 I'm your KrishiLink Assistant. How can I help you today?"
+      }
     ]);
     setInput("");
     setShowAll(false);
@@ -207,14 +187,13 @@ export function ChatBot() {
           <div className="assistant-logo">🌱</div>
           <div>
             <h2>KrishiLink Assistant</h2>
-            <p>{getLabel("Smart Farming & Market Support 24/7", "24/7 स्मार्ट कृषि व मंडी सहायता", "२४/७ स्मार्ट कृषी सहाय्यक")}</p>
+            <p>Smart farming support 24/7</p>
           </div>
         </div>
 
         <div className="header-actions">
-          <button className="new-chat" onClick={newChat} title="Reset Chat">
-            <RotateCcw size={13} />
-            <span>Reset</span>
+          <button className="new-chat" onClick={newChat}>
+            ↻ New Chat
           </button>
           <button
             className="close-chat"
@@ -227,37 +206,31 @@ export function ChatBot() {
       </div>
 
       <div className="chatbot-main">
-        {/* Quick Suggestion Chips */}
-        <div className="services-container">
-          <div className="section-title">
-            <span>{getLabel("Quick Inquiries", "त्वरित विषय", "जलद विषय")}</span>
-            <small>{getLabel("Instant Answers", "तुरंत उत्तर", "त्वरित उत्तरे")}</small>
-          </div>
-
-          <div className="services">
-            {services.map((service) => (
-              <button
-                key={service.title}
-                className="service"
-                onClick={() => sendMessage(service.prompt)}
-                disabled={loading}
-              >
-                <span className="service-icon">{service.icon}</span>
-                <span className="service-title">{service.title}</span>
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="view-services"
-            onClick={() => setShowAll(!showAll)}
-          >
-            {showAll
-              ? getLabel("↑ Show fewer topics", "↑ कम विषय दिखाएं", "↑ कमी विषय")
-              : getLabel("▦ View all agricultural topics", "▦ सभी कृषि विषय देखें", "▦ सर्व विषय पहा")}
-          </button>
+        <div className="section-title">
+          <span>How can I help?</span>
+          <small>Quick actions</small>
         </div>
+
+        <div className="services">
+          {services.map((service) => (
+            <button
+              key={service.title}
+              className="service"
+              onClick={() => sendMessage(service.prompt)}
+              disabled={loading}
+            >
+              <span className="service-icon">{service.icon}</span>
+              <span className="service-title">{service.title}</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          className="view-services"
+          onClick={() => setShowAll(!showAll)}
+        >
+          {showAll ? "↑ Show fewer services" : "▦ View all services"}
+        </button>
 
         {/* Messages Feed */}
         <div className="messages">
@@ -267,6 +240,7 @@ export function ChatBot() {
               className={`message ${
                 message.role === "user" ? "message-user" : "message-bot"
               }`}
+              style={{ whiteSpace: "pre-line" }}
             >
               {renderMessageContent(message.text)}
             </div>
@@ -285,23 +259,30 @@ export function ChatBot() {
         {/* Smart Prompt Shortcuts */}
         <div className="smart-suggestions">
           <button
-            onClick={() => sendMessage(language === "hi" ? "गेहूं का ताजा मंडी भाव क्या है?" : "What is the current wheat mandi rate?")}
+            onClick={() => sendMessage("What is the current wheat price?")}
             disabled={loading}
           >
-            🌾 {getLabel("Wheat Price", "गेहूं भाव", "गहू दर")}
+            🌾 Wheat price
           </button>
           <button
-            onClick={() => sendMessage(language === "hi" ? "नेट रियलाइजेशन कैलकुलेट करके बताएं।" : "How is net realisation calculated?")}
+            onClick={() => sendMessage("How can I find a buyer?")}
             disabled={loading}
           >
-            💰 {getLabel("Net Realisation", "नेट मुनाफा", "निव्वळ प्राप्ती")}
+            🏪 Find buyer
           </button>
           <button
-            onClick={() => sendMessage(language === "hi" ? "फेक ऑफर की पहचान कैसे करें?" : "How to identify fake offers?")}
+            onClick={() => sendMessage("How can I sell my produce?")}
             disabled={loading}
           >
-            🛡️ {getLabel("Fake Offers", "फेक ऑफर", "संशयास्पद ऑफर")}
+            🛒 Sell produce
           </button>
+        </div>
+
+        <div className="app-tip">
+          <span>💡</span>
+          <div>
+            <strong>Pro tip:</strong> Ask me about crop prices, buyers, selling, market trends and more.
+          </div>
         </div>
       </div>
 
@@ -310,22 +291,19 @@ export function ChatBot() {
         <input
           type="text"
           value={input}
-          placeholder={getLabel(
-            "Ask about prices, net profit, buyers, crop advice...",
-            "मंडी भाव, शुद्ध मुनाफा, खरीदार, फसल सलाह पूछें...",
-            "बाजार भाव, नफा, खरेदीदार, पीक सल्ला विचारा..."
-          )}
+          placeholder="Ask about prices, buyers, crops..."
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              sendMessage();
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleFreeTextMessage();
             }
           }}
           disabled={loading}
         />
         <button
           className="send"
-          onClick={() => sendMessage()}
+          onClick={() => handleFreeTextMessage()}
           disabled={loading || !input.trim()}
           aria-label="Send message"
         >

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api/client.js";
 import { useAuth, getDashboardPath } from "../context/AuthContext.jsx";
+import { KycModal } from "../components/profile/KycModal.jsx";
+import { VerificationBadge } from "../components/common/VerificationBadge.jsx";
 
 export function AuthPage({ reg = false }) {
   const navigate = useNavigate();
@@ -48,8 +50,11 @@ export function AuthPage({ reg = false }) {
     buyerType: "TRADER",
     registrationNumber: "",
     memberCount: "",
+    kycVerified: false,
+    aadhaarLast4: "",
   });
 
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [err, setErr] = useState("");
   const [locationStatus, setLocationStatus] = useState("idle");
 
@@ -396,6 +401,60 @@ export function AuthPage({ reg = false }) {
           </label>
         </div>
 
+        {/* Complete KYC Section */}
+        <div className="registration-kyc-card">
+          <div className="kyc-card-top">
+            <div>
+              <span className="kyc-tag-pill">TRUST & IDENTITY</span>
+              <h3 style={{ margin: "4px 0" }}>Complete KYC</h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--ink-secondary)" }}>
+                Verify with Aadhaar + OTP now to earn the green <b>Verified ✓</b> badge immediately upon account creation.
+              </p>
+            </div>
+            <VerificationBadge
+              status={f.kycVerified ? "VERIFIED" : "UNVERIFIED"}
+              kycVerified={f.kycVerified}
+              showKyc={true}
+              size="md"
+            />
+          </div>
+
+          {f.kycVerified ? (
+            <div className="kyc-completed-box">
+              <div className="kyc-completed-status">
+                <span className="check-circle">✓</span>
+                <div>
+                  <strong>KYC Verification Successful ✓</strong>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px" }}>
+                    Aadhaar reference: <code>{f.aadhaarLast4 || "XXXX-XXXX-8921"}</code> · Profile status: <b>KYC Verified ✓</b>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="secondary"
+                style={{ fontSize: "12px", padding: "6px 12px" }}
+                onClick={() => setIsKycModalOpen(true)}
+              >
+                Re-verify
+              </button>
+            </div>
+          ) : (
+            <div className="kyc-pending-action">
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
+                Takes less than 1 minute using demo UIDAI OTP. Aadhaar numbers are never permanently stored.
+              </p>
+              <button
+                type="button"
+                className="primary verify-now-action-btn"
+                onClick={() => setIsKycModalOpen(true)}
+              >
+                🛡️ Verify Now
+              </button>
+            </div>
+          )}
+        </div>
+
         <h3>Location details</h3>
 
         <div className="location-box">
@@ -664,6 +723,20 @@ export function AuthPage({ reg = false }) {
       {err && <p className="error">{err}</p>}
 
       <Link to="/login">Login instead</Link>
+
+      <KycModal
+        isOpen={isKycModalOpen}
+        onClose={() => setIsKycModalOpen(false)}
+        onSuccess={(data) => {
+          setF((prev) => ({
+            ...prev,
+            kycVerified: true,
+            aadhaarLast4: data.aadhaarLast4,
+          }));
+        }}
+        initialPhone={f.phone}
+        userName={f.name}
+      />
     </div>
   );
 }

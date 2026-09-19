@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { Link, NavLink, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useLanguage } from "../../context/LanguageContext.jsx";
-import { Menu, X, LogOut, Globe } from "lucide-react";
 
 export function Shell({ children }) {
   const { user, logout } = useAuth();
-  const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const { r: routeRole } = useParams();
   const r = routeRole || user?.role?.toLowerCase().replaceAll("_", "-") || "farmer";
@@ -16,6 +13,34 @@ export function Shell({ children }) {
   const handleSignOut = () => {
     logout();
     navigate("/", { replace: true });
+  };
+
+  const getNavLabel = (key, defaultLabel) => {
+    const keyMap = {
+      dashboard: "nav.dashboard",
+      "market-sync": "nav.dailyPriceSync",
+      users: "nav.users",
+      prices: "nav.marketPrices",
+      predictions: "nav.marketPrediction",
+      disputes: "nav.disputes",
+      analytics: "nav.analytics",
+      profile: "nav.myProfile",
+      demands: "nav.buyerDemands",
+      lots: workspaceRole === "BUYER" ? "nav.browseLots" : workspaceRole === "KRISHI_KENDRA" ? "nav.marketLots" : "nav.myLots",
+      recommendations: "nav.recommendedLots",
+      offers: "nav.offers",
+      transactions: "nav.transactions",
+      payments: "nav.payments",
+      logistics: "nav.logistics",
+      notifications: "nav.notifications",
+      farmers: "nav.farmers",
+      aggregation: "nav.aggregation",
+      matching: "matching.title",
+      storage: "nav.storage",
+      farm: "nav.myFarm",
+      inspections: "nav.inspectionDesk",
+    };
+    return t(keyMap[key] || defaultLabel, defaultLabel);
   };
 
   let items =
@@ -29,17 +54,16 @@ export function Shell({ children }) {
         ]
       : workspaceRole === "BUYER"
         ? [
-            [t("dashboard", "Dashboard"), "dashboard", "◫"],
-            [t("buyerProfile", "Buyer profile"), "profile", "🏢"],
-            [t("marketPrediction", "Market Prediction"), "predictions", "📈"],
-            [t("buyerDemands", "Buyer demands"), "demands", "⌁"],
-            [t("browseLots", "Browse lots"), "lots", "▦"],
-            [t("recommendations", "Recommended lots"), "recommendations", "✦"],
-            [t("offers", "Offers"), "offers", "↔"],
-            [t("transactions", "Transactions"), "transactions", "✓"],
-            [t("payments", "Payments & Escrow"), "payments", "₹"],
-            [t("logistics", "Logistics"), "logistics", "⌁"],
-            [t("notifications", "Notifications"), "notifications", "●"],
+            ["Dashboard", "dashboard", "◫"],
+            ["Market Prediction", "predictions", "📈"],
+            ["Buyer demands", "demands", "⌁"],
+            ["Browse lots", "lots", "▦"],
+            ["Recommended lots", "recommendations", "✦"],
+            ["Offers", "offers", "↔"],
+            ["Transactions", "transactions", "✓"],
+            ["Payments", "payments", "₹"],
+            ["Logistics", "logistics", "⌁"],
+            ["Notifications", "notifications", "●"],
           ]
         : workspaceRole === "FPO"
           ? [
@@ -87,29 +111,10 @@ export function Shell({ children }) {
 
   return (
     <div className="app-shell">
-      {/* Mobile Drawer Overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="mobile-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <aside className={mobileMenuOpen ? "mobile-open" : ""}>
-        <div className="sidebar-brand-row">
-          <Link className="brand" to="/" onClick={() => setMobileMenuOpen(false)}>
-            🌾 <span>KrishiLink</span>
-          </Link>
-          <button
-            type="button"
-            className="mobile-close-btn"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Close navigation"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
+      <aside>
+        <Link className="brand" to="/">
+          🌾 <span>KrishiLink</span>
+        </Link>
         <div className="workspace-card">
           <span className="workspace-role">{workspaceRole}</span>
           <b>
@@ -146,22 +151,18 @@ export function Shell({ children }) {
         </div>
 
         <p className="side-label">WORKSPACE</p>
-        <div className="side-nav-items">
-          {items.map(([label, key, icon]) => (
-            <NavLink
-              key={key}
-              className={({ isActive }) =>
-                "side-link" + (isActive ? " active" : "")
-              }
-              to={"/" + r + "/" + key}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <span className="nav-icon">{icon}</span>
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </div>
-
+        {items.map(([label, key, icon]) => (
+          <NavLink
+            key={key}
+            className={({ isActive }) =>
+              "side-link" + (isActive ? " active" : "")
+            }
+            to={"/" + r + "/" + key}
+          >
+            <span className="nav-icon">{icon}</span>
+            <span>{label}</span>
+          </NavLink>
+        ))}
         <div className="sidebar-bottom">
           <span className="online-dot" /> Verified marketplace
           <br />
@@ -262,6 +263,7 @@ export function Shell({ children }) {
               <span>{t("signOut", "Sign out")}</span>
             </button>
           </div>
+          <button onClick={handleSignOut} className="signout-btn">Sign out</button>
         </header>
 
         <main>{children}</main>
@@ -270,4 +272,4 @@ export function Shell({ children }) {
   );
 }
 
-export default Shell;
+export default Shell;
