@@ -8,6 +8,7 @@ import {
   updateProfile,
   getProfile,
   sendKycOtp,
+  resendKycOtp,
   verifyKycOtp,
 } from "../controllers/authController.js";
 
@@ -19,6 +20,7 @@ router.get("/me", requireAuth, me);
 router.put("/profile", requireAuth, updateProfile);
 router.get("/profile/:id", optionalAuth, getProfile);
 router.post("/kyc/send-otp", optionalAuth, sendKycOtp);
+router.post("/kyc/resend-otp", optionalAuth, resendKycOtp);
 router.post("/kyc/verify-otp", optionalAuth, verifyKycOtp);
 
 export default router;

@@ -775,8 +775,6 @@ export function ProfileManagement() {
         isOpen={isKycModalOpen}
         onClose={() => setIsKycModalOpen(false)}
         onSuccess={handleKycSuccess}
-        initialPhone={form.phone}
-        userName={form.name}
       />
 
       {/* PUBLIC TRUST PROFILE MODAL PREVIEW */}

@@ -734,8 +734,6 @@ export function AuthPage({ reg = false }) {
             aadhaarLast4: data.aadhaarLast4,
           }));
         }}
-        initialPhone={f.phone}
-        userName={f.name}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { User, Transaction, Lot, Demand } from "../models/index.js";
 import { ok, fail } from "../utils/response.js";
 import { resolveCoordinates } from "../utils/geoCoordinates.js";
+import aadhaarKycService from "../services/aadhaarKycService.js";
 
 const signToken = (user) =>
   jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -403,61 +404,68 @@ export async function getProfile(req, res, next) {
 
 export async function sendKycOtp(req, res, next) {
   try {
-    const { aadhaarNumber, phone } = req.body;
-    const cleanAadhaar = String(aadhaarNumber || "").replace(/\D/g, "");
-
-    if (cleanAadhaar.length !== 12) {
-      return fail(res, 422, "A valid 12-digit Aadhaar number is required");
-    }
-
-    const last4 = cleanAadhaar.slice(-4);
-    const maskedAadhaar = `XXXX-XXXX-${last4}`;
-    const cleanPhone = String(phone || "").replace(/\D/g, "");
-    const maskedPhone =
-      cleanPhone.length >= 10
-        ? `+91 ${cleanPhone.slice(0, 2)}******${cleanPhone.slice(-2)}`
-        : "+91 98******10";
+    const { aadhaarNumber } = req.body;
+    const result = await aadhaarKycService.generateOtp(aadhaarNumber);
 
     return ok(
       res,
       {
-        aadhaarLast4: maskedAadhaar,
-        maskedTarget: maskedPhone,
-        demoOtp: "123456",
+        client_id: result.client_id,
+        aadhaarLast4: result.aadhaarLast4,
+        maskedTarget: result.maskedTarget,
+        ...(result.sandboxOtpHint ? { sandboxOtpHint: result.sandboxOtpHint } : {}),
       },
-      "OTP sent successfully to mobile registered with Aadhaar"
+      result.message || "OTP has been sent to the mobile number registered with your Aadhaar."
     );
   } catch (error) {
+    if (error.statusCode) {
+      return fail(res, error.statusCode, error.message);
+    }
+    next(error);
+  }
+}
+
+export async function resendKycOtp(req, res, next) {
+  try {
+    const { client_id } = req.body;
+    if (!client_id) {
+      return fail(res, 400, "Client session ID is required");
+    }
+
+    const result = await aadhaarKycService.resendOtp(client_id);
+    return ok(res, result, result.message);
+  } catch (error) {
+    if (error.statusCode) {
+      return fail(res, error.statusCode, error.message);
+    }
     next(error);
   }
 }
 
 export async function verifyKycOtp(req, res, next) {
   try {
-    const { otp, aadhaarLast4, aadhaarNumber } = req.body;
-    const cleanOtp = String(otp || "").trim();
-
-    // Prototype demo accepts 123456 or any 6-digit OTP
-    if (!cleanOtp || (cleanOtp !== "123456" && cleanOtp.length !== 6)) {
-      return fail(res, 400, "Invalid OTP. Use demo OTP: 123456");
+    const { client_id, otp } = req.body;
+    if (!client_id || !otp) {
+      return fail(res, 400, "Session client_id and 6-digit OTP are required");
     }
 
-    const last4 = aadhaarLast4
-      ? aadhaarLast4
-      : aadhaarNumber
-      ? `XXXX-XXXX-${String(aadhaarNumber).slice(-4)}`
-      : "XXXX-XXXX-8921";
+    const verificationResult = await aadhaarKycService.verifyOtp(client_id, otp);
 
     let updatedUser = null;
     if (req.user?._id) {
       const user = await User.findById(req.user._id);
       if (user) {
         user.kycVerified = true;
-        user.kycVerifiedAt = new Date();
-        user.aadhaarLast4 = last4;
+        user.kycVerifiedAt = verificationResult.verifiedAt;
+        user.aadhaarLast4 = verificationResult.aadhaarLast4;
         user.verification = "VERIFIED";
         user.verificationBadge =
           user.role === "BUYER" ? "VERIFIED_BUYER" : "EKYC_VERIFIED_FARMER";
+        if (verificationResult.ekycDetails) {
+          user.ekycDetails = verificationResult.ekycDetails;
+          user.ekycStatus = "VERIFIED";
+          user.ekycVerifiedAt = verificationResult.verifiedAt;
+        }
         await user.save();
         updatedUser = sanitizeUser(user);
       }
@@ -467,12 +475,15 @@ export async function verifyKycOtp(req, res, next) {
       res,
       {
         verified: true,
-        aadhaarLast4: last4,
+        aadhaarLast4: verificationResult.aadhaarLast4,
         user: updatedUser,
       },
-      "KYC Verification Successful ✓"
+      "Aadhaar KYC Verified ✓"
     );
   } catch (error) {
+    if (error.statusCode) {
+      return fail(res, error.statusCode, error.message);
+    }
     next(error);
   }
 }
