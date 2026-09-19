@@ -1,8 +1,8 @@
-import { generateChatResponse } from "../services/chatService.js";
+import { generateChatResponse } from "../services/chatServices.js";
 
 export async function chat(req, res) {
   try {
-    const { message } = req.body;
+    const { message, history, language = "en", isQuickAction = false } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -11,7 +11,12 @@ export async function chat(req, res) {
       });
     }
 
-    const reply = await generateChatResponse(message);
+    const reply = await generateChatResponse({
+      message: message.trim(),
+      history: Array.isArray(history) ? history : [],
+      language: ["en", "hi", "mr"].includes(language) ? language : "en",
+      isQuickAction: Boolean(isQuickAction)
+    });
 
     return res.json({
       success: true,
