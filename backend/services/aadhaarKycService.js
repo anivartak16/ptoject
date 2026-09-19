@@ -39,16 +39,46 @@ export class AadhaarKycService {
   constructor() {
     this.provider = (process.env.AADHAAR_KYC_PROVIDER || "surepass").toLowerCase();
     this.env = (process.env.AADHAAR_KYC_ENV || "sandbox").toLowerCase();
-    this.surepassToken = process.env.SUREPASS_API_TOKEN || process.env.AADHAAR_KYC_API_KEY || "";
+    this.surepassToken = process.env.SUREPASS_API_TOKEN || "";
     this.cashfreeClientId = process.env.CASHFREE_CLIENT_ID || "";
     this.cashfreeClientSecret = process.env.CASHFREE_CLIENT_SECRET || "";
+    this.sandboxApiKey = process.env.SANDBOX_API_KEY || process.env.AADHAAR_KYC_API_KEY || "";
+    this.sandboxApiSecret = process.env.SANDBOX_API_SECRET || "";
+    this.sandboxToken = null;
+    this.sandboxTokenExpiresAt = 0;
     this.baseUrl = process.env.AADHAAR_KYC_BASE_URL || (
       this.provider === "surepass"
         ? "https://kyc-api.surepass.io/api/v1"
+        : this.provider === "sandbox" || this.provider === "sandbox_co_in"
+        ? "https://api.sandbox.co.in"
         : this.env === "production"
         ? "https://api.cashfree.com/verification"
         : "https://sandbox.cashfree.com/verification"
     );
+  }
+
+  /**
+   * Retrieves or refreshes a Sandbox.co.in JWT access token
+   */
+  async getSandboxAccessToken() {
+    if (this.sandboxToken && Date.now() < this.sandboxTokenExpiresAt) {
+      return this.sandboxToken;
+    }
+    const response = await axios.post(
+      "https://api.sandbox.co.in/authenticate",
+      {},
+      {
+        headers: {
+          "x-api-key": this.sandboxApiKey,
+          "x-api-secret": this.sandboxApiSecret,
+          "x-api-version": "1.0",
+        },
+        timeout: 12000,
+      }
+    );
+    this.sandboxToken = response.data?.access_token;
+    this.sandboxTokenExpiresAt = Date.now() + 23 * 60 * 60 * 1000;
+    return this.sandboxToken;
   }
 
   /**
@@ -195,6 +225,54 @@ export class AadhaarKycService {
       } catch (err) {
         if (err.statusCode) throw err;
         const message = err.response?.data?.message || "Cashfree Aadhaar service is currently unavailable.";
+        const customErr = new Error(message);
+        customErr.statusCode = err.response?.status || 502;
+        throw customErr;
+      }
+    }
+
+    if ((this.provider === "sandbox" || this.provider === "sandbox_co_in") && this.sandboxApiKey) {
+      try {
+        const token = this.sandboxApiSecret ? await this.getSandboxAccessToken() : this.sandboxApiKey;
+        const response = await axios.post(
+          "https://api.sandbox.co.in/kyc/aadhaar/okyc/otp",
+          {
+            "@entity": "in.co.sandbox.kyc.aadhaar.okyc.otp.request",
+            aadhaar_number: cleanAadhaar,
+          },
+          {
+            headers: {
+              Authorization: token,
+              "x-api-key": this.sandboxApiKey,
+              "x-api-version": "1.0",
+              "Content-Type": "application/json",
+            },
+            timeout: 12000,
+          }
+        );
+
+        const data = response.data?.data;
+        sessionStore.set(clientId, {
+          provider: "sandbox_co_in",
+          providerClientId: data?.reference_id || response.data?.reference_id,
+          maskedAadhaar,
+          aadhaarHash: crypto.createHash("sha256").update(cleanAadhaar).digest("hex"),
+          createdAt: Date.now(),
+          lastRequestedAt: Date.now(),
+          expiresAt: Date.now() + 10 * 60 * 1000,
+          resendCount: 0,
+          verifyAttempts: 0,
+        });
+
+        return {
+          client_id: clientId,
+          aadhaarLast4: maskedAadhaar,
+          maskedTarget: "******" + cleanAadhaar.slice(-4),
+          message: "OTP has been sent to the mobile number registered with your Aadhaar.",
+        };
+      } catch (err) {
+        if (err.statusCode) throw err;
+        const message = err.response?.data?.message || "Sandbox.co.in Aadhaar service is currently unavailable.";
         const customErr = new Error(message);
         customErr.statusCode = err.response?.status || 502;
         throw customErr;
@@ -398,7 +476,58 @@ export class AadhaarKycService {
       }
     }
 
-    // 3. Sandbox / Emulation Verification
+    // 3. Live Sandbox.co.in Verification
+    if (session.provider === "sandbox_co_in" && this.sandboxApiKey) {
+      try {
+        const token = this.sandboxApiSecret ? await this.getSandboxAccessToken() : this.sandboxApiKey;
+        const response = await axios.post(
+          "https://api.sandbox.co.in/kyc/aadhaar/okyc/otp/verify",
+          {
+            "@entity": "in.co.sandbox.kyc.aadhaar.okyc.otp.verify.request",
+            reference_id: session.providerClientId,
+            otp: cleanOtp,
+          },
+          {
+            headers: {
+              Authorization: token,
+              "x-api-key": this.sandboxApiKey,
+              "x-api-version": "1.0",
+              "Content-Type": "application/json",
+            },
+            timeout: 15000,
+          }
+        );
+
+        if (response.data?.status !== "SUCCESS" && response.data?.data?.status !== "VALID") {
+          const err = new Error(response.data?.message || "Incorrect or expired OTP. Please try again.");
+          err.statusCode = 400;
+          throw err;
+        }
+
+        const ekycData = response.data?.data || {};
+        sessionStore.delete(clientId);
+
+        return {
+          verified: true,
+          aadhaarLast4: session.maskedAadhaar,
+          verifiedAt: new Date(),
+          ekycDetails: {
+            fullName: ekycData.name || "",
+            gender: ekycData.gender || "",
+            dob: ekycData.date_of_birth || "",
+            address: ekycData.address || {},
+          },
+        };
+      } catch (err) {
+        if (err.statusCode) throw err;
+        const message = err.response?.data?.message || "Incorrect or expired OTP. Please try again.";
+        const customErr = new Error(message);
+        customErr.statusCode = err.response?.status || 400;
+        throw customErr;
+      }
+    }
+
+    // 4. Sandbox / Emulation Verification
     const inputOtpHash = crypto.createHash("sha256").update(cleanOtp).digest("hex");
     if (inputOtpHash !== session.sandboxOtpHash) {
       const err = new Error("Incorrect or expired OTP. Please try again.");
