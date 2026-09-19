@@ -58,7 +58,8 @@ export function Shell({ children }) {
         ]
       : workspaceRole === "BUYER"
         ? [
-            ["Dashboard", "dashboard", "◫"],
+            [t("dashboard", "Dashboard"), "dashboard", "◫"],
+            [t("myProfile", "My Profile"), "profile", "👤"],
             ["Market Prediction", "predictions", "📈"],
             ["Buyer demands", "demands", "⌁"],
             ["Browse lots", "lots", "▦"],
@@ -72,7 +73,7 @@ export function Shell({ children }) {
         : workspaceRole === "FPO"
           ? [
               [t("dashboard", "Dashboard"), "dashboard", "◫"],
-              [t("fpoProfile", "FPO Leader & Aggregation"), "profile", "🏛️"],
+              [t("myProfile", "My Profile"), "profile", "👤"],
               [t("farmers", "Farmers"), "farmers", "◉"],
               [t("aggregatedLots", "Aggregated lots"), "lots", "▦"],
               [t("aggregation", "Aggregation"), "aggregation", "⊞"],
@@ -88,7 +89,7 @@ export function Shell({ children }) {
             ]
           : [
               [t("dashboard", "Dashboard"), "dashboard", "◫"],
-              [t("farmerProfile", "Farmer profile & e-KYC"), "profile", "🛡️"],
+              [t("myProfile", "My Profile"), "profile", "👤"],
               [t("myFarm", "My farm"), "farm", "⌂"],
               [t("myLots", "My lots"), "lots", "▦"],
               [t("marketPrices", "Market prices"), "prices", "↗"],
@@ -108,7 +109,7 @@ export function Shell({ children }) {
       [t("dashboard", "Dashboard"), "dashboard", "◫"],
       [t("inspectionDesk", "Inspection Desk"), "inspections", "✓"],
       [t("myLots", "Market Lots"), "lots", "▦"],
-      [t("myProfile", "KVK Profile"), "profile", "👤"],
+      [t("myProfile", "My Profile"), "profile", "👤"],
       [t("notifications", "Notifications"), "notifications", "●"],
     ];
   }
@@ -129,29 +130,6 @@ export function Shell({ children }) {
               : user?.name}
           </b>
           <small>{user?.district ? `${user.district}, ` : ""}{user?.state || "National Network"}</small>
-          <Link
-            to={`/${r}/profile`}
-            className="sidebar-profile-action-btn"
-            style={{
-              marginTop: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              fontSize: "12px",
-              padding: "6px 10px",
-              borderRadius: "6px",
-              background: "#ffffff",
-              color: "#166534",
-              fontWeight: 700,
-              textDecoration: "none",
-              border: "1px solid #bbf7d0",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-            }}
-          >
-            <span>👤</span>
-            <span>{workspaceRole === "BUYER" ? "Buyer Profile" : workspaceRole === "FPO" ? "FPO Leader & Aggregation" : "Farmer Profile & e-KYC"} →</span>
-          </Link>
         </div>
 
         <p className="side-label">WORKSPACE</p>

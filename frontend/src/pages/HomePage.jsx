@@ -15,7 +15,7 @@ import { RolesSection } from "../components/landing/RolesSection.jsx";
 import { LandingCtaSection } from "../components/landing/LandingCtaSection.jsx";
 
 export function HomePage() {
-  const [language, setLanguage] = useState("en");
+  const { language, setLanguage } = useLanguage();
   const [selectedCrop, setSelectedCrop] = useState("Wheat");
 
   const marketRows = [

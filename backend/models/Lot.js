@@ -22,6 +22,24 @@ const lotSchema = new Schema(
     expectedPrice: { type: Number, required: true },
     quality: { type: Schema.Types.ObjectId, ref: "Quality" },
     availableUntil: Date,
+    farmingType: {
+      type: String,
+      enum: ["conventional", "organic", "in_conversion"],
+      default: "conventional",
+    },
+    organicCertificationStatus: {
+      type: String,
+      enum: ["verified", "pending", "not_verified"],
+      default: "not_verified",
+    },
+    certificationType: {
+      type: String,
+      enum: ["PGS-India", "NPOP", "other", ""],
+      default: "",
+    },
+    certificateId: { type: String, trim: true },
+    certificateValidity: Date,
+    certificateDocumentUrl: { type: String, trim: true },
     status: {
       type: String,
       enum: [

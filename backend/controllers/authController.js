@@ -170,6 +170,7 @@ function sanitizeUser(user) {
     requiredCrops: user.requiredCrops || [],
     requiredQuantity: user.requiredQuantity,
     qualityRequirements: user.qualityRequirements || "Grade A / Moisture < 12%",
+    qualitySpecs: user.qualitySpecs || null,
     registrationNumber: user.registrationNumber,
     memberCount: user.memberCount,
     fpoLeaderDesignation: user.fpoLeaderDesignation || "Chairman & Managing Director",
@@ -279,6 +280,7 @@ export async function updateProfile(req, res, next) {
       "requiredCrops",
       "requiredQuantity",
       "qualityRequirements",
+      "qualitySpecs",
       "profilePhoto",
       "farmName",
       "landSize",
@@ -293,6 +295,47 @@ export async function updateProfile(req, res, next) {
         user[field] = req.body[field];
       }
     });
+
+    if (req.body.qualitySpecs && typeof req.body.qualitySpecs === "object") {
+      user.qualitySpecs = {
+        crop: String(req.body.qualitySpecs.crop || "").trim(),
+        grade: String(req.body.qualitySpecs.grade || "").trim(),
+        variety: String(req.body.qualitySpecs.variety || "").trim(),
+        colorAppearance: String(req.body.qualitySpecs.colorAppearance || "").trim(),
+        sizeType: String(req.body.qualitySpecs.sizeType || "").trim(),
+        moisturePercent:
+          req.body.qualitySpecs.moisturePercent !== undefined &&
+          req.body.qualitySpecs.moisturePercent !== null &&
+          req.body.qualitySpecs.moisturePercent !== ""
+            ? Number(req.body.qualitySpecs.moisturePercent)
+            : undefined,
+        foreignMatterPercent:
+          req.body.qualitySpecs.foreignMatterPercent !== undefined &&
+          req.body.qualitySpecs.foreignMatterPercent !== null &&
+          req.body.qualitySpecs.foreignMatterPercent !== ""
+            ? Number(req.body.qualitySpecs.foreignMatterPercent)
+            : undefined,
+        damagedGrainsPercent:
+          req.body.qualitySpecs.damagedGrainsPercent !== undefined &&
+          req.body.qualitySpecs.damagedGrainsPercent !== null &&
+          req.body.qualitySpecs.damagedGrainsPercent !== ""
+            ? Number(req.body.qualitySpecs.damagedGrainsPercent)
+            : undefined,
+        brokenGrainsPercent:
+          req.body.qualitySpecs.brokenGrainsPercent !== undefined &&
+          req.body.qualitySpecs.brokenGrainsPercent !== null &&
+          req.body.qualitySpecs.brokenGrainsPercent !== ""
+            ? Number(req.body.qualitySpecs.brokenGrainsPercent)
+            : undefined,
+        oilContentPercent:
+          req.body.qualitySpecs.oilContentPercent !== undefined &&
+          req.body.qualitySpecs.oilContentPercent !== null &&
+          req.body.qualitySpecs.oilContentPercent !== ""
+            ? Number(req.body.qualitySpecs.oilContentPercent)
+            : undefined,
+        otherRequirements: String(req.body.qualitySpecs.otherRequirements || "").trim().slice(0, 200),
+      };
+    }
 
     if (typeof req.body.crops === "string") {
       user.crops = req.body.crops.split(",").map((s) => s.trim()).filter(Boolean);

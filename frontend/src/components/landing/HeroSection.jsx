@@ -21,18 +21,22 @@ export function HeroSection({ language: propLang }) {
           <span className="live-dot" />
           <span className="kicker-flag">🇮🇳</span>
           <span className="kicker-title">
-            {language === "en"
-              ? "PAN-INDIA DIGITAL AGRI MARKETPLACE"
-              : "राष्ट्रीय डिजिटल कृषि बाजार"}
+            {language === "mr"
+              ? "अखिल भारतीय डिजिटल कृषी बाजारपेठ"
+              : language === "hi"
+              ? "राष्ट्रीय डिजिटल कृषि बाजार"
+              : "PAN-INDIA DIGITAL AGRI MARKETPLACE"}
           </span>
           <i />
-          <span>18+ STATES CONNECTED</span>
+          <span>
+            {language === "mr" ? "१८+ राज्ये जोडलेली" : language === "hi" ? "18+ राज्य जुड़े" : "18+ STATES CONNECTED"}
+          </span>
         </div>
 
         <h1>
           {language === "mr" ? (
             <>
-              Connecting Indian Farmers & Verified Buyers <em>Across the Nation.</em>
+              भारतीय शेतकरी आणि अधिकृत खरेदीदारांचा <em>राष्ट्रीय डिजिटल बाजार.</em>
             </>
           ) : language === "hi" ? (
             <>
@@ -46,14 +50,22 @@ export function HeroSection({ language: propLang }) {
         </h1>
 
         <p className="market-lede">
-          {language === "en"
-            ? "Discover transparent daily prices across 500+ APMC mandis, connect directly with institutional millers and traders, and trade with Krishi Kendra quality certification and secured escrow settlements."
-            : "500+ APMC मंडियों के पारदर्शी भाव देखें, सीधे संस्थागत मिलर्स व व्यापारियों से जुड़ें, और कृषि केंद्र गुणवत्ता प्रमाणन व सुरक्षित बैंक एस्क्रो के साथ व्यापार करें।"}
+          {language === "mr"
+            ? "५००+ बाजार समित्यांचे पारदर्शक दर पहा, थेट संस्थागत खरेदीदारांशी जुळा आणि कृषी केंद्र गुणवत्ता प्रमाणन व सुरक्षित बँक एस्क्रोसह व्यापार करा."
+            : language === "hi"
+            ? "500+ APMC मंडियों के पारदर्शी भाव देखें, सीधे संस्थागत मिलर्स व व्यापारियों से जुड़ें, और कृषि केंद्र गुणवत्ता प्रमाणन व सुरक्षित बैंक एस्क्रो के साथ व्यापार करें।"
+            : "Discover transparent daily prices across 500+ APMC mandis, connect directly with institutional millers and traders, and trade with Krishi Kendra quality certification and secured escrow settlements."}
         </p>
 
         <div className="hero-actions">
           <Link className="hero-btn-primary" to="/register/farmer">
-            <span>{language === "en" ? "Sell Produce (Farmer / FPO)" : "फसल बेचें (किसान / FPO)"}</span>
+            <span>
+              {language === "mr"
+                ? "शेतमाल विका (शेतकरी / FPO)"
+                : language === "hi"
+                ? "फसल बेचें (किसान / FPO)"
+                : "Sell Produce (Farmer / FPO)"}
+            </span>
             <ArrowRight size={17} />
           </Link>
 
@@ -63,7 +75,13 @@ export function HeroSection({ language: propLang }) {
             onClick={() => scrollToSection("buyer-demands")}
           >
             <Compass size={17} />
-            <span>{language === "en" ? "View Live Buyer Demands" : "खरीदार मांग देखें"}</span>
+            <span>
+              {language === "mr"
+                ? "थेट खरेदीदार मागण्या पहा"
+                : language === "hi"
+                ? "खरीदार मांग देखें"
+                : "View Live Buyer Demands"}
+            </span>
           </button>
         </div>
 
@@ -71,30 +89,32 @@ export function HeroSection({ language: propLang }) {
           <div className="stat-box">
             <b>₹2,580</b>
             <span>
-              {language === "en"
-                ? "National modal rate"
-                : "राष्ट्रीय औसत भाव"}
+              {language === "mr"
+                ? "राष्ट्रीय सरासरी भाव"
+                : language === "hi"
+                ? "राष्ट्रीय औसत भाव"
+                : "National modal rate"}
             </span>
           </div>
 
           <div className="stat-box">
             <b>18+</b>
             <span>
-              {language === "en" ? "States covered" : "शामिल राज्य"}
+              {language === "mr" ? "शामिल राज्ये" : language === "hi" ? "शामिल राज्य" : "States covered"}
             </span>
           </div>
 
           <div className="stat-box">
             <b>520+</b>
             <span>
-              {language === "en" ? "APMC Mandis" : "जुड़ी मंडियां"}
+              {language === "mr" ? "बाजार समित्या" : language === "hi" ? "जुड़ी मंडियां" : "APMC Mandis"}
             </span>
           </div>
 
           <div className="stat-box">
             <b>48,000+ qtl</b>
             <span>
-              {language === "en" ? "Daily volume" : "दैनिक व्यापार"}
+              {language === "mr" ? "दैनिक व्यापार" : language === "hi" ? "दैनिक व्यापार" : "Daily volume"}
             </span>
           </div>
         </div>

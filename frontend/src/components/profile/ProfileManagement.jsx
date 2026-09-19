@@ -6,6 +6,13 @@ import { useLanguage } from "../../context/LanguageContext.jsx";
 import { VerificationBadge } from "../common/VerificationBadge.jsx";
 import { KycModal } from "./KycModal.jsx";
 import { TrustProfileModal } from "./TrustProfileModal.jsx";
+import {
+  QualitySpecsForm,
+  validateQualitySpecs,
+  formatQualityRequirements,
+  getCropConfig,
+} from "./QualitySpecsForm.jsx";
+import { CropVarietyMultiSelect } from "./CropVarietyMultiSelect.jsx";
 
 /**
  * ProfileManagement:
@@ -59,6 +66,51 @@ export function ProfileManagement() {
     profilePhoto: user?.profilePhoto || "",
   });
 
+  // Structured Quality Requirements State (Crop-Specific & Machine-Comparable)
+  const [selectedQualityCrop, setSelectedQualityCrop] = useState(
+    user?.qualitySpecs?.crop || "Wheat"
+  );
+  const [qualitySpecs, setQualitySpecs] = useState(
+    user?.qualitySpecs || {
+      crop: "Wheat",
+      grade: "FAQ (Fair Average Quality)",
+      variety: "Lokwan",
+      colorAppearance: "Golden Yellow",
+      sizeType: "Medium Grain",
+      moisturePercent: 12.0,
+      foreignMatterPercent: 1.0,
+      damagedGrainsPercent: 2.0,
+      brokenGrainsPercent: 5.0,
+      oilContentPercent: 18.0,
+      otherRequirements: "",
+    }
+  );
+  const [qualityErrors, setQualityErrors] = useState({});
+
+  const handleQualityCropChange = (newCrop) => {
+    setSelectedQualityCrop(newCrop);
+    const cfg = getCropConfig(newCrop);
+    setQualitySpecs((prev) => ({
+      ...prev,
+      crop: newCrop,
+      grade: cfg.grades[0] || "Grade 1",
+      variety: cfg.varieties[0] || "Standard",
+      colorAppearance: cfg.colors?.[0] || "",
+      sizeType: cfg.sizes?.[0] || "",
+      moisturePercent:
+        cfg.measurable.find((m) => m.key === "moisturePercent")?.default ?? 12.0,
+      foreignMatterPercent:
+        cfg.measurable.find((m) => m.key === "foreignMatterPercent")?.default ?? 1.0,
+      damagedGrainsPercent:
+        cfg.measurable.find((m) => m.key === "damagedGrainsPercent")?.default ?? 2.0,
+      brokenGrainsPercent:
+        cfg.measurable.find((m) => m.key === "brokenGrainsPercent")?.default ?? 5.0,
+      oilContentPercent:
+        cfg.measurable.find((m) => m.key === "oilContentPercent")?.default ?? 18.0,
+    }));
+    setQualityErrors({});
+  };
+
   // Load transaction count and latest profile details
   useEffect(() => {
     if (user?._id) {
@@ -68,6 +120,12 @@ export function ProfileManagement() {
           const data = res.data.data;
           if (data) {
             setTxCount(data.transactionCount || 0);
+            if (data.qualitySpecs) {
+              setQualitySpecs(data.qualitySpecs);
+              if (data.qualitySpecs.crop) {
+                setSelectedQualityCrop(data.qualitySpecs.crop);
+              }
+            }
             setForm((prev) => ({
               ...prev,
               name: data.name || prev.name,
@@ -125,6 +183,27 @@ export function ProfileManagement() {
     setProfileMsg("");
     setProfileErr("");
 
+    if (isBuyer) {
+      const errs = validateQualitySpecs(qualitySpecs, selectedQualityCrop);
+      if (Object.keys(errs).length > 0) {
+        setQualityErrors(errs);
+        setProfileErr(
+          getLabel(
+            "Please resolve the highlighted errors in your Quality Requirements.",
+            "कृपया गुणवत्ता विनिर्देशों में त्रुटियों को ठीक करें।",
+            "कृपया गुणवत्ता निकषांमधील त्रुटी दुरुस्त करा."
+          )
+        );
+        setSaving(false);
+        return;
+      }
+      setQualityErrors({});
+    }
+
+    const compiledQuality = isBuyer
+      ? formatQualityRequirements(qualitySpecs, selectedQualityCrop)
+      : form.qualityRequirements;
+
     try {
       const payload = {
         ...form,
@@ -133,6 +212,13 @@ export function ProfileManagement() {
         availableQuantity: Number(form.availableQuantity) || undefined,
         requiredQuantity: Number(form.requiredQuantity) || undefined,
         landSize: Number(form.landSize) || undefined,
+        qualityRequirements: compiledQuality,
+        qualitySpecs: isBuyer
+          ? {
+              ...qualitySpecs,
+              crop: selectedQualityCrop,
+            }
+          : undefined,
       };
 
       const res = await api.put("/auth/profile", payload);
@@ -408,7 +494,11 @@ export function ProfileManagement() {
               </div>
               <div className="highlight-cell">
                 <small>{isBuyer ? "QUALITY REQUIREMENT" : "CROP QUALITY"}</small>
-                <b>{isBuyer ? form.qualityRequirements : form.cropQuality}</b>
+                <b>
+                  {isBuyer
+                    ? formatQualityRequirements(qualitySpecs, selectedQualityCrop)
+                    : form.cropQuality}
+                </b>
               </div>
               <div className="highlight-cell">
                 <small>{isBuyer ? "PROCUREMENT CROPS" : "ACTIVE CROPS"}</small>
@@ -562,15 +652,13 @@ export function ProfileManagement() {
                     />
                   </label>
 
-                  <label>
-                    Crops Grown (Comma separated)
-                    <input
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <CropVarietyMultiSelect
                       value={form.crops}
-                      onChange={(e) => setForm({ ...form, crops: e.target.value })}
-                      placeholder="e.g. Wheat, Soybean, Gram"
-                      required
+                      onChange={(newCrops) => setForm({ ...form, crops: newCrops })}
+                      getLabel={getLabel}
                     />
-                  </label>
+                  </div>
 
                   <label>
                     Available Quantity (kg)
@@ -653,15 +741,22 @@ export function ProfileManagement() {
                     />
                   </label>
 
-                  <label style={{ gridColumn: "1 / -1" }}>
-                    Quality Requirements & Specifications
-                    <input
-                      value={form.qualityRequirements}
-                      onChange={(e) => setForm({ ...form, qualityRequirements: e.target.value })}
-                      placeholder="e.g. Grade A, Moisture < 12%, Foreign Matter < 1%"
-                      required
+                  <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+                    <QualitySpecsForm
+                      selectedCrop={selectedQualityCrop}
+                      onCropChange={handleQualityCropChange}
+                      availableCrops={form.requiredCrops.split(",").map((c) => c.trim()).filter(Boolean)}
+                      specs={qualitySpecs}
+                      onChange={(newSpecs) => {
+                        setQualitySpecs(newSpecs);
+                        if (Object.keys(qualityErrors).length > 0) {
+                          setQualityErrors(validateQualitySpecs(newSpecs, selectedQualityCrop));
+                        }
+                      }}
+                      errors={qualityErrors}
+                      getLabel={getLabel}
                     />
-                  </label>
+                  </div>
                 </div>
               </>
             )}

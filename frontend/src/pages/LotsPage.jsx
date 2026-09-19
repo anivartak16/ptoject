@@ -5,6 +5,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
 import { FarmerVerificationBadge } from "../components/common/FarmerVerificationBadge.jsx";
 import { TrustProfileModal } from "../components/profile/TrustProfileModal.jsx";
+import { OrganicBadge } from "../components/common/OrganicBadge.jsx";
 
 export function OfferModal({ lot }) {
   const { getLabel } = useLanguage();
@@ -62,6 +63,12 @@ export function LotsPage() {
     quantity: 1000,
     expectedPrice: 2450,
     location: "Indore",
+    farmingType: "conventional",
+    certificationType: "PGS-India",
+    certificateId: "",
+    certificateValidity: "",
+    organicCertificationStatus: "verified",
+    certificateDocumentUrl: "",
   });
 
   const set = (key, value) => setF((x) => ({ ...x, [key]: value }));
@@ -231,6 +238,111 @@ export function LotsPage() {
                 required
               />
             </label>
+
+            {/* Farming Type & Organic Certification Flow */}
+            <div className="form-section-divider" style={{ gridColumn: "1 / -1", margin: "12px 0 4px 0", borderTop: "1px solid #e2e8f0", paddingTop: "14px" }}>
+              <span style={{ fontWeight: 700, fontSize: "14px", color: "#166534", display: "flex", alignItems: "center", gap: "6px" }}>
+                🌱 {getLabel("Farming Type & Organic Credentials", "कृषि प्रकार व जैविक प्रमाणन", "शेतीचा प्रकार व सेंद्रिय प्रमाणपत्र")}
+              </span>
+            </div>
+
+            <div style={{ gridColumn: "1 / -1", display: "flex", gap: "18px", flexWrap: "wrap", margin: "4px 0 8px 0" }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", fontWeight: 600 }}>
+                <input
+                  type="radio"
+                  name="farmingType"
+                  value="conventional"
+                  checked={f.farmingType === "conventional"}
+                  onChange={(e) => set("farmingType", e.target.value)}
+                />
+                <span>{getLabel("Conventional", "पारंपरिक (Conventional)", "पारंपरिक")}</span>
+              </label>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", fontWeight: 600 }}>
+                <input
+                  type="radio"
+                  name="farmingType"
+                  value="organic"
+                  checked={f.farmingType === "organic"}
+                  onChange={(e) => set("farmingType", e.target.value)}
+                />
+                <span style={{ color: "#16a34a" }}>🌱 {getLabel("Organic", "जैविक (Organic)", "सेंद्रिय (Organic)")}</span>
+              </label>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", cursor: "pointer", fontWeight: 600 }}>
+                <input
+                  type="radio"
+                  name="farmingType"
+                  value="in_conversion"
+                  checked={f.farmingType === "in_conversion"}
+                  onChange={(e) => set("farmingType", e.target.value)}
+                />
+                <span style={{ color: "#0284c7" }}>🌿 {getLabel("In-Conversion (Transitioning)", "जैविक रूपांतरण में (In-Conversion)", "सेंद्रिय रूपांतरणात (In-Conversion)")}</span>
+              </label>
+            </div>
+
+            {f.farmingType === "organic" && (
+              <div style={{ gridColumn: "1 / -1", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", marginTop: "4px" }}>
+                <label>
+                  {getLabel("Certification Status", "प्रमाणन स्थिति", "प्रमाणपत्र स्थिती")}
+                  <select
+                    value={f.organicCertificationStatus}
+                    onChange={(e) => set("organicCertificationStatus", e.target.value)}
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                  >
+                    <option value="verified">{getLabel("Certified Organic (Valid Certificate)", "प्रमाणित जैविक (वैध प्रमाण पत्र)", "प्रमाणित सेंद्रिय (वैध प्रमाणपत्र)")}</option>
+                    <option value="pending">{getLabel("Verification Pending / Applied", "सत्यापन लंबित / आवेदन किया गया", "तपासणी प्रलंबित / अर्ज केला")}</option>
+                    <option value="not_verified">{getLabel("Not Verified / Self-Claim", "असत्यापित / स्व-घोषणा", "अप्रमाणित / स्व-घोषणा")}</option>
+                  </select>
+                </label>
+
+                <label>
+                  {getLabel("Certification Standard", "प्रमाणन मानक", "प्रमाणन मानक")}
+                  <select
+                    value={f.certificationType}
+                    onChange={(e) => set("certificationType", e.target.value)}
+                    style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                  >
+                    <option value="PGS-India">PGS-India (Participatory Guarantee System)</option>
+                    <option value="NPOP">NPOP (National Programme for Organic Production)</option>
+                    <option value="other">{getLabel("Other Recognized Body", "अन्य मान्यता प्राप्त संस्था", "इतर मान्यताप्राप्त संस्था")}</option>
+                  </select>
+                </label>
+
+                <label>
+                  {getLabel("Certificate / Registration ID", "प्रमाण पत्र / पंजीकरण संख्या", "प्रमाणपत्र / नोंदणी क्रमांक")}
+                  <input
+                    placeholder="e.g. PGS-IN-2024-8891"
+                    value={f.certificateId}
+                    onChange={(e) => set("certificateId", e.target.value)}
+                  />
+                </label>
+
+                <label>
+                  {getLabel("Validity Date", "वैधता तिथि", "वैधता तारीख")}
+                  <input
+                    type="date"
+                    value={f.certificateValidity}
+                    onChange={(e) => set("certificateValidity", e.target.value)}
+                  />
+                </label>
+
+                <label style={{ gridColumn: "1 / -1" }}>
+                  {getLabel("Certificate Document (Optional / Upload)", "प्रमाण पत्र दस्तावेज (वैकल्पिक)", "प्रमाणपत्र दस्तऐवज (पर्यायी)")}
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        set("certificateDocumentUrl", `/uploads/certificates/${e.target.files[0].name}`);
+                      }
+                    }}
+                    style={{ marginTop: "4px" }}
+                  />
+                  <small style={{ color: "#64748b", display: "block", marginTop: "4px" }}>
+                    {getLabel("Upload your PGS-India Green/Scope or NPOP certification for instant verification badge.", "तत्काल सत्यापन बैज के लिए अपना पीजीएस-इंडिया या एनपीओपी प्रमाणपत्र अपलोड करें।", "त्वरित तपासणी बॅजसाठी आपले पीजीएस-इंडिया किंवा एनपीओपी प्रमाणपत्र अपलोड करा.")}
+                  </small>
+                </label>
+              </div>
+            )}
           </div>
           <div className="form-actions">
             <button type="button" onClick={() => setShow(false)}>
@@ -251,11 +363,16 @@ export function LotsPage() {
           rows.map((l) => (
             <article className="lot" key={l._id}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                   <StatusBadge>{l.status}</StatusBadge>
                   {user.role !== "BUYER" && (
                     <FarmerVerificationBadge compact farmer={user} verification={user.verification} />
                   )}
+                  <OrganicBadge
+                    farmingType={l.farmingType}
+                    organicCertificationStatus={l.organicCertificationStatus}
+                    certificationType={l.certificationType}
+                  />
                 </div>
                 {l.quality?.grade && (
                   <span style={{ fontSize: "12px", fontWeight: 700, color: "#166534" }}>

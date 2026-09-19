@@ -41,8 +41,27 @@ export async function createLot(req, res, next) {
       inspectionNotes: "Submitted for Krishi Vigyan Kendra testing",
     });
 
+    let organicCertificationStatus = "not_verified";
+    if (body.farmingType === "organic") {
+      if (body.certificateId && body.certificateId.trim().length >= 3) {
+        organicCertificationStatus = body.organicCertificationStatus || "verified";
+      } else if (body.organicCertificationStatus === "pending") {
+        organicCertificationStatus = "pending";
+      } else {
+        organicCertificationStatus = "not_verified";
+      }
+    } else if (body.farmingType === "in_conversion") {
+      organicCertificationStatus = body.organicCertificationStatus || "pending";
+    }
+
     const lot = await Lot.create({
       ...body,
+      farmingType: body.farmingType || "conventional",
+      organicCertificationStatus,
+      certificationType: body.certificationType || "",
+      certificateId: body.certificateId || "",
+      certificateValidity: body.certificateValidity || undefined,
+      certificateDocumentUrl: body.certificateDocumentUrl || "",
       owner: req.user._id,
       ownerType: req.user.role,
       remainingQuantity: body.quantity,

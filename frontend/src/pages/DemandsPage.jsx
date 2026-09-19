@@ -5,6 +5,7 @@ import { useLanguage } from "../context/LanguageContext.jsx";
 import { StatusBadge } from "../components/common/StatusBadge.jsx";
 import { BuyerVerificationBadge } from "../components/common/BuyerVerificationBadge.jsx";
 import { ConnectModal } from "../components/common/ConnectModal.jsx";
+import { OrganicBadge } from "../components/common/OrganicBadge.jsx";
 import {
   Sparkles,
   Search,
@@ -43,6 +44,7 @@ export function DemandsPage() {
     preferredLocation: "Indore",
     deliveryLocation: "Indore APMC Warehouse",
     paymentTerms: "100% Escrow Secured",
+    farmingType: "any",
     notes: "Requires KVK moisture test certificate. Immediate escrow settlement on delivery.",
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -222,6 +224,21 @@ export function DemandsPage() {
             </label>
 
             <label>
+              {getLabel("Farming Type Preference", "कृषि प्रकार प्राथमिकता", "शेतीचा प्रकार प्राधान्य")}
+              <select
+                value={form.farmingType}
+                onChange={(e) =>
+                  setForm({ ...form, farmingType: e.target.value })
+                }
+              >
+                <option value="any">{getLabel("Any (Conventional or Organic)", "कोई भी (पारंपरिक या जैविक)", "कोणतेही (पारंपरिक किंवा सेंद्रिय)")}</option>
+                <option value="organic">{getLabel("🌱 Organic Only (Certified Preferred)", "🌱 केवल जैविक (प्रमाणित प्राथमिकता)", "🌱 फक्त सेंद्रिय (प्रमाणित प्राधान्य)")}</option>
+                <option value="in_conversion">{getLabel("🌿 In-Conversion (Transitioning)", "🌿 जैविक रूपांतरण में", "🌿 सेंद्रिय रूपांतरणात")}</option>
+                <option value="conventional">{getLabel("Conventional Only", "केवल पारंपरिक", "फक्त पारंपरिक")}</option>
+              </select>
+            </label>
+
+            <label>
               {getLabel("Maximum Moisture %", "अधिकतम नमी प्रतिशत", "कमाल आर्द्रता %")}
               <input
                 type="number"
@@ -342,9 +359,18 @@ export function DemandsPage() {
                 {/* Header: Commodity & Verification Badge */}
                 <div className="demand-top-row">
                   <div>
-                    <span className="demand-crop-badge">
-                      {demand.commodity}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                      <span className="demand-crop-badge">
+                        {demand.commodity}
+                      </span>
+                      {demand.farmingType && demand.farmingType !== "any" && (
+                        <OrganicBadge
+                          compact
+                          farmingType={demand.farmingType}
+                          organicCertificationStatus={demand.farmingType === "organic" ? "verified" : "not_verified"}
+                        />
+                      )}
+                    </div>
                     <h3 className="demand-title">
                       {demand.requiredQuantity?.toLocaleString("en-IN")} kg
                       <small className="qtl-text"> ({qtl} Quintals / {demand.variety || "Standard"})</small>
@@ -447,9 +473,19 @@ export function DemandsPage() {
 
                             <div className="match-detail-wrap">
                               <div className="match-lot-title">
-                                <b>
-                                  {m.lot?.commodity} · {m.lot?.remainingQuantity} kg available
-                                </b>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                  <b>
+                                    {m.lot?.commodity} · {m.lot?.remainingQuantity} kg available
+                                  </b>
+                                  {m.lot?.farmingType && m.lot.farmingType !== "conventional" && (
+                                    <OrganicBadge
+                                      compact
+                                      farmingType={m.lot.farmingType}
+                                      organicCertificationStatus={m.lot.organicCertificationStatus}
+                                      certificationType={m.lot.certificationType}
+                                    />
+                                  )}
+                                </div>
                                 <span className="lot-price">
                                   ₹{m.lot?.expectedPrice}/kg
                                 </span>

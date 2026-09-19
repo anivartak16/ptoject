@@ -16,6 +16,11 @@ const demandSchema = new Schema(
     maxPrice: { type: Number, required: true },
     paymentTerms: { type: String, default: "100% Escrow Secured" },
     contactPhone: String,
+    farmingType: {
+      type: String,
+      enum: ["any", "conventional", "organic", "in_conversion"],
+      default: "any",
+    },
     notes: String,
     deadline: Date,
     status: { type: String, default: "ACTIVE" },

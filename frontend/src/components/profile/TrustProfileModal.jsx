@@ -233,6 +233,25 @@ export function TrustProfileModal({ isOpen, onClose, userId, initialData = null 
                   <div className="spec-card">
                     <small>QUALITY STANDARDS</small>
                     <b>{profile.qualityRequirements || "Grade A · Moisture < 12%"}</b>
+                    {profile.qualitySpecs && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>
+                        {profile.qualitySpecs.grade && (
+                          <span style={{ fontSize: "10px", background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", padding: "1px 6px", borderRadius: "8px" }}>
+                            {profile.qualitySpecs.grade}
+                          </span>
+                        )}
+                        {profile.qualitySpecs.variety && (
+                          <span style={{ fontSize: "10px", background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", padding: "1px 6px", borderRadius: "8px" }}>
+                            {profile.qualitySpecs.variety}
+                          </span>
+                        )}
+                        {profile.qualitySpecs.moisturePercent !== undefined && (
+                          <span style={{ fontSize: "10px", background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", padding: "1px 6px", borderRadius: "8px" }}>
+                            Moisture ≤ {profile.qualitySpecs.moisturePercent}%
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="spec-card">

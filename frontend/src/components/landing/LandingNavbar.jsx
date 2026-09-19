@@ -59,31 +59,31 @@ export function LandingNavbar({ language: propLanguage, setLanguage: propSetLang
             href="#market-prices"
             onClick={(e) => scrollToSection(e, "market-prices")}
           >
-            {language === "en" ? "Mandi Rates" : "मंडी भाव"}
+            {getLabel("Mandi Rates", "मंडी भाव", "बाजार भाव")}
           </a>
           <a
             href="#how-it-works"
             onClick={(e) => scrollToSection(e, "how-it-works")}
           >
-            {language === "en" ? "How It Works" : "कार्यप्रणाली"}
+            {getLabel("How It Works", "कार्यप्रणाली", "कार्यपद्धती")}
           </a>
           <a
             href="#buyer-demands"
             onClick={(e) => scrollToSection(e, "buyer-demands")}
           >
-            {language === "en" ? "Buyer Demands" : "खरीदार मांग"}
+            {getLabel("Buyer Demands", "खरीदार मांग", "खरेदीदार मागणी")}
           </a>
           <a
             href="#mandi-network"
             onClick={(e) => scrollToSection(e, "mandi-network")}
           >
-            {language === "en" ? "Mandi Network" : "मंडी नेटवर्क"}
+            {getLabel("Mandi Network", "मंडी नेटवर्क", "बाजार समिती नेटवर्क")}
           </a>
           <a
             href="#stakeholders"
             onClick={(e) => scrollToSection(e, "stakeholders")}
           >
-            {language === "en" ? "Stakeholders" : "भागीदार"}
+            {getLabel("Stakeholders", "भागीदार", "भागीदार घटक")}
           </a>
         </div>
 
@@ -106,25 +106,33 @@ export function LandingNavbar({ language: propLanguage, setLanguage: propSetLang
             >
               हिंदी
             </button>
+            <button
+              type="button"
+              className={language === "mr" ? "active" : ""}
+              onClick={() => setLanguage("mr")}
+              aria-label="Switch to Marathi"
+            >
+              मराठी
+            </button>
           </div>
 
           <Link to="/admin/login" className="admin-nav-btn" title="Admin Portal">
             <Shield size={14} />
-            <span>{language === "en" ? "Admin" : "एडमिन"}</span>
+            <span>{getLabel("Admin", "एडमिन", "प्रशासक")}</span>
           </Link>
 
           {user ? (
             <Link to={getDashboardPath(user.role)} className="nav-cta-btn">
               <LayoutDashboard size={15} />
-              <span>{language === "en" ? "My Dashboard" : "मेरा डैशबोर्ड"}</span>
+              <span>{getLabel("My Dashboard", "मेरा डैशबोर्ड", "माझे डॅशबोर्ड")}</span>
             </Link>
           ) : (
             <>
               <Link to="/login" className="login-link">
-                {language === "en" ? "Sign In" : "लॉगिन"}
+                {getLabel("Sign In", "लॉगिन", "लॉगिन")}
               </Link>
               <Link className="nav-cta-btn" to="/register/farmer">
-                <span>{language === "en" ? "Get Started" : "शुरू करें"}</span>
+                <span>{getLabel("Get Started", "शुरू करें", "सुरुवात करा")}</span>
                 <ArrowRight size={15} />
               </Link>
             </>

@@ -11,6 +11,7 @@ import { OperationalPage } from "./OperationalPage.jsx";
 import { PriceOpportunityAlert } from "../components/common/PriceOpportunityAlert.jsx";
 import { NetRealisationCalculator } from "../components/common/NetRealisationCalculator.jsx";
 import { MarketDataSourcesWidget } from "../components/common/MarketDataSourcesWidget.jsx";
+import { OrganicFarmingModal } from "../components/common/OrganicFarmingModal.jsx";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -53,6 +54,7 @@ export function DashboardPage() {
   const [buyerLots, setBuyerLots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isOrganicModalOpen, setIsOrganicModalOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -545,6 +547,40 @@ export function DashboardPage() {
         </div>
       </div>
 
+      {/* Farmer & FPO: Organic Farming Guidance Card */}
+      {!isBuyer && (
+        <div className="panel organic-dashboard-card">
+          <div className="organic-card-content">
+            <div className="organic-card-header">
+              <span className="organic-card-emoji">🌱</span>
+              <div>
+                <div className="organic-card-eyebrow">PRACTICES & CERTIFICATION</div>
+                <h3>Organic Farming</h3>
+              </div>
+            </div>
+            <p className="organic-card-subtitle">
+              Get guidance on organic practices, natural inputs and certification.
+            </p>
+            <div className="organic-card-tags">
+              <span>✓ Natural Compost</span>
+              <span>✓ Bio-Inputs & Neem</span>
+              <span>✓ Natural Pest Management</span>
+              <span>✓ PGS-India & NPOP Certification</span>
+            </div>
+          </div>
+          <div className="organic-card-action">
+            <button
+              type="button"
+              className="primary organic-explore-btn"
+              onClick={() => setIsOrganicModalOpen(true)}
+            >
+              <span>Explore Organic Farming</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Buyer-Specific: Active Demands & Live Farmer Supply Feed */}
       {isBuyer && (
         <>
@@ -957,6 +993,13 @@ export function DashboardPage() {
       <div style={{ marginTop: "24px" }}>
         <MarketDataSourcesWidget commodity={selectedCrop} />
       </div>
+
+      {/* Organic Farming Modal */}
+      <OrganicFarmingModal
+        isOpen={isOrganicModalOpen}
+        onClose={() => setIsOrganicModalOpen(false)}
+        initialCrop={selectedCrop}
+      />
     </section>
   );
 }

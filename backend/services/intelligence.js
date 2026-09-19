@@ -503,13 +503,15 @@ export async function matchesFor(demand, currentUser = null) {
 
       // 2. Quality grade fit (25 pts)
       const lotGrade = (l.quality?.grade || "Grade B").toLowerCase();
-      const demGrade = (demand.requiredQuality || "Grade A").toLowerCase();
+      const buyerQualitySpecs = demand.qualitySpecs || demand.buyer?.qualitySpecs;
+      const demGrade = (demand.requiredQuality || buyerQualitySpecs?.grade || "Grade A").toLowerCase();
+      const demMoisture = demand.maxMoisture || buyerQualitySpecs?.moisturePercent;
       let qualityScore = 15;
-      if (lotGrade === demGrade) {
+      if (lotGrade === demGrade || lotGrade.includes(demGrade) || demGrade.includes(lotGrade)) {
         qualityScore = 25;
       } else if (lotGrade.includes("a") && demGrade.includes("b")) {
         qualityScore = 25; // Superior grade supplied
-      } else if (l.quality?.moisture && demand.maxMoisture && l.quality.moisture <= demand.maxMoisture) {
+      } else if (l.quality?.moisture && demMoisture && l.quality.moisture <= demMoisture) {
         qualityScore = 22;
       }
 
@@ -536,8 +538,46 @@ export async function matchesFor(demand, currentUser = null) {
       // 5. Freshness & availability (10 pts)
       const freshnessScore = l.availableUntil ? 10 : 7;
 
+      // 6. Organic / Farming Type fit
+      let organicBonus = 0;
+      let organicReason = null;
+      const demFarming = (demand.farmingType || "any").toLowerCase();
+      const lotFarming = (l.farmingType || "conventional").toLowerCase();
+      const lotOrganicStatus = l.organicCertificationStatus || "not_verified";
+
+      if (demFarming === "organic") {
+        if (lotFarming === "organic" && lotOrganicStatus === "verified") {
+          organicBonus = 15; // Top priority for verified organic
+          organicReason = `🌱 Certified Organic match (${l.certificationType || "PGS-India / NPOP"} Verified ✓)`;
+        } else if (lotFarming === "organic" && lotOrganicStatus === "pending") {
+          organicBonus = 5;
+          organicReason = `🟡 Organic match (Verification Pending)`;
+        } else if (lotFarming === "in_conversion") {
+          organicBonus = 2;
+          organicReason = `🌱 In-Conversion Organic`;
+        } else {
+          organicBonus = -30; // Heavily deprioritize conventional when buyer requested organic
+          organicReason = `⚪ Conventional produce (Buyer requested Organic Only)`;
+        }
+      } else if (demFarming === "in_conversion") {
+        if (lotFarming === "in_conversion") {
+          organicBonus = 10;
+          organicReason = `🌱 In-Conversion Organic match`;
+        }
+      } else if (demFarming === "conventional") {
+        if (lotFarming === "conventional") {
+          organicBonus = 5;
+        }
+      } else {
+        // demFarming === "any"
+        if (lotFarming === "organic" && lotOrganicStatus === "verified") {
+          organicBonus = 5;
+          organicReason = `🌱 Certified Organic available (${l.certificationType || "Verified"} ✓)`;
+        }
+      }
+
       const matchScore = Math.round(
-        Math.max(0, Math.min(100, quantityScore + qualityScore + priceScore + locationScore + freshnessScore))
+        Math.max(0, Math.min(100, quantityScore + qualityScore + priceScore + locationScore + freshnessScore + organicBonus))
       );
 
       const isUserLot =
@@ -552,6 +592,10 @@ export async function matchesFor(demand, currentUser = null) {
         `${locationScore}/15 location proximity (${l.location || "Local"} -> ${demand.preferredLocation || "Destination"})`,
         `${freshnessScore}/10 batch freshness`,
       ];
+
+      if (organicReason) {
+        reasons.push(organicReason);
+      }
 
       // Net Realisation computation for the lot
       const estimatedTransport = 2; // ₹2/kg estimated
