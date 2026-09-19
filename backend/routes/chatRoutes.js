@@ -10,7 +10,7 @@ router.get("/status", async (_req, res) => {
     data: result,
   });
 });
-
+// res
 router.post("/", async (req, res) => {
   try {
     const { message, history = [], language = "en", isQuickAction = false } = req.body;
