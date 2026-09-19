@@ -1,6 +1,15 @@
 import crypto from "crypto";
 import axios from "axios";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { isValidAadhaar } from "../utils/verhoeff.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
+dotenv.config({ path: path.resolve(process.cwd(), "backend/.env"), override: true });
+dotenv.config({ path: path.resolve(process.cwd(), ".env"), override: true });
 
 /**
  * Aadhaar e-KYC & Authentication Service
@@ -37,16 +46,40 @@ export function stopSessionCleaner() {
 
 export class AadhaarKycService {
   constructor() {
-    this.provider = (process.env.AADHAAR_KYC_PROVIDER || "surepass").toLowerCase();
-    this.env = (process.env.AADHAAR_KYC_ENV || "sandbox").toLowerCase();
-    this.surepassToken = process.env.SUREPASS_API_TOKEN || "";
-    this.cashfreeClientId = process.env.CASHFREE_CLIENT_ID || "";
-    this.cashfreeClientSecret = process.env.CASHFREE_CLIENT_SECRET || "";
-    this.sandboxApiKey = process.env.SANDBOX_API_KEY || process.env.AADHAAR_KYC_API_KEY || "";
-    this.sandboxApiSecret = process.env.SANDBOX_API_SECRET || "";
     this.sandboxToken = null;
     this.sandboxTokenExpiresAt = 0;
-    this.baseUrl = process.env.AADHAAR_KYC_BASE_URL || (
+  }
+
+  get provider() {
+    return (process.env.AADHAAR_KYC_PROVIDER || "sandbox").toLowerCase();
+  }
+
+  get env() {
+    return (process.env.AADHAAR_KYC_ENV || "production").toLowerCase();
+  }
+
+  get surepassToken() {
+    return process.env.SUREPASS_API_TOKEN || "";
+  }
+
+  get cashfreeClientId() {
+    return process.env.CASHFREE_CLIENT_ID || "";
+  }
+
+  get cashfreeClientSecret() {
+    return process.env.CASHFREE_CLIENT_SECRET || "";
+  }
+
+  get sandboxApiKey() {
+    return process.env.SANDBOX_API_KEY || process.env.AADHAAR_KYC_API_KEY || "";
+  }
+
+  get sandboxApiSecret() {
+    return process.env.SANDBOX_API_SECRET || "";
+  }
+
+  get baseUrl() {
+    return process.env.AADHAAR_KYC_BASE_URL || (
       this.provider === "surepass"
         ? "https://kyc-api.surepass.io/api/v1"
         : this.provider === "sandbox" || this.provider === "sandbox_co_in"
@@ -304,8 +337,6 @@ export class AadhaarKycService {
       aadhaarLast4: maskedAadhaar,
       maskedTarget: maskedMobile,
       message: "OTP has been sent to the mobile number registered with your Aadhaar.",
-      // Include sandbox hint only in development/sandbox mode for testing convenience
-      ...(this.env === "sandbox" && !this.surepassToken ? { sandboxOtpHint: sandboxOtp } : {}),
     };
   }
 
@@ -338,18 +369,15 @@ export class AadhaarKycService {
     session.resendCount += 1;
     session.lastRequestedAt = Date.now();
 
-    // If sandbox, refresh OTP
-    let sandboxOtpHint = undefined;
+    // If sandbox emulation, refresh OTP hash
     if (session.provider === "sandbox") {
       const newOtp = String(Math.floor(100000 + Math.random() * 900000));
       session.sandboxOtpHash = crypto.createHash("sha256").update(newOtp).digest("hex");
-      if (this.env === "sandbox") sandboxOtpHint = newOtp;
     }
 
     return {
       message: "A new OTP has been sent to the mobile number registered with your Aadhaar.",
       maskedTarget: "******" + session.maskedAadhaar.slice(-4),
-      ...(sandboxOtpHint ? { sandboxOtpHint } : {}),
     };
   }
 

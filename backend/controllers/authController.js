@@ -413,7 +413,6 @@ export async function sendKycOtp(req, res, next) {
         client_id: result.client_id,
         aadhaarLast4: result.aadhaarLast4,
         maskedTarget: result.maskedTarget,
-        ...(result.sandboxOtpHint ? { sandboxOtpHint: result.sandboxOtpHint } : {}),
       },
       result.message || "OTP has been sent to the mobile number registered with your Aadhaar."
     );
