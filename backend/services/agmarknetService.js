@@ -401,7 +401,8 @@ export function generateBenchmarkMandiRecords(commodity, state = null, limit = 2
     } else {
       targetMandis = [
         { state: normState, district: "Central Mandi Yard", market: `${normState} APMC Yard` },
-        ...profile.mandis,
+        { state: normState, district: "District Grain Yard", market: `${normState} Krishi Upaj Mandi` },
+        { state: normState, district: "Regional Yard", market: `${normState} Main APMC` },
       ];
     }
   }
@@ -471,7 +472,7 @@ async function fetchMandiPrices(
   const params = {
     "api-key": apiKey,
     format: "json",
-    limit,
+    limit: state ? Math.min(Math.max((limit || 50) * 3, 150), 1000) : limit,
     offset,
   };
 
@@ -541,10 +542,43 @@ async function fetchMandiPrices(
   let total = 0;
 
   if (response?.data?.records?.length) {
-    records = response.data.records.map(normalizeRecord);
-    total = Number(response.data?.total || records.length);
-  } else {
-    // FALLBACK TO MONGODB MandiPrice
+    let rawRecords = response.data.records.map(normalizeRecord);
+
+    // CRITICAL: api.data.gov.in tokenizes query words (e.g. "Madhya Pradesh" returns "Uttar Pradesh" & "Himachal Pradesh" because of "Pradesh").
+    // Strictly filter by the exact requested state, district, commodity, and market.
+    if (state) {
+      const normState = normalizeState(state).toLowerCase();
+      rawRecords = rawRecords.filter(
+        (r) => r.state && normalizeState(r.state).toLowerCase() === normState
+      );
+    }
+    if (district) {
+      const normDist = district.trim().toLowerCase();
+      rawRecords = rawRecords.filter(
+        (r) => r.district && r.district.trim().toLowerCase() === normDist
+      );
+    }
+    if (commodity) {
+      const normComm = commodity.trim().toLowerCase();
+      rawRecords = rawRecords.filter(
+        (r) => r.commodity && r.commodity.trim().toLowerCase() === normComm
+      );
+    }
+    if (market) {
+      const normMarket = market.trim().toLowerCase();
+      rawRecords = rawRecords.filter(
+        (r) => r.market && r.market.trim().toLowerCase() === normMarket
+      );
+    }
+
+    if (rawRecords.length > 0) {
+      records = rawRecords.slice(0, limit || 50);
+      total = rawRecords.length;
+    }
+  }
+
+  // If live API yielded 0 records for the specified filter, fall back to local MongoDB MandiPrice
+  if (records.length === 0) {
     const query = {};
     if (state) {
       const normState = normalizeState(state);
@@ -589,40 +623,7 @@ async function fetchMandiPrices(
       console.warn("MongoDB fallback query error:", _dbErr.message);
     }
 
-    // If state-specific query had 0 records, check if commodity has records across ANY state in DB
-    if (records.length === 0 && commodity && state) {
-      try {
-        const commOnlyQuery = {
-          commodity: new RegExp(commodity.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i"),
-        };
-        const allStateRecords = await MandiPrice.find(commOnlyQuery)
-          .sort({ arrivalDate: -1, createdAt: -1 })
-          .limit(limit || 50)
-          .lean();
-
-        if (allStateRecords.length > 0) {
-          records = allStateRecords.map((doc) => ({
-            state: doc.state,
-            district: doc.district,
-            market: doc.market,
-            commodity: doc.commodity,
-            variety: doc.variety || "Normal",
-            grade: doc.grade || "FAQ",
-            arrivalDate: doc.arrivalDate
-              ? new Date(doc.arrivalDate).toLocaleDateString("en-GB")
-              : "",
-            minPrice: doc.minPrice || 0,
-            maxPrice: doc.maxPrice || 0,
-            modalPrice: doc.modalPrice || 0,
-          }));
-          total = records.length;
-        }
-      } catch (_altDbErr) {
-        console.warn("MongoDB secondary fallback error:", _altDbErr.message);
-      }
-    }
-
-    // If still 0 records after checking DB, generate realistic benchmark mandi records
+    // If still 0 records after checking DB, generate realistic benchmark mandi records (strictly bound to requested state)
     if (records.length === 0) {
       records = generateBenchmarkMandiRecords(commodity || "Wheat", state, limit || 20);
       total = records.length;

@@ -449,6 +449,15 @@ export function AdminMarketSyncPage() {
         let records = res.data.data?.records || [];
         let total = res.data.data?.total || records.length;
 
+        // Enforce strict client-side state match to prevent any government API tokenization leaks
+        if (filterState && records.length > 0) {
+          const normFilterState = filterState.trim().toLowerCase();
+          records = records.filter(
+            (r) => r.state && r.state.trim().toLowerCase() === normFilterState
+          );
+          total = records.length;
+        }
+
         // Smart Fallback: If 0 records because state filter is too restrictive for this crop
         if (records.length === 0 && filterState && filterCommodity) {
           const fallbackParams = {
