@@ -1,15 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 
 let aiClient = null;
+let currentKey = null;
 
-function getAIClient() {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
+export function getAIClient() {
+  const rawKey = process.env.GEMINI_API_KEY || "";
+  const apiKey = rawKey.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!aiClient || currentKey !== apiKey) {
     try {
       aiClient = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY,
+        apiKey,
       });
+      currentKey = apiKey;
     } catch (err) {
       console.warn("Could not initialize GoogleGenAI client:", err.message);
+      aiClient = null;
+      currentKey = null;
     }
   }
   return aiClient;
@@ -689,9 +700,10 @@ Rules:
 
   if (client) {
     const candidateModels = [
-      "gemini-2.5-flash",
-      "gemini-flash-latest",
-      "gemini-2.5-pro",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-pro",
     ];
 
     // Build multi-turn conversation history
@@ -723,9 +735,18 @@ Rules:
           return response.text.trim();
         }
       } catch (err) {
-        console.warn(`Model ${model} unavailable (${err?.status || err?.message || "error"}), trying next model...`);
+        console.warn(
+          `[Gemini AI] Model ${model} failed (${err?.status || err?.name || "Error"}): ${err?.message || "error"}`
+        );
       }
     }
+    console.warn(
+      "[Gemini AI] All models failed or key was unauthorized/blocked. Falling back to domain answers."
+    );
+  } else {
+    console.warn(
+      "[Gemini AI] No GEMINI_API_KEY found or client initialization failed. Using domain answers."
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -735,8 +756,62 @@ Rules:
   return getDomainFallback(cleanMsg, langKey, history);
 }
 
+export async function testGeminiConnection() {
+  const rawKey = process.env.GEMINI_API_KEY || "";
+  const apiKey = rawKey.trim();
+  if (!apiKey) {
+    return {
+      connected: false,
+      reason: "MISSING_KEY",
+      message: "GEMINI_API_KEY is not set in backend/.env",
+    };
+  }
+
+  const client = getAIClient();
+  if (!client) {
+    return {
+      connected: false,
+      reason: "INIT_FAILED",
+      message: "Failed to create GoogleGenAI client instance",
+    };
+  }
+
+  const candidateModels = [
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
+  ];
+
+  let lastError = null;
+  for (const model of candidateModels) {
+    try {
+      const response = await client.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: "Hello" }] }],
+      });
+      if (response?.text) {
+        return {
+          connected: true,
+          model,
+          sampleResponse: response.text.trim(),
+        };
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  return {
+    connected: false,
+    reason: lastError?.status || "API_ERROR",
+    message: lastError?.message || "Unknown error connecting to Gemini API",
+  };
+}
+
 export default {
   generateChatResponse,
+  testGeminiConnection,
+  getAIClient,
   predefinedResponses,
   matchQuickActionKey,
   getDomainFallback,

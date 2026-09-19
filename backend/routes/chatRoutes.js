@@ -1,7 +1,15 @@
 import express from "express";
-import { generateChatResponse } from "../services/chatServices.js";
+import { generateChatResponse, testGeminiConnection } from "../services/chatServices.js";
 
 const router = express.Router();
+
+router.get("/status", async (_req, res) => {
+  const result = await testGeminiConnection();
+  return res.json({
+    success: true,
+    data: result,
+  });
+});
 
 router.post("/", async (req, res) => {
   try {
