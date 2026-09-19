@@ -1,4 +1,5 @@
 import { Market, MarketPrice, Demand } from "../models/index.js";
+import MandiPrice from "../models/mandiPriceSchema.js";
 import { marketsFor, priceInsight, sellAdvice } from "../services/intelligence.js";
 import { ok, fail } from "../utils/response.js";
 
@@ -48,9 +49,53 @@ export async function getNearbyMarkets(req, res, next) {
 export async function getPrices(req, res, next) {
   try {
     const filter = {};
-    if (req.query.commodity) filter.commodity = req.query.commodity;
+    if (req.query.commodity) {
+      filter.commodity = new RegExp(req.query.commodity.trim(), "i");
+    }
+    if (req.query.state) {
+      filter.state = new RegExp(req.query.state.trim(), "i");
+    }
 
-    const rows = await MarketPrice.find(filter)
+    // 1. Query live MandiPrice records first for real-time rates
+    const mandiRows = await MandiPrice.find(filter)
+      .sort({ arrivalDate: -1, createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    if (mandiRows && mandiRows.length > 0) {
+      const rows = mandiRows.map((r) => ({
+        _id: r._id,
+        commodity: r.commodity,
+        variety: r.variety || "",
+        grade: r.grade || "FAQ",
+        date: r.arrivalDate,
+        arrivalDate: r.arrivalDate,
+        minPrice: r.minPrice > 150 ? Math.round(r.minPrice / 100) : r.minPrice,
+        maxPrice: r.maxPrice > 150 ? Math.round(r.maxPrice / 100) : r.maxPrice,
+        modalPrice: r.modalPrice > 150 ? Math.round(r.modalPrice / 100) : r.modalPrice,
+        rawMinPrice: r.minPrice,
+        rawMaxPrice: r.maxPrice,
+        rawModalPrice: r.modalPrice,
+        unit: "KG",
+        source: r.source || "AGMARKNET (Real-Time)",
+        market: {
+          _id: r.marketRef || r._id,
+          name: r.market,
+          district: r.district,
+          state: r.state,
+          location: `${r.district}, ${r.state}`,
+        },
+      }));
+      return ok(res, rows);
+    }
+
+    // 2. Fallback to MarketPrice if MandiPrice has no matching records
+    const legacyFilter = {};
+    if (req.query.commodity) {
+      legacyFilter.commodity = new RegExp(req.query.commodity.trim(), "i");
+    }
+
+    const rows = await MarketPrice.find(legacyFilter)
       .populate("market")
       .sort({ date: -1 })
       .limit(100);

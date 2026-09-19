@@ -9,6 +9,8 @@ import {
   getDbStats,
   getDbRecords,
   getActiveOptions,
+  getSyncStatus,
+  triggerLiveSync,
 } from "../controllers/marketPrice.controller.js";
 
 // Optional: wire in your existing auth middleware if these should be protected
@@ -54,6 +56,17 @@ router.get(
 router.post(
   "/prices/sync",
   syncToDb
+);
+
+// Real-Time Sync Engine Status & Manual Trigger
+router.get(
+  "/sync/status",
+  getSyncStatus
+);
+
+router.post(
+  "/sync/trigger",
+  triggerLiveSync
 );
 
 export default router;

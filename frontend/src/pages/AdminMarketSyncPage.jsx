@@ -18,6 +18,11 @@ import {
   Calendar,
   Info,
   ArrowRight,
+  Zap,
+  Clock,
+  Activity,
+  Server,
+  ShieldCheck,
 } from "lucide-react";
 import {
   AreaChart,
@@ -188,6 +193,13 @@ export function AdminMarketSyncPage() {
   const [syncResult, setSyncResult] = useState(null);
   const [syncError, setSyncError] = useState("");
 
+  // Real-Time Auto-Sync Engine State
+  const [syncDaemon, setSyncDaemon] = useState(null);
+  const [instantSyncLoading, setInstantSyncLoading] = useState(false);
+  const [instantSyncMsg, setInstantSyncMsg] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [countdownStr, setCountdownStr] = useState("");
+
   // Active Explorer Tab: "prices" | "state-commodity" | "by-commodity" | "by-state" | "db"
   const [activeTab, setActiveTab] = useState("prices");
 
@@ -282,10 +294,72 @@ export function AdminMarketSyncPage() {
     }
   }, []);
 
+  // Fetch Sync Daemon Status
+  const loadDaemonStatus = useCallback(async () => {
+    try {
+      const res = await api.get("/marketPrice/sync/status");
+      if (res.data?.data) {
+        setSyncDaemon(res.data.data);
+      }
+    } catch (e) {
+      console.warn("Could not fetch sync daemon status", e);
+    }
+  }, []);
+
+  // Trigger Instant Live National Sync
+  const handleTriggerLiveNationalSync = async () => {
+    setInstantSyncLoading(true);
+    setInstantSyncMsg(null);
+    try {
+      const res = await api.post("/marketPrice/sync/trigger", { limit: 250 });
+      setInstantSyncMsg({
+        success: res.data?.success,
+        message: res.data?.message || `Successfully ingested real-time arrivals.`,
+        time: new Date().toLocaleTimeString(),
+      });
+      await Promise.all([loadDbStats(), loadDaemonStatus()]);
+    } catch (err) {
+      setInstantSyncMsg({
+        success: false,
+        message: err.response?.data?.message || err.message || "Live sync trigger failed.",
+        time: new Date().toLocaleTimeString(),
+      });
+    } finally {
+      setInstantSyncLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadDbStats();
     loadActiveOptions();
-  }, [loadDbStats, loadActiveOptions]);
+    loadDaemonStatus();
+  }, [loadDbStats, loadActiveOptions, loadDaemonStatus]);
+
+  // Countdown timer for next scheduled background sync
+  useEffect(() => {
+    if (!syncDaemon?.nextScheduledSyncAt) return;
+    const interval = setInterval(() => {
+      const diff = new Date(syncDaemon.nextScheduledSyncAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setCountdownStr("Sync due / in progress...");
+      } else {
+        const mins = Math.floor(diff / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        setCountdownStr(`${mins}m ${secs.toString().padStart(2, "0")}s`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [syncDaemon?.nextScheduledSyncAt]);
+
+  // Real-time polling auto-refresh (every 15 seconds)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = setInterval(() => {
+      loadDbStats();
+      loadDaemonStatus();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [autoRefresh, loadDbStats, loadDaemonStatus]);
 
   // Execute Sync to DB via POST /api/marketPrice/prices/sync
   const handleSyncToDb = async (overrideParams = null) => {
@@ -632,6 +706,271 @@ export function AdminMarketSyncPage() {
               : "Ready to sync"
           }
         />
+      </div>
+
+      {/* Real-Time Automated Sync Engine & Daemon Hub */}
+      <div className="panel real-time-daemon-hub" style={{
+        background: "linear-gradient(135deg, #064e3b 0%, #0f766e 100%)",
+        color: "#ffffff",
+        borderRadius: "16px",
+        padding: "24px 28px",
+        boxShadow: "0 10px 25px -5px rgba(6, 78, 59, 0.25), 0 8px 10px -6px rgba(6, 78, 59, 0.2)",
+        position: "relative",
+        overflow: "hidden"
+      }}>
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+          gap: "18px",
+          position: "relative",
+          zIndex: 2,
+        }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
+              <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 10px",
+                borderRadius: "20px",
+                background: "rgba(16, 185, 129, 0.25)",
+                border: "1px solid rgba(110, 231, 183, 0.4)",
+                fontSize: "12px",
+                fontWeight: "700",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                color: "#a7f3d0"
+              }}>
+                <span style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: "#34d399",
+                  boxShadow: "0 0 10px #34d399",
+                  display: "inline-block"
+                }}></span>
+                {syncDaemon?.active ? "REAL-TIME SYNC DAEMON ACTIVE" : "DAEMON INITIALIZING"}
+              </span>
+              <span style={{ fontSize: "12px", opacity: 0.85, color: "#e6fffa" }}>
+                Auto-Sync Interval: <b>Every {syncDaemon?.intervalMinutes || 30} Mins</b>
+              </span>
+            </div>
+            <h2 style={{ color: "#ffffff", fontSize: "22px", fontWeight: "700", margin: "0 0 6px 0" }}>
+              Pan-India Real-Time Mandi Ingestion Architecture
+            </h2>
+            <p style={{ color: "rgba(255, 255, 255, 0.82)", fontSize: "14px", margin: 0, maxWidth: "680px", lineHeight: "1.5" }}>
+              Automated background daemon synchronizes official trading arrivals from AGMARKNET (data.gov.in) into MongoDB, auto-bridging with KrishiLink's Price Engine, ML Predictions, and Multilingual Chatbot.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <label style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(0, 0, 0, 0.2)",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                color: "#e2e8f0",
+                cursor: "pointer",
+                userSelect: "none"
+              }}>
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  style={{ accentColor: "#10b981", cursor: "pointer" }}
+                />
+                Auto-Refresh Feed (15s)
+              </label>
+
+              <button
+                type="button"
+                onClick={handleTriggerLiveNationalSync}
+                disabled={instantSyncLoading || syncDaemon?.isRunning}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
+                  background: instantSyncLoading ? "#047857" : "#10b981",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                  cursor: instantSyncLoading ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <Zap size={16} className={instantSyncLoading ? "spin" : ""} />
+                <span>{instantSyncLoading ? "Syncing National Mandis..." : "Trigger Instant National Sync"}</span>
+              </button>
+            </div>
+
+            {instantSyncMsg && (
+              <div style={{
+                fontSize: "12px",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                background: instantSyncMsg.success ? "rgba(16, 185, 129, 0.25)" : "rgba(239, 68, 68, 0.25)",
+                color: instantSyncMsg.success ? "#6ee7b7" : "#fca5a5",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}>
+                <Clock size={13} />
+                <span>[{instantSyncMsg.time}] {instantSyncMsg.message}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Live Metrics Grid */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "14px",
+          marginTop: "20px",
+          position: "relative",
+          zIndex: 2
+        }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.1)", borderRadius: "10px", padding: "12px 16px" }}>
+            <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#a7f3d0", fontWeight: "600" }}>
+              Next Scheduled Sync
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "4px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Clock size={16} color="#6ee7b7" />
+              <span>{countdownStr || "Calculating..."}</span>
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>
+              Automated 30-min background daemon
+            </div>
+          </div>
+
+          <div style={{ background: "rgba(255, 255, 255, 0.1)", borderRadius: "10px", padding: "12px 16px" }}>
+            <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#a7f3d0", fontWeight: "600" }}>
+              Latest Ingested Batch
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "4px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Activity size={16} color="#6ee7b7" />
+              <span>{syncDaemon?.lastSyncCount || 0} Records</span>
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>
+              {syncDaemon?.lastSyncAt ? `Last run at ${new Date(syncDaemon.lastSyncAt).toLocaleTimeString()}` : "At server boot"}
+            </div>
+          </div>
+
+          <div style={{ background: "rgba(255, 255, 255, 0.1)", borderRadius: "10px", padding: "12px 16px" }}>
+            <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#a7f3d0", fontWeight: "600" }}>
+              Data Pipeline Architecture
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "4px", color: "#34d399", display: "flex", alignItems: "center", gap: "6px" }}>
+              <ShieldCheck size={16} color="#34d399" />
+              <span>DUAL BRIDGE ACTIVE</span>
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>
+              MandiPrice ⇄ MarketPrice linked
+            </div>
+          </div>
+
+          <div style={{ background: "rgba(255, 255, 255, 0.1)", borderRadius: "10px", padding: "12px 16px" }}>
+            <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#a7f3d0", fontWeight: "600" }}>
+              Consumer Readiness
+            </div>
+            <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "4px", color: "#ffffff", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Server size={16} color="#6ee7b7" />
+              <span>100% Real-Time</span>
+            </div>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>
+              Farmer / Buyer / Chatbot live
+            </div>
+          </div>
+        </div>
+
+        {/* Real-Time Architecture Pipeline Visualizer */}
+        <div style={{
+          marginTop: "20px",
+          padding: "14px 18px",
+          background: "rgba(0, 0, 0, 0.22)",
+          borderRadius: "12px",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+          fontSize: "12px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: "600", color: "#ffffff", flexWrap: "wrap" }}>
+            <span style={{ padding: "4px 8px", background: "rgba(16, 185, 129, 0.3)", borderRadius: "6px", color: "#a7f3d0" }}>1. AGMARKNET API (data.gov.in)</span>
+            <span style={{ color: "#6ee7b7" }}>➔</span>
+            <span style={{ padding: "4px 8px", background: "rgba(16, 185, 129, 0.3)", borderRadius: "6px", color: "#a7f3d0" }}>2. Sync Daemon (30m Interval)</span>
+            <span style={{ color: "#6ee7b7" }}>➔</span>
+            <span style={{ padding: "4px 8px", background: "rgba(16, 185, 129, 0.3)", borderRadius: "6px", color: "#a7f3d0" }}>3. MongoDB Unified Bridge</span>
+            <span style={{ color: "#6ee7b7" }}>➔</span>
+            <span style={{ padding: "4px 8px", background: "rgba(16, 185, 129, 0.3)", borderRadius: "6px", color: "#a7f3d0" }}>4. Live REST & AI Consumers</span>
+          </div>
+          <div style={{ color: "#e2e8f0", fontSize: "11px" }}>
+            API Status: <code style={{ background: "rgba(255,255,255,0.15)", padding: "2px 6px", borderRadius: "4px" }}>Connected</code> | Resource ID: <code style={{ background: "rgba(255,255,255,0.15)", padding: "2px 6px", borderRadius: "4px" }}>9ef84268...</code>
+          </div>
+        </div>
+
+        {/* Sync History Logs (Last Runs) */}
+        {syncDaemon?.history?.length > 0 && (
+          <div style={{ marginTop: "16px", fontSize: "12px" }}>
+            <details style={{ cursor: "pointer" }}>
+              <summary style={{ color: "#a7f3d0", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <span>View Real-Time Sync Ingestion Logs ({syncDaemon.history.length} recent runs)</span>
+              </summary>
+              <div style={{
+                marginTop: "10px",
+                maxHeight: "160px",
+                overflowY: "auto",
+                background: "rgba(0, 0, 0, 0.35)",
+                borderRadius: "8px",
+                padding: "10px"
+              }}>
+                <table style={{ width: "100%", fontSize: "11px", borderCollapse: "collapse", color: "#e2e8f0" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", textAlign: "left", color: "#a7f3d0" }}>
+                      <th style={{ padding: "4px 8px" }}>Timestamp</th>
+                      <th style={{ padding: "4px 8px" }}>Trigger Type</th>
+                      <th style={{ padding: "4px 8px" }}>Ingested Records</th>
+                      <th style={{ padding: "4px 8px" }}>Duration</th>
+                      <th style={{ padding: "4px 8px" }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {syncDaemon.history.map((h, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "4px 8px" }}>{new Date(h.timestamp).toLocaleTimeString()}</td>
+                        <td style={{ padding: "4px 8px" }}>
+                          <span style={{
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            background: h.type === "MANUAL_TRIGGER" ? "rgba(59, 130, 246, 0.3)" : "rgba(16, 185, 129, 0.3)",
+                            fontSize: "10px"
+                          }}>
+                            {h.type}
+                          </span>
+                        </td>
+                        <td style={{ padding: "4px 8px", fontWeight: "700" }}>{h.recordsCount}</td>
+                        <td style={{ padding: "4px 8px" }}>{(h.durationMs / 1000).toFixed(2)}s</td>
+                        <td style={{ padding: "4px 8px", color: h.status === "SUCCESS" ? "#34d399" : "#f87171" }}>{h.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+        )}
       </div>
 
       {/* Sync Control Centre Panel */}

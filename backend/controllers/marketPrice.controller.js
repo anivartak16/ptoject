@@ -7,6 +7,8 @@ import {
   syncStateCommodityToDb,
   fetchActiveOptions,
   toAgmarknetDate,
+  getSyncEngineStatus,
+  runLiveNationalSync,
 } from "../services/agmarknetService.js";
 
 // GET /api/marketPrice/prices?state=...&commodity=...&district=...&date=...&fromDate=...&toDate=...&limit=100&offset=0
@@ -361,6 +363,45 @@ async function getActiveOptions(req, res) {
   }
 }
 
+// GET /api/marketPrice/sync/status
+// Returns live status of the auto-sync daemon and DB health
+async function getSyncStatus(_req, res) {
+  try {
+    const status = await getSyncEngineStatus();
+    res.json({
+      success: true,
+      data: status,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Could not fetch sync daemon status: " + error.message,
+      error: error.message,
+    });
+  }
+}
+
+// POST /api/marketPrice/sync/trigger
+// Manually triggers an instant live sync run
+async function triggerLiveSync(req, res) {
+  try {
+    const { limit = 250 } = req.body || {};
+    const result = await runLiveNationalSync({ force: true, limit: Number(limit) || 250 });
+
+    res.json({
+      success: result.success,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    res.status(502).json({
+      success: false,
+      message: "Live sync failed: " + error.message,
+      error: error.message,
+    });
+  }
+}
+
 export {
   getPrices,
   getCommodityAcrossStates,
@@ -370,4 +411,6 @@ export {
   getDbStats,
   getDbRecords,
   getActiveOptions,
+  getSyncStatus,
+  triggerLiveSync,
 };

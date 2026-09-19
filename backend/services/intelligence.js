@@ -38,25 +38,24 @@ function hashString(str) {
 export async function priceInsight(commodity = "Wheat") {
   const queryRegex = getCommodityRegex(commodity);
 
-  // 1. Check MarketPrice collection
-  let rows = await MarketPrice.find({ commodity: queryRegex }).sort({ date: 1 });
+  // 1. Prioritize live MandiPrice records for real-time market insights
+  let rows = [];
+  const mandiRows = await MandiPrice.find({ commodity: queryRegex })
+    .sort({ arrivalDate: 1 })
+    .limit(60)
+    .lean();
 
-  // 2. Fall back to live MandiPrice records if MarketPrice is empty
-  if (!rows || !rows.length) {
-    const mandiRows = await MandiPrice.find({ commodity: queryRegex })
-      .sort({ arrivalDate: 1 })
-      .limit(60)
-      .lean();
-
-    if (mandiRows.length) {
-      rows = mandiRows.map((r) => ({
-        commodity: r.commodity,
-        modalPrice: r.modalPrice > 150 ? Math.round(r.modalPrice / 100) : r.modalPrice,
-        minPrice: r.minPrice > 150 ? Math.round(r.minPrice / 100) : r.minPrice,
-        maxPrice: r.maxPrice > 150 ? Math.round(r.maxPrice / 100) : r.maxPrice,
-        date: r.arrivalDate,
-      }));
-    }
+  if (mandiRows && mandiRows.length > 0) {
+    rows = mandiRows.map((r) => ({
+      commodity: r.commodity,
+      modalPrice: r.modalPrice > 150 ? Math.round(r.modalPrice / 100) : r.modalPrice,
+      minPrice: r.minPrice > 150 ? Math.round(r.minPrice / 100) : r.minPrice,
+      maxPrice: r.maxPrice > 150 ? Math.round(r.maxPrice / 100) : r.maxPrice,
+      date: r.arrivalDate,
+    }));
+  } else {
+    // Fall back to legacy MarketPrice records if MandiPrice is empty
+    rows = await MarketPrice.find({ commodity: queryRegex }).sort({ date: 1 });
   }
 
   if (!rows || !rows.length) return null;
