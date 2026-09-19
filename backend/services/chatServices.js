@@ -486,54 +486,80 @@ export async function getLiveMandiPriceData(message) {
 
     // Common mandis/districts (multilingual)
     const mandiKeywords = [
-      { regex: /khurai|खुरई/i, name: "khurai" },
-      { regex: /indore|इंदौर|इंदूर/i, name: "indore" },
-      { regex: /dewas|देवास/i, name: "dewas" },
-      { regex: /ujjain|उज्जैन/i, name: "ujjain" },
-      { regex: /bhopal|भोपाल|भोपाळ/i, name: "bhopal" },
-      { regex: /sagar|सागर/i, name: "sagar" },
-      { regex: /vidisha|विदिशा/i, name: "vidisha" },
-      { regex: /bina|बीना/i, name: "bina" },
-      { regex: /katni|कटनी/i, name: "katni" },
-      { regex: /betul|बैतूल/i, name: "betul" },
-      { regex: /sehore|सीहोर/i, name: "sehore" },
-      { regex: /harda|हरदा/i, name: "harda" },
-      { regex: /hoshangabad|होशंगाबाद/i, name: "hoshangabad" },
-      { regex: /guna|गुना/i, name: "guna" },
-      { regex: /gwalior|ग्वालियर/i, name: "gwalior" },
-      { regex: /jabalpur|जबलपुर/i, name: "jabalpur" },
-      { regex: /rewa|रीवा/i, name: "rewa" },
-      { regex: /mandsaur|मंदसौर/i, name: "mandsaur" },
-      { regex: /neemuch|नीमच/i, name: "neemuch" },
-      { regex: /ratlam|रतलाम/i, name: "ratlam" },
-      { regex: /nagpur|नागपूर|नागपुर/i, name: "nagpur" },
-      { regex: /pune|पुणे/i, name: "pune" },
-      { regex: /nashik|नाशिक|नासिक/i, name: "nashik" },
-      { regex: /amravati|अमरावती/i, name: "amravati" },
-      { regex: /aurangabad|संभाजीनगर|औरंगाबाद/i, name: "aurangabad" },
-      { regex: /solapur|सोलापूर|सोलापुर/i, name: "solapur" },
-      { regex: /kolhapur|कोल्हापूर|कोल्हापुर/i, name: "kolhapur" },
-      { regex: /latur|लातूर|लातुर/i, name: "latur" },
+      { regex: /khargone|kargone|खरगोन/i, name: "khargone", displayName: "Khargone" },
+      { regex: /khurai|खुरई/i, name: "khurai", displayName: "Khurai APMC" },
+      { regex: /indore|इंदौर|इंदूर/i, name: "indore", displayName: "Indore" },
+      { regex: /dewas|देवास/i, name: "dewas", displayName: "Dewas" },
+      { regex: /ujjain|उज्जैन/i, name: "ujjain", displayName: "Ujjain" },
+      { regex: /bhopal|भोपाल|भोपाळ/i, name: "bhopal", displayName: "Bhopal" },
+      { regex: /sagar|सागर/i, name: "sagar", displayName: "Sagar" },
+      { regex: /vidisha|विदिशा/i, name: "vidisha", displayName: "Vidisha" },
+      { regex: /bina|बीना/i, name: "bina", displayName: "Bina" },
+      { regex: /khandwa|खंडवा/i, name: "khandwa", displayName: "Khandwa" },
+      { regex: /dhar|धार/i, name: "dhar", displayName: "Dhar" },
+      { regex: /badwah|barwaha|badwaha|बड़वाह|बडवाह/i, name: "badwaha", displayName: "Badwaha" },
+      { regex: /sanawad|सनावद/i, name: "sanawad", displayName: "Sanawad" },
+      { regex: /kasrawad|कसरावद/i, name: "kasrawad", displayName: "Kasrawad" },
+      { regex: /bhikangaon|भीकनगांव/i, name: "bhikangaon", displayName: "Bhikangaon" },
+      { regex: /katni|कटनी/i, name: "katni", displayName: "Katni" },
+      { regex: /betul|बैतूल/i, name: "betul", displayName: "Betul" },
+      { regex: /sehore|सीहोर/i, name: "sehore", displayName: "Sehore" },
+      { regex: /harda|हरदा/i, name: "harda", displayName: "Harda" },
+      { regex: /hoshangabad|होशंगाबाद/i, name: "hoshangabad", displayName: "Hoshangabad" },
+      { regex: /guna|गुना/i, name: "guna", displayName: "Guna" },
+      { regex: /gwalior|ग्वालियर/i, name: "gwalior", displayName: "Gwalior" },
+      { regex: /jabalpur|जबलपुर/i, name: "jabalpur", displayName: "Jabalpur" },
+      { regex: /rewa|रीवा/i, name: "rewa", displayName: "Rewa" },
+      { regex: /mandsaur|मंदसौर/i, name: "mandsaur", displayName: "Mandsaur" },
+      { regex: /neemuch|नीमच/i, name: "neemuch", displayName: "Neemuch" },
+      { regex: /ratlam|रतलाम/i, name: "ratlam", displayName: "Ratlam" },
+      { regex: /nagpur|नागपूर|नागपुर/i, name: "nagpur", displayName: "Nagpur" },
+      { regex: /pune|पुणे/i, name: "pune", displayName: "Pune" },
+      { regex: /nashik|नाशिक|नासिक/i, name: "nashik", displayName: "Nashik" },
+      { regex: /amravati|अमरावती/i, name: "amravati", displayName: "Amravati" },
+      { regex: /aurangabad|संभाजीनगर|औरंगाबाद/i, name: "aurangabad", displayName: "Aurangabad" },
+      { regex: /solapur|सोलापूर|सोलापुर/i, name: "solapur", displayName: "Solapur" },
+      { regex: /kolhapur|कोल्हापूर|कोल्हापुर/i, name: "kolhapur", displayName: "Kolhapur" },
+      { regex: /latur|लातूर|लातुर/i, name: "latur", displayName: "Latur" },
     ];
 
     let detectedMandi = null;
+    let detectedMandiDisplayName = null;
     for (const m of mandiKeywords) {
       if (m.regex.test(q)) {
         detectedMandi = m.name;
+        detectedMandiDisplayName = m.displayName;
         break;
       }
     }
 
+    const nonMandiWords = [
+      "the", "yesterday", "today", "modal", "current", "this", "my", "any", "all",
+      "what", "which", "is", "price", "rate", "bhav", "crop", "produce", "lot",
+      "kal", "aaj", "daam", "मंडी", "बाजार", "भाव", "दर", "किंमत"
+    ];
+
     if (!detectedMandi) {
-      const match = q.match(/in\s+([a-zA-Z]+)(?:\s+mandi)?/i);
-      if (
-        match &&
-        match[1] &&
-        !["the", "yesterday", "today", "modal", "current", "this", "my", "any"].includes(
-          match[1].toLowerCase()
-        )
-      ) {
-        detectedMandi = match[1].toLowerCase();
+      // 1. Preposition match ("of khargone mandi", "in khurai", "from indore", "at dewas")
+      const prepMatch = q.match(/(?:in|of|at|from|for|near)\s+([a-zA-Z\u0900-\u097F]+)(?:\s+(?:mandi|market|apmc|bazar|बाजार|मंडी))?/i);
+      if (prepMatch && prepMatch[1]) {
+        const cand = prepMatch[1].toLowerCase();
+        if (!nonMandiWords.includes(cand) && cand.length >= 3) {
+          detectedMandi = cand;
+          detectedMandiDisplayName = prepMatch[1].charAt(0).toUpperCase() + prepMatch[1].slice(1);
+        }
+      }
+    }
+
+    if (!detectedMandi) {
+      // 2. Suffix match ("khargone mandi", "kargone apmc", "खुरई बाजार")
+      const suffixMatch = q.match(/([a-zA-Z\u0900-\u097F]+)\s+(?:mandi|market|apmc|bazar|बाजार|मंडी)/i);
+      if (suffixMatch && suffixMatch[1]) {
+        const cand = suffixMatch[1].toLowerCase();
+        if (!nonMandiWords.includes(cand) && cand.length >= 3) {
+          detectedMandi = cand;
+          detectedMandiDisplayName = suffixMatch[1].charAt(0).toUpperCase() + suffixMatch[1].slice(1);
+        }
       }
     }
 
@@ -541,42 +567,135 @@ export async function getLiveMandiPriceData(message) {
       return null;
     }
 
-    let filter = {};
-    if (detectedCommodity) {
-      filter.commodity = new RegExp(detectedCommodity, "i");
-    }
-    if (detectedMandi) {
-      filter.$or = [
-        { market: new RegExp(detectedMandi, "i") },
-        { district: new RegExp(detectedMandi, "i") },
-      ];
+    // Case 1: Both commodity AND specific mandi identified
+    if (detectedCommodity && detectedMandi) {
+      const directRecords = await MandiPrice.find({
+        commodity: new RegExp(detectedCommodity, "i"),
+        $or: [
+          { market: new RegExp(detectedMandi, "i") },
+          { district: new RegExp(detectedMandi, "i") },
+        ],
+      })
+        .sort({ arrivalDate: -1, createdAt: -1 })
+        .limit(5)
+        .lean();
+
+      if (directRecords && directRecords.length > 0) {
+        return {
+          type: "DIRECT_MATCH",
+          commodity: detectedCommodity,
+          mandi: detectedMandiDisplayName || directRecords[0].market,
+          district: directRecords[0].district,
+          state: directRecords[0].state,
+          records: directRecords,
+        };
+      }
+
+      // Check if this mandi exists in DB with OTHER commodities
+      const otherMandiRecords = await MandiPrice.find({
+        $or: [
+          { market: new RegExp(detectedMandi, "i") },
+          { district: new RegExp(detectedMandi, "i") },
+        ],
+      })
+        .sort({ arrivalDate: -1 })
+        .limit(15)
+        .lean();
+
+      const seen = new Set();
+      const distinctMandiCrops = [];
+      for (const r of otherMandiRecords) {
+        if (!seen.has(r.commodity)) {
+          seen.add(r.commodity);
+          distinctMandiCrops.push(r);
+        }
+      }
+
+      const stateName = otherMandiRecords.length > 0 ? otherMandiRecords[0].state : null;
+      let regionalRecords = [];
+      if (stateName) {
+        regionalRecords = await MandiPrice.find({
+          commodity: new RegExp(detectedCommodity, "i"),
+          state: new RegExp(stateName, "i"),
+        })
+          .sort({ arrivalDate: -1 })
+          .limit(4)
+          .lean();
+      }
+      if (!regionalRecords || !regionalRecords.length) {
+        regionalRecords = await MandiPrice.find({
+          commodity: new RegExp(detectedCommodity, "i"),
+        })
+          .sort({ arrivalDate: -1 })
+          .limit(4)
+          .lean();
+      }
+
+      if (distinctMandiCrops.length > 0) {
+        return {
+          type: "MANDI_NO_CROP",
+          commodity: detectedCommodity,
+          requestedMandi: detectedMandiDisplayName || otherMandiRecords[0].market || detectedMandi,
+          district: otherMandiRecords[0].district,
+          state: stateName,
+          availableMandiCrops: distinctMandiCrops.slice(0, 5),
+          regionalRecords,
+        };
+      } else {
+        return {
+          type: "MANDI_NOT_FOUND",
+          commodity: detectedCommodity,
+          requestedMandi: detectedMandiDisplayName || detectedMandi,
+          regionalRecords,
+        };
+      }
     }
 
-    let records = await MandiPrice.find(filter)
-      .sort({ arrivalDate: -1, createdAt: -1 })
-      .limit(5)
-      .lean();
-
-    if (records && records.length > 0) {
-      return {
-        commodity: detectedCommodity || records[0].commodity,
-        mandi: detectedMandi || records[0].market,
-        records,
-      };
-    }
-
-    // Fallback: If specific mandi + commodity had no match, find records for the commodity
-    if (detectedCommodity) {
-      records = await MandiPrice.find({ commodity: new RegExp(detectedCommodity, "i") })
+    // Case 2: Only commodity detected (e.g. "soyabean price")
+    if (detectedCommodity && !detectedMandi) {
+      const records = await MandiPrice.find({
+        commodity: new RegExp(detectedCommodity, "i"),
+      })
         .sort({ arrivalDate: -1 })
         .limit(4)
         .lean();
+
       if (records && records.length > 0) {
         return {
+          type: "COMMODITY_ONLY",
           commodity: detectedCommodity,
-          mandi: null,
-          requestedMandi: detectedMandi,
           records,
+        };
+      }
+    }
+
+    // Case 3: Only mandi detected (e.g. "khargone mandi bhav")
+    if (detectedMandi && !detectedCommodity) {
+      const records = await MandiPrice.find({
+        $or: [
+          { market: new RegExp(detectedMandi, "i") },
+          { district: new RegExp(detectedMandi, "i") },
+        ],
+      })
+        .sort({ arrivalDate: -1 })
+        .limit(15)
+        .lean();
+
+      if (records && records.length > 0) {
+        const seen = new Set();
+        const distinctMandiCrops = [];
+        for (const r of records) {
+          if (!seen.has(r.commodity)) {
+            seen.add(r.commodity);
+            distinctMandiCrops.push(r);
+          }
+        }
+        return {
+          type: "MANDI_ALL_CROPS",
+          mandi: detectedMandiDisplayName || records[0].market,
+          district: records[0].district,
+          state: records[0].state,
+          records: distinctMandiCrops.slice(0, 6),
         };
       }
     }
@@ -642,46 +761,169 @@ export async function getDomainFallback(message, langKey = "en", history = [], p
       ? preloadedPriceData
       : await getLiveMandiPriceData(q);
 
-  if (liveData && liveData.records && liveData.records.length > 0) {
-    const rec = liveData.records[0];
-    const arrivalStr = rec.arrivalDate
-      ? new Date(rec.arrivalDate).toLocaleDateString("en-IN", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
-      : "Recent";
+  if (liveData) {
+    // 1.A: User asked for a specific mandi, but that mandi has NO arrivals recorded for that crop
+    if (liveData.type === "MANDI_NO_CROP") {
+      const cropsText = (liveData.availableMandiCrops || [])
+        .map(c => `• **${c.commodity}** (${c.market}): Modal ₹${c.modalPrice.toLocaleString("en-IN")}/qtl (₹${c.minPrice.toLocaleString("en-IN")} – ₹${c.maxPrice.toLocaleString("en-IN")})`)
+        .join("\n");
+      const regText = (liveData.regionalRecords || [])
+        .map(r => `• **${r.market}** (${r.district || ""}, ${r.state || ""}): Modal ₹${r.modalPrice.toLocaleString("en-IN")}/qtl`)
+        .join("\n");
 
-    if (langKey === "mr") {
+      if (langKey === "mr") {
+        return (
+          `⚠️ **${liveData.requestedMandi} बाजार समितीत ${liveData.commodity} ची ताजी आवक नोंदवलेली नाही**\n\n` +
+          `AGMARKNET नुसार ${liveData.requestedMandi} (जिल्हा: ${liveData.district || ""}, ${liveData.state || ""}) मध्ये सध्या **${liveData.commodity}** ची कोणतीही आवक झालेली नाही.\n\n` +
+          `🌾 **${liveData.requestedMandi} बाजारात नोंदवलेली इतर पिके:**\n` +
+          (cropsText || "• पिकांची माहिती उपलब्ध नाही") + "\n\n" +
+          (regText ? `📊 **${liveData.state || "राज्यातील"} इतर बाजार समित्यांमधील ${liveData.commodity} चे ताजे भाव:**\n` + regText + "\n\n" : "") +
+          `💡 *टीप: ५२०+ बाजार समित्यांचे थेट दर तपासण्यासाठी डॅशबोर्डवरील **Mandi Prices** विभागाला भेट द्या.*`
+        );
+      }
+
+      if (langKey === "hi") {
+        return (
+          `⚠️ **${liveData.requestedMandi} मंडी में ${liveData.commodity} की हालिया आवक दर्ज नहीं है**\n\n` +
+          `AGMARKNET पोर्टल के अनुसार ${liveData.requestedMandi} (जिला: ${liveData.district || ""}, ${liveData.state || ""}) में वर्तमान में **${liveData.commodity}** की कोई ताज़ा आवक दर्ज नहीं हुई है।\n\n` +
+          `🌾 **${liveData.requestedMandi} मंडी में उपलब्ध अन्य फसलों के ताज़ा भाव:**\n` +
+          (cropsText || "• फसल विवरण उपलब्ध नहीं है") + "\n\n" +
+          (regText ? `📊 **${liveData.state || "राज्य"} की अन्य प्रमुख मंडियों में ${liveData.commodity} के ताज़ा भाव:**\n` + regText + "\n\n" : "") +
+          `💡 *सलाह: 520+ मंडियों के लाइव भाव और 30-दिवसीय मूल्य रुझान देखने के लिए **Mandi Prices** सेक्शन पर जाएं।*`
+        );
+      }
+
       return (
-        `📊 **${rec.market} - ${rec.commodity} बाजार भाव**\n\n` +
-        `• **सरासरी (मॉडेल) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
-        `• **किमान – कमाल दर**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
-        `• **जिल्हा / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश / महाराष्ट्र"}\n` +
-        `• **आवक तारीख**: ${arrivalStr} (AGMARKNET अधिकृत)\n\n` +
-        `💡 *टीप: ५२०+ बाजार समित्यांचे थेट दर, दर कल आणि वाहतूक खर्च वजा जाता मिळणारा निव्वळ नफा (Net Realisation) तपासण्यासाठी मेनूमधील **Mandi Prices** विभागाला भेट द्या.*`
+        `⚠️ **No Recent ${liveData.commodity} Arrivals Reported for ${liveData.requestedMandi} Mandi**\n\n` +
+        `According to AGMARKNET, there are currently no recorded arrivals for **${liveData.commodity}** at ${liveData.requestedMandi} (District: ${liveData.district || ""}, ${liveData.state || ""}).\n\n` +
+        `🌾 **Available Crop Rates at ${liveData.requestedMandi}:**\n` +
+        (cropsText || "• No other arrivals reported") + "\n\n" +
+        (regText ? `📊 **Recent ${liveData.commodity} Rates in ${liveData.state || "Nearby"} Mandis:**\n` + regText + "\n\n" : "") +
+        `💡 *Tip: Go to the **Mandi Prices** section on your dashboard to search all 520+ mandis and compare rates across districts.*`
       );
     }
 
-    if (langKey === "hi") {
+    // 1.B: User asked for an unknown mandi that has no records in DB
+    if (liveData.type === "MANDI_NOT_FOUND") {
+      const regText = (liveData.regionalRecords || [])
+        .map(r => `• **${r.market}** (${r.district || ""}, ${r.state || ""}): Modal ₹${r.modalPrice.toLocaleString("en-IN")}/qtl`)
+        .join("\n");
+
+      if (langKey === "mr") {
+        return (
+          `⚠️ **'${liveData.requestedMandi}' बाजार समितीची नोंद AGMARKNET मध्ये आढळली नाही.**\n\n` +
+          (regText ? `📊 **इतर प्रमुख बाजारांमधील ${liveData.commodity} चे ताजे भाव:**\n` + regText + "\n\n" : "") +
+          `💡 *टीप: ५२०+ नोंदणीकृत बाजार समित्या शोधण्यासाठी मेनूमधील **Mandi Prices** विभागाला भेट द्या.*`
+        );
+      }
+      if (langKey === "hi") {
+        return (
+          `⚠️ **'${liveData.requestedMandi}' मंडी का AGMARKNET रिकॉर्ड नहीं मिला।**\n\n` +
+          (regText ? `📊 **अन्य प्रमुख मंडियों में ${liveData.commodity} के ताज़ा भाव:**\n` + regText + "\n\n" : "") +
+          `💡 *सलाह: 520+ पंजीकृत मंडियों के भाव देखने के लिए मेनू में **Mandi Prices** पर जाएं।*`
+        );
+      }
       return (
-        `📊 **${rec.market} - ${rec.commodity} के ताज़ा मंडी भाव**\n\n` +
-        `• **मॉडल (औसत) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
-        `• **न्यूनतम – अधिकतम भाव**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
-        `• **जिला / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश"}\n` +
-        `• **आवक दिनांक**: ${arrivalStr} (AGMARKNET सत्यापित)\n\n` +
-        `💡 *सलाह: 520+ मंडियों के लाइव भाव, 30-दिवसीय मूल्य रुझान और शुद्ध मुनाफा (Net Realisation) देखने के लिए नेविगेशन में **Mandi Prices** पर जाएं।*`
+        `⚠️ **No AGMARKNET arrival records found for "${liveData.requestedMandi}" mandi.**\n\n` +
+        (regText ? `📊 **Recent ${liveData.commodity} Rates in Major Mandis:**\n` + regText + "\n\n" : "") +
+        `💡 *Tip: Go to **Mandi Prices** in your navigation to search across 520+ registered APMC mandis.*`
       );
     }
 
-    return (
-      `📊 **${rec.market} Mandi Rates for ${rec.commodity}**\n\n` +
-      `• **Modal (Avg) Price**: ₹${rec.modalPrice.toLocaleString("en-IN")} / quintal\n` +
-      `• **Price Range**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / quintal\n` +
-      `• **District / State**: ${rec.district || ""}, ${rec.state || "Madhya Pradesh"}\n` +
-      `• **Arrival Date**: ${arrivalStr} (AGMARKNET Verified)\n\n` +
-      `💡 *Tip: Go to the **Mandi Prices** section on your dashboard to view real-time arrivals across 520+ mandis, 30-day price trends, and calculate Net Realisation after transport costs.*`
-    );
+    // 1.C: Direct match (crop + mandi found)
+    if (liveData.records && liveData.records.length > 0 && liveData.type !== "COMMODITY_ONLY" && liveData.type !== "MANDI_ALL_CROPS") {
+      const rec = liveData.records[0];
+      const arrivalStr = rec.arrivalDate
+        ? new Date(rec.arrivalDate).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })
+        : "Recent";
+
+      if (langKey === "mr") {
+        return (
+          `📊 **${rec.market} - ${rec.commodity} बाजार भाव**\n\n` +
+          `• **सरासरी (मॉडेल) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+          `• **किमान – कमाल दर**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+          `• **जिल्हा / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश / महाराष्ट्र"}\n` +
+          `• **आवक तारीख**: ${arrivalStr} (AGMARKNET अधिकृत)\n\n` +
+          `💡 *टीप: ५२०+ बाजार समित्यांचे थेट दर, दर कल आणि वाहतूक खर्च वजा जाता मिळणारा निव्वळ नफा (Net Realisation) तपासण्यासाठी मेनूमधील **Mandi Prices** विभागाला भेट द्या.*`
+        );
+      }
+
+      if (langKey === "hi") {
+        return (
+          `📊 **${rec.market} - ${rec.commodity} के ताज़ा मंडी भाव**\n\n` +
+          `• **मॉडल (औसत) भाव**: ₹${rec.modalPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+          `• **न्यूनतम – अधिकतम भाव**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / क्विंटल\n` +
+          `• **जिला / राज्य**: ${rec.district || ""}, ${rec.state || "मध्य प्रदेश"}\n` +
+          `• **आवक दिनांक**: ${arrivalStr} (AGMARKNET सत्यापित)\n\n` +
+          `💡 *सलाह: 520+ मंडियों के लाइव भाव, 30-दिवसीय मूल्य रुझान और शुद्ध मुनाफा (Net Realisation) देखने के लिए नेविगेशन में **Mandi Prices** पर जाएं।*`
+        );
+      }
+
+      return (
+        `📊 **${rec.market} Mandi Rates for ${rec.commodity}**\n\n` +
+        `• **Modal (Avg) Price**: ₹${rec.modalPrice.toLocaleString("en-IN")} / quintal\n` +
+        `• **Price Range**: ₹${rec.minPrice.toLocaleString("en-IN")} – ₹${rec.maxPrice.toLocaleString("en-IN")} / quintal\n` +
+        `• **District / State**: ${rec.district || ""}, ${rec.state || "Madhya Pradesh"}\n` +
+        `• **Arrival Date**: ${arrivalStr} (AGMARKNET Verified)\n\n` +
+        `💡 *Tip: Go to the **Mandi Prices** section on your dashboard to view real-time arrivals across 520+ mandis, 30-day price trends, and calculate Net Realisation after transport costs.*`
+      );
+    }
+
+    // 1.D: Commodity only (multiple mandis for that crop)
+    if (liveData.type === "COMMODITY_ONLY" && liveData.records && liveData.records.length > 0) {
+      const rows = liveData.records
+        .map(r => `• **${r.market}** (${r.district || ""}, ${r.state || ""}): Modal ₹${r.modalPrice.toLocaleString("en-IN")}/qtl (₹${r.minPrice.toLocaleString("en-IN")} – ₹${r.maxPrice.toLocaleString("en-IN")})`)
+        .join("\n");
+      if (langKey === "mr") {
+        return (
+          `📊 **${liveData.commodity} चे चालू बाजार भाव:**\n\n` +
+          rows + "\n\n" +
+          `💡 *टीप: विशिष्ट बाजार समितीचे दर जाणून घेण्यासाठी बाजाराचे नाव सांगा (उदा. 'इंदूर', 'खुरई') किंवा **Mandi Prices** तपासा.*`
+        );
+      }
+      if (langKey === "hi") {
+        return (
+          `📊 **${liveData.commodity} के प्रमुख मंडी भाव:**\n\n` +
+          rows + "\n\n" +
+          `💡 *सलाह: किसी विशिष्ट मंडी के भाव जानने के लिए मंडी का नाम लिखें (उदा. 'इंदौर', 'खुरई') या **Mandi Prices** देखें।*`
+        );
+      }
+      return (
+        `📊 **Current Mandi Rates for ${liveData.commodity}:**\n\n` +
+        rows + "\n\n" +
+        `💡 *Tip: Mention a specific mandi name (e.g., 'Khurai', 'Indore', 'Dewas') or check **Mandi Prices** on your dashboard for 30-day price trends.*`
+      );
+    }
+
+    // 1.E: Mandi only (all crops at that mandi)
+    if (liveData.type === "MANDI_ALL_CROPS" && liveData.records && liveData.records.length > 0) {
+      const rows = liveData.records
+        .map(r => `• **${r.commodity}**: Modal ₹${r.modalPrice.toLocaleString("en-IN")}/qtl (Range: ₹${r.minPrice.toLocaleString("en-IN")} – ₹${r.maxPrice.toLocaleString("en-IN")})`)
+        .join("\n");
+      if (langKey === "mr") {
+        return (
+          `📊 **${liveData.mandi} बाजार समितीचे ताजे भाव:**\n\n` +
+          rows + "\n\n" +
+          `💡 *टीप: अधिक तपशील आणि आवक पाहण्यासाठी मेनूमधील **Mandi Prices** विभागाला भेट द्या.*`
+        );
+      }
+      if (langKey === "hi") {
+        return (
+          `📊 **${liveData.mandi} मंडी के ताज़ा भाव:**\n\n` +
+          rows + "\n\n" +
+          `💡 *सलाह: 520+ मंडियों के लाइव भाव और मूल्य रुझान देखने के लिए **Mandi Prices** सेक्शन पर जाएं।*`
+        );
+      }
+      return (
+        `📊 **Current Mandi Rates at ${liveData.mandi}:**\n\n` +
+        rows + "\n\n" +
+        `💡 *Tip: Go to **Mandi Prices** on your dashboard for real-time arrivals and net realization calculations.*`
+      );
+    }
   }
 
   // Check quick action match only when no specific DB records match the query
@@ -1151,11 +1393,20 @@ export async function generateChatResponse(input, options = {}) {
   if (isQuickAction && quickKey && dict[quickKey]) {
     return dict[quickKey];
   }
-  if (quickKey && dict[quickKey] && (!livePriceData || !livePriceData.records || !livePriceData.records.length)) {
+  const hasLiveMandiInfo = Boolean(
+    livePriceData &&
+    (
+      (livePriceData.records && livePriceData.records.length > 0) ||
+      (livePriceData.availableMandiCrops && livePriceData.availableMandiCrops.length > 0) ||
+      (livePriceData.regionalRecords && livePriceData.regionalRecords.length > 0)
+    )
+  );
+  if (quickKey && dict[quickKey] && !hasLiveMandiInfo) {
     return dict[quickKey];
   }
+
   let livePricePromptSnippet = "";
-  if (livePriceData && livePriceData.records && livePriceData.records.length > 0) {
+  if (livePriceData?.type === "DIRECT_MATCH" && livePriceData.records && livePriceData.records.length > 0) {
     const r = livePriceData.records[0];
     const arrivalDateStr = r.arrivalDate
       ? new Date(r.arrivalDate).toLocaleDateString("en-IN")
@@ -1170,6 +1421,39 @@ Price Range: ₹${r.minPrice} – ₹${r.maxPrice} / quintal
 District: ${r.district || "N/A"}, State: ${r.state || "N/A"}
 Arrival Date: ${arrivalDateStr}
 RULE: YOU MUST CITE THESE EXACT NUMBERS IF THE USER IS ASKING FOR THIS CROP/MANDI PRICE.
+==================================================
+`;
+  } else if (livePriceData?.type === "MANDI_NO_CROP") {
+    const cropsText = (livePriceData.availableMandiCrops || [])
+      .map(c => `• ${c.commodity} (${c.market}): Modal ₹${c.modalPrice}/qtl (Range: ₹${c.minPrice} - ₹${c.maxPrice})`)
+      .join("\n");
+    const regText = (livePriceData.regionalRecords || [])
+      .map(r => `• ${r.market} (${r.district || ""}, ${r.state || ""}): Modal ₹${r.modalPrice}/qtl`)
+      .join("\n");
+    livePricePromptSnippet = `
+==================================================
+AUTHENTIC LIVE KRISHILINK DATABASE STATUS:
+Requested Mandi: ${livePriceData.requestedMandi}
+Requested Commodity: ${livePriceData.commodity}
+CRITICAL FACTS & RULES:
+1. On AGMARKNET, there are NO recent arrivals of ${livePriceData.commodity} recorded at ${livePriceData.requestedMandi} (${livePriceData.state || ""}).
+2. NEVER claim that an unrelated market (like Jasdan, Rajkot, or Tamil Nadu) is ${livePriceData.requestedMandi}.
+3. State clearly that no recent arrivals for ${livePriceData.commodity} were reported in ${livePriceData.requestedMandi}.
+4. Mention the available crop arrivals that ARE reported in ${livePriceData.requestedMandi}:
+${cropsText}
+5. Provide recent ${livePriceData.commodity} rates from neighboring/state mandis:
+${regText}
+==================================================
+`;
+  } else if (livePriceData?.type === "COMMODITY_ONLY" && livePriceData.records && livePriceData.records.length > 0) {
+    const rows = livePriceData.records
+      .map(r => `• ${r.market} (${r.district || ""}, ${r.state || ""}): Modal ₹${r.modalPrice}/qtl`)
+      .join("\n");
+    livePricePromptSnippet = `
+==================================================
+AUTHENTIC LIVE KRISHILINK DATABASE RECORDS FOR ${livePriceData.commodity}:
+${rows}
+RULE: CITE THESE REAL MANDI RATES FOR ${livePriceData.commodity}.
 ==================================================
 `;
   }
