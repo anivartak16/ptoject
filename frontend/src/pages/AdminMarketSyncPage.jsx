@@ -23,6 +23,10 @@ import {
   Activity,
   Server,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   AreaChart,
@@ -189,6 +193,7 @@ export function AdminMarketSyncPage() {
   const [syncFromDate, setSyncFromDate] = useState("");
   const [syncToDate, setSyncToDate] = useState("");
   const [syncLimit, setSyncLimit] = useState(100);
+  const [syncFetchAll, setSyncFetchAll] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [syncError, setSyncError] = useState("");
@@ -210,6 +215,7 @@ export function AdminMarketSyncPage() {
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
   const [dataLimit, setDataLimit] = useState(50);
+  const [explorerPage, setExplorerPage] = useState(1);
   const [fallbackNotice, setFallbackNotice] = useState(null);
 
   // Explorer Data State
@@ -373,6 +379,8 @@ export function AdminMarketSyncPage() {
       fromDate: syncFromDate || undefined,
       toDate: syncToDate || undefined,
       limit: syncLimit,
+      autoPaginate: syncFetchAll || syncLimit > 250,
+      fetchAll: syncFetchAll,
     };
 
     // If an override updated state or commodity, update the form inputs as well
@@ -429,16 +437,20 @@ export function AdminMarketSyncPage() {
   };
 
   // Fetch data based on active explorer route
-  const fetchExplorerRouteData = useCallback(async () => {
+  const fetchExplorerRouteData = useCallback(async (targetPage = explorerPage) => {
     setExplorerLoading(true);
     setExplorerError("");
     try {
       let res;
+      const pageToUse = typeof targetPage === "number" ? Math.max(1, targetPage) : 1;
+
       if (activeTab === "prices") {
         // GET /api/marketPrice/prices
+        const offset = (pageToUse - 1) * dataLimit;
         const params = {
           limit: dataLimit,
-          offset: 0,
+          offset,
+          page: pageToUse,
         };
         if (filterState) params.state = filterState;
         if (filterCommodity) params.commodity = filterCommodity;
@@ -447,7 +459,7 @@ export function AdminMarketSyncPage() {
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices", { params });
         let records = res.data.data?.records || [];
-        let total = res.data.data?.total || records.length;
+        let total = typeof res.data.data?.total === "number" ? res.data.data.total : records.length;
 
         // Enforce strict client-side state match to prevent any government API tokenization leaks
         if (filterState && records.length > 0) {
@@ -455,7 +467,6 @@ export function AdminMarketSyncPage() {
           records = records.filter(
             (r) => r.state && r.state.trim().toLowerCase() === normFilterState
           );
-          total = records.length;
         }
 
         // Smart Fallback: If 0 records because state filter is too restrictive for this crop
@@ -463,6 +474,7 @@ export function AdminMarketSyncPage() {
           const fallbackParams = {
             limit: dataLimit,
             offset: 0,
+            page: 1,
             commodity: filterCommodity,
           };
           if (filterFromDate) fallbackParams.fromDate = filterFromDate;
@@ -472,7 +484,7 @@ export function AdminMarketSyncPage() {
             const altRecords = fallbackRes.data.data?.records || [];
             if (altRecords.length > 0) {
               records = altRecords;
-              total = fallbackRes.data.data?.total || altRecords.length;
+              total = typeof fallbackRes.data.data?.total === "number" ? fallbackRes.data.data.total : altRecords.length;
               const altStates = Array.from(new Set(altRecords.map((r) => r.state))).filter(Boolean);
               setFallbackNotice({
                 type: "state_empty_crop_found",
@@ -505,7 +517,7 @@ export function AdminMarketSyncPage() {
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/state-commodity", { params });
         let records = res.data.data?.records || [];
-        let total = res.data.data?.total || records.length;
+        let total = typeof res.data.data?.total === "number" ? res.data.data.total : records.length;
 
         // If 0 records and backend provided alternative active states for this crop
         if (records.length === 0 && res.data.data?.commodityActiveStates?.length > 0) {
@@ -522,7 +534,7 @@ export function AdminMarketSyncPage() {
             const altRecords = altRes.data.data?.records || [];
             if (altRecords.length > 0) {
               records = altRecords;
-              total = altRes.data.data?.total || altRecords.length;
+              total = typeof altRes.data.data?.total === "number" ? altRes.data.data.total : altRecords.length;
               setFallbackNotice({
                 type: "auto_switched_state",
                 originalState: targetState,
@@ -562,7 +574,7 @@ export function AdminMarketSyncPage() {
         // GET /api/marketPrice/prices/db
         const params = {
           limit: dataLimit,
-          page: 1,
+          page: pageToUse,
         };
         if (filterState) params.state = filterState;
         if (filterCommodity) params.commodity = filterCommodity;
@@ -571,18 +583,18 @@ export function AdminMarketSyncPage() {
         if (filterToDate) params.toDate = filterToDate;
         res = await api.get("/marketPrice/prices/db", { params });
         let records = res.data.data?.records || [];
-        let total = res.data.data?.total || 0;
+        let total = typeof res.data.data?.total === "number" ? res.data.data.total : 0;
 
         // If 0 records in DB for selected state, check across all states in DB
         if (records.length === 0 && filterState && filterCommodity) {
-          const fallbackParams = { ...params };
+          const fallbackParams = { ...params, page: 1 };
           delete fallbackParams.state;
           try {
             const fallbackRes = await api.get("/marketPrice/prices/db", { params: fallbackParams });
             const altRecords = fallbackRes.data.data?.records || [];
             if (altRecords.length > 0) {
               records = altRecords;
-              total = fallbackRes.data.data?.total || altRecords.length;
+              total = typeof fallbackRes.data.data?.total === "number" ? fallbackRes.data.data.total : altRecords.length;
               const altStates = Array.from(new Set(altRecords.map((r) => r.state))).filter(Boolean);
               setFallbackNotice({
                 type: "db_state_empty_crop_found",
@@ -616,7 +628,14 @@ export function AdminMarketSyncPage() {
     } finally {
       setExplorerLoading(false);
     }
-  }, [activeTab, filterState, filterCommodity, filterDistrict, filterFromDate, filterToDate, dataLimit]);
+  }, [activeTab, filterState, filterCommodity, filterDistrict, filterFromDate, filterToDate, dataLimit, explorerPage]);
+
+  const handlePageChange = (newPage) => {
+    const totalPages = Math.max(1, Math.ceil(explorerTotal / dataLimit));
+    const target = Math.max(1, Math.min(newPage, totalPages));
+    setExplorerPage(target);
+    fetchExplorerRouteData(target);
+  };
 
   useEffect(() => {
     fetchExplorerRouteData();
@@ -1184,17 +1203,27 @@ export function AdminMarketSyncPage() {
           </div>
 
           <div className="form-item limit-item">
-            <label htmlFor="sync-limit-input">Record Limit</label>
+            <label htmlFor="sync-limit-input">Record Limit & Mode</label>
             <select
               id="sync-limit-input"
-              value={syncLimit}
-              onChange={(e) => setSyncLimit(Number(e.target.value))}
+              value={syncFetchAll ? "all" : syncLimit}
+              onChange={(e) => {
+                if (e.target.value === "all") {
+                  setSyncFetchAll(true);
+                  setSyncLimit(5000);
+                } else {
+                  setSyncFetchAll(false);
+                  setSyncLimit(Number(e.target.value));
+                }
+              }}
             >
               <option value={50}>50 records</option>
               <option value={100}>100 records</option>
-              <option value={200}>200 records</option>
-              <option value={500}>500 records</option>
-              <option value={1000}>1000 records</option>
+              <option value={250}>250 records</option>
+              <option value={500}>500 records (Auto-Paged)</option>
+              <option value={1000}>1,000 records (Auto-Paged)</option>
+              <option value={2500}>2,500 records (Auto-Paged)</option>
+              <option value="all">⚡ Full Dataset (Auto-Paging All Records)</option>
             </select>
           </div>
 
@@ -1429,7 +1458,11 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className={`tab-btn ${activeTab === "prices" ? "active" : ""}`}
-            onClick={() => setActiveTab("prices")}
+            onClick={() => {
+              setActiveTab("prices");
+              setExplorerPage(1);
+              setTableSearch("");
+            }}
           >
             <CloudDownload size={14} />
             <span>1. Live AGMARKNET Prices (/prices)</span>
@@ -1437,7 +1470,11 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className={`tab-btn ${activeTab === "state-commodity" ? "active" : ""}`}
-            onClick={() => setActiveTab("state-commodity")}
+            onClick={() => {
+              setActiveTab("state-commodity");
+              setExplorerPage(1);
+              setTableSearch("");
+            }}
           >
             <Layers size={14} />
             <span>2. State + Commodity All Districts (/state-commodity)</span>
@@ -1445,7 +1482,11 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className={`tab-btn ${activeTab === "by-commodity" ? "active" : ""}`}
-            onClick={() => setActiveTab("by-commodity")}
+            onClick={() => {
+              setActiveTab("by-commodity");
+              setExplorerPage(1);
+              setTableSearch("");
+            }}
           >
             <TrendingUp size={14} />
             <span>3. Commodity Across States (/by-commodity/:commodity)</span>
@@ -1453,7 +1494,11 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className={`tab-btn ${activeTab === "by-state" ? "active" : ""}`}
-            onClick={() => setActiveTab("by-state")}
+            onClick={() => {
+              setActiveTab("by-state");
+              setExplorerPage(1);
+              setTableSearch("");
+            }}
           >
             <MapPin size={14} />
             <span>4. State Commodities (/by-state/:state)</span>
@@ -1461,7 +1506,11 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className={`tab-btn db-tab ${activeTab === "db" ? "active" : ""}`}
-            onClick={() => setActiveTab("db")}
+            onClick={() => {
+              setActiveTab("db");
+              setExplorerPage(1);
+              setTableSearch("");
+            }}
           >
             <Database size={14} />
             <span>5. Database Records (/prices/db)</span>
@@ -1472,11 +1521,13 @@ export function AdminMarketSyncPage() {
             style={activeTab === "prediction" ? { borderColor: "#16a34a", color: "#16a34a", fontWeight: 700 } : {}}
             onClick={() => {
               setActiveTab("prediction");
+              setExplorerPage(1);
+              setTableSearch("");
               fetchPredictionForAdmin(predCrop, predHorizon, predRole);
             }}
           >
-            <TrendingUp size={14} color="#16a34a" />
-            <span>6. 📈 Live DB Prediction & Forecast Engine</span>
+            <Zap size={14} />
+            <span>6. ML Price Prediction Engine (Live)</span>
           </button>
         </div>
 
@@ -2033,7 +2084,10 @@ export function AdminMarketSyncPage() {
               <label>State (All 36 States & UTs):</label>
               <select
                 value={filterState}
-                onChange={(e) => setFilterState(e.target.value)}
+                onChange={(e) => {
+                  setFilterState(e.target.value);
+                  setExplorerPage(1);
+                }}
               >
                 <option value="">All States</option>
                 {activeOptions.activeStates?.length > 0 && (
@@ -2064,7 +2118,10 @@ export function AdminMarketSyncPage() {
               <label>Commodity:</label>
               <select
                 value={filterCommodity}
-                onChange={(e) => setFilterCommodity(e.target.value)}
+                onChange={(e) => {
+                  setFilterCommodity(e.target.value);
+                  setExplorerPage(1);
+                }}
               >
                 <option value="">All Commodities</option>
                 <optgroup label="⚡ Popular Commodities">
@@ -2092,7 +2149,10 @@ export function AdminMarketSyncPage() {
                 type="text"
                 placeholder="District (optional)"
                 value={filterDistrict}
-                onChange={(e) => setFilterDistrict(e.target.value)}
+                onChange={(e) => {
+                  setFilterDistrict(e.target.value);
+                  setExplorerPage(1);
+                }}
               />
             </div>
           )}
@@ -2105,7 +2165,10 @@ export function AdminMarketSyncPage() {
                 <input
                   type="date"
                   value={filterFromDate}
-                  onChange={(e) => setFilterFromDate(e.target.value)}
+                  onChange={(e) => {
+                    setFilterFromDate(e.target.value);
+                    setExplorerPage(1);
+                  }}
                 />
               </div>
               <div className="filter-input-group">
@@ -2113,7 +2176,10 @@ export function AdminMarketSyncPage() {
                 <input
                   type="date"
                   value={filterToDate}
-                  onChange={(e) => setFilterToDate(e.target.value)}
+                  onChange={(e) => {
+                    setFilterToDate(e.target.value);
+                    setExplorerPage(1);
+                  }}
                 />
               </div>
             </>
@@ -2121,15 +2187,21 @@ export function AdminMarketSyncPage() {
 
           {(activeTab === "prices" || activeTab === "db") && (
             <div className="filter-input-group">
-              <label>Limit:</label>
+              <label>Page Size:</label>
               <select
                 value={dataLimit}
-                onChange={(e) => setDataLimit(Number(e.target.value))}
+                onChange={(e) => {
+                  const newLimit = Number(e.target.value);
+                  setDataLimit(newLimit);
+                  setExplorerPage(1);
+                  fetchExplorerRouteData(1);
+                }}
               >
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={200}>200</option>
+                <option value={20}>20 rows</option>
+                <option value={50}>50 rows</option>
+                <option value={100}>100 rows</option>
+                <option value={200}>200 rows</option>
+                <option value={500}>500 rows</option>
               </select>
             </div>
           )}
@@ -2137,7 +2209,10 @@ export function AdminMarketSyncPage() {
           <button
             type="button"
             className="secondary query-btn"
-            onClick={fetchExplorerRouteData}
+            onClick={() => {
+              setExplorerPage(1);
+              fetchExplorerRouteData(1);
+            }}
             disabled={explorerLoading}
           >
             <Search size={14} className={explorerLoading ? "spin" : ""} />
@@ -2146,11 +2221,32 @@ export function AdminMarketSyncPage() {
         </div>
 
         {/* Table Search & Results Count Bar */}
-        <div className="table-action-bar">
-          <div className="results-count">
-            Showing <strong>{filteredRows.length}</strong> of{" "}
-            <strong>{explorerTotal}</strong> records
-            {activeTab === "db" && " (Saved in MongoDB)"}
+        <div className="table-action-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div className="results-count" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span>
+              Showing{" "}
+              <strong>
+                {explorerTotal > 0 ? (explorerPage - 1) * dataLimit + 1 : 0} –{" "}
+                {Math.min(explorerPage * dataLimit, explorerTotal).toLocaleString()}
+              </strong>{" "}
+              of <strong>{explorerTotal.toLocaleString()}</strong> records
+              {activeTab === "db" && " (Saved in MongoDB)"}
+              {activeTab === "prices" && " (AGMARKNET Official Feed)"}
+            </span>
+            {(activeTab === "prices" || activeTab === "db") && explorerTotal > dataLimit && (
+              <span
+                style={{
+                  fontSize: "11px",
+                  background: "#e0e7ff",
+                  color: "#3730a3",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                Page {explorerPage} of {Math.ceil(explorerTotal / dataLimit)}
+              </span>
+            )}
           </div>
           <div className="search-box">
             <Search size={14} className="search-icon" />
@@ -2362,6 +2458,143 @@ export function AdminMarketSyncPage() {
                 ))}
               </tbody>
             </table>
+          )}
+
+          {/* Interactive Pagination Bar for Paginated Views */}
+          {(activeTab === "prices" || activeTab === "db") && explorerTotal > 0 && (
+            <div
+              className="explorer-pagination-bar"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "14px 20px",
+                background: "#f8fafc",
+                borderTop: "1px solid #e2e8f0",
+                borderRadius: "0 0 10px 10px",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div style={{ fontSize: "13px", color: "#64748b" }}>
+                Showing{" "}
+                <strong style={{ color: "#1e293b" }}>
+                  {(explorerPage - 1) * dataLimit + 1} –{" "}
+                  {Math.min(explorerPage * dataLimit, explorerTotal).toLocaleString()}
+                </strong>{" "}
+                of <strong style={{ color: "#1e293b" }}>{explorerTotal.toLocaleString()}</strong> total records
+                <span style={{ marginLeft: "6px", color: "#94a3b8" }}>
+                  (Page {explorerPage} of {Math.max(1, Math.ceil(explorerTotal / dataLimit))})
+                </span>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  type="button"
+                  title="First Page"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 10px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: explorerPage <= 1 ? "#f1f5f9" : "#ffffff",
+                    color: explorerPage <= 1 ? "#94a3b8" : "#334155",
+                    cursor: explorerPage <= 1 ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() => handlePageChange(1)}
+                  disabled={explorerPage <= 1 || explorerLoading}
+                >
+                  <ChevronsLeft size={14} />
+                  <span>First</span>
+                </button>
+
+                <button
+                  type="button"
+                  title="Previous Page"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: explorerPage <= 1 ? "#f1f5f9" : "#ffffff",
+                    color: explorerPage <= 1 ? "#94a3b8" : "#334155",
+                    cursor: explorerPage <= 1 ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() => handlePageChange(explorerPage - 1)}
+                  disabled={explorerPage <= 1 || explorerLoading}
+                >
+                  <ChevronLeft size={14} />
+                  <span>Prev</span>
+                </button>
+
+                <div
+                  style={{
+                    padding: "4px 12px",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    background: "#e2e8f0",
+                    borderRadius: "6px",
+                  }}
+                >
+                  {explorerPage} / {Math.max(1, Math.ceil(explorerTotal / dataLimit))}
+                </div>
+
+                <button
+                  type="button"
+                  title="Next Page"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 12px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "#f1f5f9" : "#ffffff",
+                    color: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "#94a3b8" : "#334155",
+                    cursor: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() => handlePageChange(explorerPage + 1)}
+                  disabled={explorerPage >= Math.ceil(explorerTotal / dataLimit) || explorerLoading}
+                >
+                  <span>Next</span>
+                  <ChevronRight size={14} />
+                </button>
+
+                <button
+                  type="button"
+                  title="Last Page"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 10px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "#f1f5f9" : "#ffffff",
+                    color: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "#94a3b8" : "#334155",
+                    cursor: explorerPage >= Math.ceil(explorerTotal / dataLimit) ? "not-allowed" : "pointer",
+                  }}
+                  onClick={() => handlePageChange(Math.ceil(explorerTotal / dataLimit))}
+                  disabled={explorerPage >= Math.ceil(explorerTotal / dataLimit) || explorerLoading}
+                >
+                  <span>Last</span>
+                  <ChevronsRight size={14} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
         </>
