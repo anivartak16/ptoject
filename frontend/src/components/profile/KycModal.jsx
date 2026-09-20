@@ -101,7 +101,6 @@ export function KycModal({
       setSuccessInfo({
         aadhaarLast4: data.aadhaarLast4,
         maskedTarget: data.maskedTarget,
-        sandboxOtpHint: data.sandboxOtpHint,
       });
       setStep("otp");
       setResendTimer(30);
@@ -130,12 +129,6 @@ export function KycModal({
       setResendActive(false);
       setOtp("");
       setResendMessage(res.data?.message || "OTP has been resent to your registered mobile.");
-      if (res.data?.data?.sandboxOtpHint) {
-        setSuccessInfo((prev) => ({
-          ...prev,
-          sandboxOtpHint: res.data.data.sandboxOtpHint,
-        }));
-      }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend OTP. Please try again.");
     } finally {
@@ -313,12 +306,6 @@ export function KycModal({
                 </small>
               </div>
 
-              {/* Sandbox/Test OTP hint (shown only when running in development sandbox mode) */}
-              {successInfo?.sandboxOtpHint && (
-                <div className="demo-otp-pill" style={{ marginTop: "10px" }}>
-                  🧪 Sandbox / Test OTP: <b>{successInfo.sandboxOtpHint}</b>
-                </div>
-              )}
             </div>
 
             <div className="kyc-input-group">

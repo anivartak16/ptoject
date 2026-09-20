@@ -172,21 +172,25 @@ async function runTestSuite() {
   // 5. OTP Success/Failure Handling (Sandbox / Test Mode)
   // ----------------------------------------------------
   console.log("[TEST 5] OTP Dispatch, Verification & Failure Handling...");
+  const origKey = process.env.SANDBOX_API_KEY;
+  const origSecret = process.env.SANDBOX_API_SECRET;
   try {
+    delete process.env.SANDBOX_API_KEY;
+    delete process.env.SANDBOX_API_SECRET;
     const testAadhaar = "45678901234" + generateVerhoeff("45678901234");
 
     // 5a. Generate OTP
     const genRes = await aadhaarKycService.generateOtp(testAadhaar);
     if (!genRes.client_id || !genRes.aadhaarLast4 || !genRes.maskedTarget) {
-      throw new Error("generateOtp missing client_id or masked fields");
+      throw new Error("generateOtp response missing required fields");
     }
     console.log("  ✓ OTP generated with session reference:", genRes.client_id);
     console.log("  ✓ Masked mobile confirmation:", genRes.maskedTarget);
 
     // 5b. Incorrect OTP rejection
     try {
-      await aadhaarKycService.verifyOtp(genRes.client_id, "999999");
-      throw new Error("verifyOtp should have rejected incorrect OTP");
+      await aadhaarKycService.verifyOtp(genRes.client_id, "000000");
+      throw new Error("Incorrect OTP was unexpectedly accepted");
     } catch (err) {
       if (!err.message.includes("Incorrect or expired OTP")) {
         throw err;
@@ -195,7 +199,8 @@ async function runTestSuite() {
     }
 
     // 5c. Correct OTP verification
-    const testOtp = genRes.sandboxOtpHint || "123456";
+    const cleanAadhaar = String(testAadhaar).replace(/\D/g, "");
+    const testOtp = genRes.sandboxOtpHint || String(Math.floor(100000 + (parseInt(cleanAadhaar.slice(-6)) % 900000)));
     const verifyRes = await aadhaarKycService.verifyOtp(genRes.client_id, testOtp);
     if (!verifyRes.verified || !verifyRes.aadhaarLast4) {
       throw new Error("verifyOtp failed with valid OTP");
@@ -214,6 +219,9 @@ async function runTestSuite() {
     console.log("  ✓ OTP lifecycle handling completed.\n");
   } catch (err) {
     console.error("  ✕ OTP handling test failed:", err.message);
+  } finally {
+    if (origKey) process.env.SANDBOX_API_KEY = origKey;
+    if (origSecret) process.env.SANDBOX_API_SECRET = origSecret;
   }
 
   // ----------------------------------------------------

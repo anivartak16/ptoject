@@ -11,7 +11,7 @@ import {
   runLiveNationalSync,
 } from "../services/agmarknetService.js";
 
-// GET /api/marketPrice/prices?state=...&commodity=...&district=...&date=...&fromDate=...&toDate=...&limit=100&offset=0
+// GET /api/marketPrice/prices?state=...&commodity=...&district=...&date=...&fromDate=...&toDate=...&limit=100&offset=0&page=1
 async function getPrices(req, res) {
   try {
     const {
@@ -23,9 +23,20 @@ async function getPrices(req, res) {
       arrivalDate,
       fromDate,
       toDate,
-      limit,
+      limit = 50,
       offset,
+      page,
+      autoPaginate,
+      fetchAll,
     } = req.query;
+
+    const targetLimit = Math.max(1, Number(limit) || 50);
+    const targetOffset =
+      offset !== undefined
+        ? Number(offset)
+        : page
+        ? (Math.max(1, Number(page)) - 1) * targetLimit
+        : 0;
 
     if (fromDate || toDate) {
       const data = await fetchMandiPricesDateRange({
@@ -36,7 +47,11 @@ async function getPrices(req, res) {
         fromDate,
         toDate,
         date: arrivalDate || date,
-        limit: limit ? Number(limit) : undefined,
+        limit: targetLimit,
+        offset: targetOffset,
+        page: page ? Number(page) : undefined,
+        autoPaginate: autoPaginate === "true" || autoPaginate === true,
+        fetchAll: fetchAll === "true" || fetchAll === true,
         persist: false,
       });
 
@@ -52,8 +67,11 @@ async function getPrices(req, res) {
       district,
       market,
       date: arrivalDate || date,
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
+      limit: targetLimit,
+      offset: targetOffset,
+      page: page ? Number(page) : undefined,
+      autoPaginate: autoPaginate === "true" || autoPaginate === true,
+      fetchAll: fetchAll === "true" || fetchAll === true,
     });
 
     res.json({
@@ -171,9 +189,14 @@ async function syncToDb(req, res) {
       arrivalDate,
       fromDate,
       toDate,
+      autoPaginate = false,
+      fetchAll = false,
     } = req.body || {};
 
     const targetDate = arrivalDate || date;
+    const targetLimit = Number(limit) || 100;
+    const isFetchAll = Boolean(fetchAll || targetLimit >= 5000);
+    const shouldAutoPaginate = Boolean(autoPaginate || isFetchAll || targetLimit > 250);
 
     // If both state and commodity are given, fetch all district records recursively
     if (state && commodity) {
@@ -184,6 +207,8 @@ async function syncToDb(req, res) {
           date: targetDate,
           fromDate,
           toDate,
+          pageSize: 250,
+          maxRecords: isFetchAll ? 10000 : Math.max(targetLimit, 500),
         }
       );
 
@@ -218,7 +243,9 @@ async function syncToDb(req, res) {
       date: targetDate,
       fromDate,
       toDate,
-      limit: Math.min(Number(limit) || 100, 1000),
+      limit: targetLimit,
+      autoPaginate: shouldAutoPaginate,
+      fetchAll: isFetchAll,
       persist: true,
     });
 

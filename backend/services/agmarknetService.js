@@ -457,6 +457,9 @@ async function fetchMandiPrices(
     arrivalDate,
     limit = 100,
     offset = 0,
+    page,
+    autoPaginate = false,
+    fetchAll = false,
     persist = false,
   } = {}
 ) {
@@ -469,36 +472,23 @@ async function fetchMandiPrices(
     );
   }
 
-  const params = {
-    "api-key": apiKey,
-    format: "json",
-    limit: state ? Math.min(Math.max((limit || 50) * 3, 150), 1000) : limit,
-    offset,
-  };
-
-  if (state) {
-    params["filters[state]"] = normalizeState(state);
-  }
-
-  if (commodity) {
-    params["filters[commodity]"] = commodity.trim();
-  }
-
-  if (district) {
-    params["filters[district]"] = district.trim();
-  }
-
-  if (market) {
-    params["filters[market]"] = market.trim();
-  }
-
+  const targetLimit = Math.max(1, Number(limit) || 100);
+  const pageNum = page ? Math.max(1, Number(page)) : Math.floor((Number(offset) || 0) / targetLimit) + 1;
+  const initialOffset = offset !== undefined ? Math.max(0, Number(offset)) : (pageNum - 1) * targetLimit;
   const targetDate = toAgmarknetDate(arrivalDate || date);
-  if (targetDate) {
-    params["filters[arrival_date]"] = targetDate;
-  }
 
   // Check cache
-  const key = cacheKey(params);
+  const key = cacheKey({
+    state,
+    commodity,
+    district,
+    market,
+    targetDate,
+    limit: targetLimit,
+    offset: initialOffset,
+    autoPaginate,
+    fetchAll,
+  });
   const cached = getFromCache(key);
 
   if (cached) {
@@ -520,60 +510,156 @@ async function fetchMandiPrices(
     return cached;
   }
 
-  // Fetch data from AGMARKNET with reliable timeout and resilient fallback to MongoDB
-  let response = null;
-  const isCircuitOpen = Date.now() - lastApiFailureTime < CIRCUIT_BREAKER_WINDOW_MS;
-  if (!isCircuitOpen) {
-    try {
-      response = await axios.get(
-        `${BASE_URL}/${resourceId}`,
-        {
-          params,
-          timeout: 8000,
-        }
-      );
-    } catch (apiErr) {
-      lastApiFailureTime = Date.now();
-      console.warn("AGMARKNET live government API unreachable/timed out. Falling back to MongoDB records:", apiErr.message);
-    }
-  }
-
   let records = [];
   let total = 0;
 
-  if (response?.data?.records?.length) {
-    let rawRecords = response.data.records.map(normalizeRecord);
+  // Branch A: Multi-page auto-paginated chunk ingestion (for full dataset sync or high limit)
+  if (autoPaginate || fetchAll || targetLimit > 1000) {
+    let currentOffset = initialOffset;
+    let accumulated = [];
+    let reportedApiTotal = 0;
+    const maxToCollect = fetchAll ? 10000 : targetLimit;
 
-    // CRITICAL: api.data.gov.in tokenizes query words (e.g. "Madhya Pradesh" returns "Uttar Pradesh" & "Himachal Pradesh" because of "Pradesh").
-    // Strictly filter by the exact requested state, district, commodity, and market.
-    if (state) {
-      const normState = normalizeState(state).toLowerCase();
-      rawRecords = rawRecords.filter(
-        (r) => r.state && normalizeState(r.state).toLowerCase() === normState
-      );
+    while (accumulated.length < maxToCollect) {
+      const chunkLimit = Math.min(1000, maxToCollect - accumulated.length);
+      const chunkParams = {
+        "api-key": apiKey,
+        format: "json",
+        limit: chunkLimit,
+        offset: currentOffset,
+      };
+      if (state) chunkParams["filters[state]"] = normalizeState(state);
+      if (commodity) chunkParams["filters[commodity]"] = commodity.trim();
+      if (district) chunkParams["filters[district]"] = district.trim();
+      if (market) chunkParams["filters[market]"] = market.trim();
+      if (targetDate) chunkParams["filters[arrival_date]"] = targetDate;
+
+      let resp = null;
+      try {
+        resp = await axios.get(`${BASE_URL}/${resourceId}`, {
+          params: chunkParams,
+          timeout: 10000,
+        });
+      } catch (err) {
+        console.warn("[AGMARKNET Auto-Pagination] Chunk fetch error at offset", currentOffset, err.message);
+        break;
+      }
+
+      const respTotal = typeof resp?.data?.total === "number" ? resp.data.total : 0;
+      if (respTotal > 0) reportedApiTotal = respTotal;
+
+      const rawChunk = (resp?.data?.records || []).map(normalizeRecord);
+      if (rawChunk.length === 0) break;
+
+      let filteredChunk = rawChunk;
+      if (state) {
+        const normState = normalizeState(state).toLowerCase();
+        filteredChunk = filteredChunk.filter(
+          (r) => r.state && normalizeState(r.state).toLowerCase() === normState
+        );
+      }
+      if (district) {
+        const normDist = district.trim().toLowerCase();
+        filteredChunk = filteredChunk.filter(
+          (r) => r.district && r.district.trim().toLowerCase() === normDist
+        );
+      }
+      if (commodity) {
+        const normComm = commodity.trim().toLowerCase();
+        filteredChunk = filteredChunk.filter(
+          (r) => r.commodity && r.commodity.trim().toLowerCase() === normComm
+        );
+      }
+      if (market) {
+        const normMarket = market.trim().toLowerCase();
+        filteredChunk = filteredChunk.filter(
+          (r) => r.market && r.market.trim().toLowerCase() === normMarket
+        );
+      }
+
+      accumulated.push(...filteredChunk);
+      currentOffset += chunkLimit;
+
+      if (rawChunk.length < chunkLimit) break;
+      if (reportedApiTotal > 0 && currentOffset >= reportedApiTotal) break;
     }
-    if (district) {
-      const normDist = district.trim().toLowerCase();
-      rawRecords = rawRecords.filter(
-        (r) => r.district && r.district.trim().toLowerCase() === normDist
-      );
+
+    records = accumulated;
+    total = reportedApiTotal > 0 ? reportedApiTotal : records.length;
+  } else {
+    // Branch B: Fast single-page fetch for interactive UI browsing & pagination
+    const params = {
+      "api-key": apiKey,
+      format: "json",
+      limit: Math.min(targetLimit, 1000),
+      offset: initialOffset,
+    };
+
+    if (state) {
+      params["filters[state]"] = normalizeState(state);
     }
     if (commodity) {
-      const normComm = commodity.trim().toLowerCase();
-      rawRecords = rawRecords.filter(
-        (r) => r.commodity && r.commodity.trim().toLowerCase() === normComm
-      );
+      params["filters[commodity]"] = commodity.trim();
+    }
+    if (district) {
+      params["filters[district]"] = district.trim();
     }
     if (market) {
-      const normMarket = market.trim().toLowerCase();
-      rawRecords = rawRecords.filter(
-        (r) => r.market && r.market.trim().toLowerCase() === normMarket
-      );
+      params["filters[market]"] = market.trim();
+    }
+    if (targetDate) {
+      params["filters[arrival_date]"] = targetDate;
     }
 
-    if (rawRecords.length > 0) {
-      records = rawRecords.slice(0, limit || 50);
-      total = rawRecords.length;
+    let response = null;
+    const isCircuitOpen = Date.now() - lastApiFailureTime < CIRCUIT_BREAKER_WINDOW_MS;
+    if (!isCircuitOpen) {
+      try {
+        response = await axios.get(
+          `${BASE_URL}/${resourceId}`,
+          {
+            params,
+            timeout: 8000,
+          }
+        );
+      } catch (apiErr) {
+        lastApiFailureTime = Date.now();
+        console.warn("AGMARKNET live government API unreachable/timed out. Falling back to MongoDB records:", apiErr.message);
+      }
+    }
+
+    if (response?.data?.records?.length) {
+      let rawRecords = response.data.records.map(normalizeRecord);
+
+      // Strictly filter by the exact requested state, district, commodity, and market
+      if (state) {
+        const normState = normalizeState(state).toLowerCase();
+        rawRecords = rawRecords.filter(
+          (r) => r.state && normalizeState(r.state).toLowerCase() === normState
+        );
+      }
+      if (district) {
+        const normDist = district.trim().toLowerCase();
+        rawRecords = rawRecords.filter(
+          (r) => r.district && r.district.trim().toLowerCase() === normDist
+        );
+      }
+      if (commodity) {
+        const normComm = commodity.trim().toLowerCase();
+        rawRecords = rawRecords.filter(
+          (r) => r.commodity && r.commodity.trim().toLowerCase() === normComm
+        );
+      }
+      if (market) {
+        const normMarket = market.trim().toLowerCase();
+        rawRecords = rawRecords.filter(
+          (r) => r.market && r.market.trim().toLowerCase() === normMarket
+        );
+      }
+
+      records = rawRecords.slice(0, targetLimit);
+      const apiReportedTotal = typeof response.data?.total === "number" ? response.data.total : 0;
+      total = apiReportedTotal > 0 ? apiReportedTotal : rawRecords.length;
     }
   }
 
@@ -599,8 +685,8 @@ async function fetchMandiPrices(
         MandiPrice.countDocuments(query),
         MandiPrice.find(query)
           .sort({ arrivalDate: -1, createdAt: -1 })
-          .skip(offset || 0)
-          .limit(limit || 50)
+          .skip(initialOffset)
+          .limit(targetLimit)
           .lean(),
       ]);
 
@@ -625,7 +711,7 @@ async function fetchMandiPrices(
 
     // If still 0 records after checking DB, generate realistic benchmark mandi records (strictly bound to requested state)
     if (records.length === 0) {
-      records = generateBenchmarkMandiRecords(commodity || "Wheat", state, limit || 20);
+      records = generateBenchmarkMandiRecords(commodity || "Wheat", state, Math.min(targetLimit, 20));
       total = records.length;
     }
   }
@@ -633,6 +719,10 @@ async function fetchMandiPrices(
   const result = {
     total,
     count: records.length,
+    page: pageNum,
+    limit: targetLimit,
+    totalPages: Math.max(1, Math.ceil(total / targetLimit)),
+    offset: initialOffset,
     records,
   };
 
@@ -668,6 +758,10 @@ async function fetchMandiPricesDateRange({
   fromDate,
   toDate,
   limit = 100,
+  offset = 0,
+  page,
+  autoPaginate = false,
+  fetchAll = false,
   persist = false,
 } = {}) {
   const dates = getDatesInRange(fromDate || date, toDate || date);
@@ -681,6 +775,10 @@ async function fetchMandiPricesDateRange({
       market,
       arrivalDate: singleDate,
       limit,
+      offset,
+      page,
+      autoPaginate,
+      fetchAll,
       persist,
     });
   }
