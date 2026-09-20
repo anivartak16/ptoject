@@ -177,6 +177,7 @@ export function OperationalPage({ title, type }) {
           <MandiRateChart
             markets={displayRows}
             title="Latest rates by grain mandi"
+            commodity="Wheat"
           />
         </div>
       )}

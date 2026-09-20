@@ -70,13 +70,15 @@ export async function getPrices(req, res, next) {
         grade: r.grade || "FAQ",
         date: r.arrivalDate,
         arrivalDate: r.arrivalDate,
-        minPrice: r.minPrice > 150 ? Math.round(r.minPrice / 100) : r.minPrice,
-        maxPrice: r.maxPrice > 150 ? Math.round(r.maxPrice / 100) : r.maxPrice,
-        modalPrice: r.modalPrice > 150 ? Math.round(r.modalPrice / 100) : r.modalPrice,
-        rawMinPrice: r.minPrice,
-        rawMaxPrice: r.maxPrice,
-        rawModalPrice: r.modalPrice,
-        unit: "KG",
+        // Keep genuine ₹/quintal prices from AGMARKNET
+        minPrice: r.minPrice,
+        maxPrice: r.maxPrice,
+        modalPrice: r.modalPrice,
+        // Also provide ₹/kg for reference
+        minPriceKg: Math.round((r.minPrice / 100) * 100) / 100,
+        maxPriceKg: Math.round((r.maxPrice / 100) * 100) / 100,
+        modalPriceKg: Math.round((r.modalPrice / 100) * 100) / 100,
+        unit: "QUINTAL",
         source: r.source || "AGMARKNET (Real-Time)",
         market: {
           _id: r.marketRef || r._id,

@@ -38,24 +38,56 @@ function hashString(str) {
 export async function priceInsight(commodity = "Wheat") {
   const queryRegex = getCommodityRegex(commodity);
 
-  // 1. Prioritize live MandiPrice records for real-time market insights
+  // 1. Prioritize live MandiPrice records (prices stored in ₹/quintal from AGMARKNET)
   let rows = [];
   const mandiRows = await MandiPrice.find({ commodity: queryRegex })
     .sort({ arrivalDate: 1 })
-    .limit(60)
+    .limit(300)
     .lean();
 
   if (mandiRows && mandiRows.length > 0) {
-    rows = mandiRows.map((r) => ({
-      commodity: r.commodity,
-      modalPrice: r.modalPrice > 150 ? Math.round(r.modalPrice / 100) : r.modalPrice,
-      minPrice: r.minPrice > 150 ? Math.round(r.minPrice / 100) : r.minPrice,
-      maxPrice: r.maxPrice > 150 ? Math.round(r.maxPrice / 100) : r.maxPrice,
-      date: r.arrivalDate,
-    }));
+    // Group records by date and compute average modal price per day (₹/qtl)
+    const byDate = new Map();
+    mandiRows.forEach((r) => {
+      const dateKey = r.arrivalDate
+        ? new Date(r.arrivalDate).toISOString().slice(0, 10)
+        : "unknown";
+      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+      byDate.get(dateKey).push(r);
+    });
+
+    // Build a time-series where each point is the average of all mandis on that date
+    rows = Array.from(byDate.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateKey, records]) => {
+        const avgModal = Math.round(
+          records.reduce((s, r) => s + (r.modalPrice || 0), 0) / records.length
+        );
+        const avgMin = Math.round(
+          records.reduce((s, r) => s + (r.minPrice || r.modalPrice || 0), 0) / records.length
+        );
+        const avgMax = Math.round(
+          records.reduce((s, r) => s + (r.maxPrice || r.modalPrice || 0), 0) / records.length
+        );
+        return {
+          commodity: records[0].commodity,
+          modalPrice: avgModal,   // ₹/quintal — genuine DB value
+          minPrice: avgMin,
+          maxPrice: avgMax,
+          date: new Date(dateKey),
+          mandisReporting: records.length,
+        };
+      });
   } else {
     // Fall back to legacy MarketPrice records if MandiPrice is empty
-    rows = await MarketPrice.find({ commodity: queryRegex }).sort({ date: 1 });
+    const legacy = await MarketPrice.find({ commodity: queryRegex }).sort({ date: 1 });
+    rows = legacy.map((r) => ({
+      commodity: r.commodity,
+      modalPrice: r.modalPrice,
+      minPrice: r.minPrice,
+      maxPrice: r.maxPrice,
+      date: r.date,
+    }));
   }
 
   if (!rows || !rows.length) return null;
@@ -83,6 +115,7 @@ export async function priceInsight(commodity = "Wheat") {
     history: rows,
   };
 }
+
 
 /**
  * Finds and ranks nearby grain mandis based on net price, ratings, distance, and transport cost.
@@ -218,20 +251,23 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
 
       let dist = calculateDistanceKm(userOrigin, mandiCoords);
       if (isSameTown) {
-        dist = 2 + (hashString(price.market) % 4); // 2-5 km for same town (e.g. Prithvipur APMC)!
+        dist = 2 + (hashString(price.market) % 4); // estimated 2-5 km (no GPS in AGMARKNET)
       } else if (isSameDistrict && dist <= 8) {
-        dist = 12 + (hashString(price.market) % 12); // 12-23 km for same district!
+        dist = 12 + (hashString(price.market) % 12); // estimated 12-23 km for same district
       }
 
-      const modalPricePerKg =
-        price.modalPrice > 150 ? Math.round(price.modalPrice / 100) : price.modalPrice;
-      const transportCostPerKm = 0.08;
-      const estimatedTransportCost = Math.max(1, Math.round(dist * transportCostPerKm));
-      const netPrice = Math.max(1, modalPricePerKg - estimatedTransportCost);
+      // Keep genuine AGMARKNET prices in ₹/quintal (the unit they are stored in)
+      const modalPricePerQtl = price.modalPrice; // genuine ₹/qtl from DB
+      const minPriceQtl = price.minPrice;
+      const maxPriceQtl = price.maxPrice;
 
-      const ratingSeed = hashString(price.market);
-      const reviewAverage = +(4.2 + (ratingSeed % 8) * 0.09).toFixed(1);
-      const reviewCount = 30 + (ratingSeed % 85);
+      // Convert to ₹/kg for net-return display (accurate to 2 decimal places)
+      const modalPricePerKg = Math.round((price.modalPrice / 100) * 100) / 100;
+
+      // Transport cost: ₹8/km per quintal is a reasonable approximation
+      const transportCostPerQtlPerKm = 0.8;
+      const estimatedTransportCostPerQtl = Math.max(5, Math.round(dist * transportCostPerQtlPerKm));
+      const netPricePerQtl = Math.max(1, modalPricePerQtl - estimatedTransportCostPerQtl);
 
       newest.set(key, {
         _id: price._id,
@@ -239,16 +275,17 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
         variety: price.variety,
         grade: price.grade,
         arrivalDate: price.arrivalDate,
+        // ₹/kg (for UI display in market list cards)
         modalPrice: modalPricePerKg,
-        modalPricePerQtl: price.modalPrice,
-        minPrice: price.minPrice > 150 ? Math.round(price.minPrice / 100) : price.minPrice,
-        maxPrice: price.maxPrice > 150 ? Math.round(price.maxPrice / 100) : price.maxPrice,
+        // ₹/quintal (genuine DB values for chart)
+        modalPricePerQtl,
+        minPrice: minPriceQtl,
+        maxPrice: maxPriceQtl,
+        netPrice: Math.round(netPricePerQtl / 100 * 100) / 100, // ₹/kg net
+        netPricePerQtl,
         distanceKm: dist,
-        transportCostPerKm: 8,
-        estimatedTransportCost,
-        netPrice,
-        reviewAverage,
-        reviewCount,
+        transportCostPerKm: 0.8,
+        estimatedTransportCost: Math.round(estimatedTransportCostPerQtl / 100 * 100) / 100,
         isSameTown,
         isSameDistrict,
         source: price.source || "AGMARKNET",
@@ -259,12 +296,11 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
           district: price.district,
           state: price.state,
           geo: { type: "Point", coordinates: mandiCoords },
-          reviewAverage,
-          reviewCount,
         },
       });
     }
   });
+
 
   // Process any seed records
   seedPrices.forEach((price) => {
@@ -347,7 +383,8 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
     }
 
     const distScore = Math.max(0, 35 - (row.distanceKm / maxDist) * 35);
-    const reviewScore = (row.reviewAverage / 5) * 10;
+    // No fake review data — use a neutral base score of 8/10 (equal for all AGMARKNET mandis)
+    const reviewScore = 8;
     const townBonus = row.isSameTown ? 25 : row.isSameDistrict ? 18 : 0;
 
     const recommendationScore = Math.min(
@@ -360,10 +397,10 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
         ? `📍 In your town (${location})`
         : row.isSameDistrict
           ? `📍 In your home district (${row.market.district || district})`
-          : `Distance: ${row.distanceKm} km`,
-      `Modal rate: ₹${row.modalPrice}/kg (₹${row.modalPricePerQtl}/qtl)`,
-      `Net return: ₹${row.netPrice}/kg after ₹${row.estimatedTransportCost} transport`,
-      `APMC rating ${row.reviewAverage}/5 (${row.reviewCount} verified trades)`,
+          : `Distance: ~${row.distanceKm} km`,
+      `Modal: ₹${row.modalPricePerQtl?.toLocaleString("en-IN")}/qtl (₹${row.modalPrice?.toFixed(2)}/kg)`,
+      `Net return: ~₹${row.netPricePerQtl?.toLocaleString("en-IN")}/qtl after transport`,
+      `Source: ${row.source || "AGMARKNET"} · Arrival: ${row.arrivalDate ? new Date(row.arrivalDate).toLocaleDateString("en-IN") : "Recent"}`,
     ];
 
     let badge = "";
@@ -381,6 +418,7 @@ export async function marketsFor(commodity = "Wheat", originOrOptions = [75.8577
       isNearest: row.distanceKm === nearestDist,
     };
   });
+
 
   scored.sort((a, b) => b.recommendationScore - a.recommendationScore);
   if (scored.length) scored[0].isRecommended = true;

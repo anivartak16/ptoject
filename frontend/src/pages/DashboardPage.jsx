@@ -791,6 +791,7 @@ export function DashboardPage() {
               <MandiRateChart
                 markets={markets}
                 height={320}
+                commodity={selectedCrop}
                 title={
                   isFpo
                     ? `Regional ${selectedCrop} Mandi Comparison`
@@ -874,10 +875,10 @@ export function DashboardPage() {
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0, paddingLeft: "8px" }}>
                         <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--brand, #166534)" }}>
-                          ₹{p.modalPrice}/kg
+                          ₹{(p.modalPricePerQtl || p.modalPrice * 100)?.toLocaleString("en-IN")}/qtl
                         </div>
                         <div style={{ fontSize: "11px", color: "var(--ink-secondary)" }}>
-                          ₹{p.modalPricePerQtl || p.modalPrice * 100}/qtl
+                          ₹{p.modalPrice?.toFixed(2)}/kg
                         </div>
                         <div style={{ fontSize: "11px", fontWeight: 600, color: "#475569", marginTop: "2px" }}>
                           Score: {p.recommendationScore ?? "—"}/100
