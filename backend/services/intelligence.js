@@ -657,4 +657,3 @@ export async function matchesFor(demand, currentUser = null) {
     })
     .sort((a, b) => b.matchScore - a.matchScore);
 }
-

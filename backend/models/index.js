@@ -13,3 +13,4 @@ export { LogisticsProvider } from "./LogisticsProvider.js";
 export { LogisticsBooking } from "./LogisticsBooking.js";
 export { StorageBooking } from "./StorageBooking.js";
 export { Dispute } from "./Dispute.js";
+export { KycSession } from "./KycSession.js";
