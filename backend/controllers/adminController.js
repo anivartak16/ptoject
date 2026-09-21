@@ -50,7 +50,7 @@ export async function getSummary(_req, res, next) {
       Demand.countDocuments({ status: "ACTIVE" }),
       Transaction.find(),
     ]);
-
+//async parallel fetching of data for dashboard summary, including counts of farmers, buyers, active lots, active demands, and transactions.
     return ok(res, {
       farmers,
       buyers,
